@@ -1,0 +1,89 @@
+types:
+  UserType:
+    type: string
+    enum:
+      - name: Normal
+      - name: Admin
+  User:
+    gen:
+      general-entity:
+    properties:
+      meta: 
+        type: GeneralEntityMetadata
+      tags:
+        type: array
+        items:
+          type: string
+      profile:
+        type: UserProfile
+  UserProfile:
+    properties:
+      name:
+        type: string
+      email:
+        type: string
+
+schemas:
+  UserResponse:
+    properties:
+      user:
+        type: User
+  
+  ListUserRequest:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+
+
+usecases:
+  user:
+    createUser:
+      req:
+        properties:
+          id:
+            type: integer
+          name:
+            type: string
+          age:
+            type: integer
+      res:
+        $ref: '#/schemas/UserResponse'
+      gen:
+        rest: 
+          method: post
+          path: 'users'
+        gql:
+    getUser:
+      req:
+        properties:
+          id:
+            type: integer
+      res:
+        $ref: '#/schemas/UserResponse'
+      gen:
+        rest:
+          method: get
+          path: 'user/:id'
+    listUsers:
+      req:
+        $ref: '#/schemas/ListUserRequest'
+      res:
+        properties:
+          users:
+            type: array
+            items:
+              type: User
+          total:
+            type: number
+      gen:
+        rest:
+          method: get
+          path: users
+          query: 
+            - id
+            - name
+
+
+  

@@ -1,0 +1,20 @@
+types:
+  GeneralEntityStatus:
+    type: string
+    enum:
+      - name: active
+        value: 1
+      - name: deleted
+        value: 2
+  GeneralEntityMetadata:
+    properties:
+      id:
+        type: string
+      userId:
+        type: string
+      status:
+        type: GeneralEntityStatus
+      createdAt:
+        type: number
+      updatedAt:
+        type: number
