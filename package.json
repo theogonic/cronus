@@ -35,7 +35,8 @@
     "nestjs-eclih": "0.0.14",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "7.3.0"
+    "rxjs": "7.3.0",
+    "typescript": "4.3.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.1.1",
@@ -59,8 +60,7 @@
     "ts-jest": "^27.0.4",
     "ts-loader": "9.2.5",
     "ts-node": "10.2.0",
-    "tsconfig-paths": "^3.10.1",
-    "typescript": "^4.3.5"
+    "tsconfig-paths": "^3.10.1"
   },
   "jest": {
     "moduleFileExtensions": [
