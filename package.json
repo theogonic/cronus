@@ -4,7 +4,7 @@
   "description": "Clean Architecture & Low Code",
   "author": "Shihao Xia <charlesxsh@hotmail.com>",
   "license": "MIT",
-  "bin": "dist/bin/tsca.js",
+  "bin": "dist/bin/zeus.js",
   "private": false,
   "scripts": {
     "prebuild": "rimraf dist",
