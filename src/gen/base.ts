@@ -42,7 +42,7 @@ export abstract class Generator<
   }
 
   protected getUsecaseTypeName(usecase: TscaUsecase) {
-    return _.upperFirst(usecase.name) + 'Usecase';
+    return _.upperFirst(usecase.name);
   }
 
   protected getUsecaseTypeTokenName(usecase: TscaUsecase) {
@@ -113,13 +113,13 @@ export abstract class Generator<
     schema: TscaSchema,
     overrideName: string,
   ): ts.TypeNode {
+    if (schema.enum && schema.parent) {
+      throw new Error(
+        'anonymous enum (defined in properties of a type) is not allowed',
+      );
+    }
     switch (schema.type) {
       case 'string':
-        if (schema.enum && schema.parent) {
-          throw new Error(
-            'anonymous enum (defined in properties of a type) is not allowed',
-          );
-        }
         return ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
       case 'number':
       case 'integer':

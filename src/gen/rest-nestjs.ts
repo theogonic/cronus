@@ -115,6 +115,9 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
       dstFile = this.output;
     }
 
+    if (schema.enum) {
+      return ts.factory.createTypeReferenceNode(schema.name);
+    }
     if (schema.type) {
       const dtoTypeName = this.getDtoTypeNameFromSchema(ctx, schema);
 

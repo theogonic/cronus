@@ -1,4 +1,3 @@
 #!/usr/bin/env bash
-cd "$(dirname "$0")"
 
-npx ts-node ./bin/zeus.ts "$@"
+npx ts-node $(dirname "$0")/bin/zeus.ts "$@"

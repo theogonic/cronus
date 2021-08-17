@@ -1,6 +1,5 @@
 types:
   GeneralEntityStatus:
-    type: string
     enum:
       - name: active
         value: 1
