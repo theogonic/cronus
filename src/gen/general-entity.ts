@@ -105,7 +105,7 @@ export class GeneralEntityGenerator extends Generator<GeneralEntityGeneratorConf
     const assignments = this.genObjAssignments(schema);
     const entityClass = ts.factory.createClassDeclaration(
       undefined,
-      undefined,
+      [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
       geTy,
       undefined,
       [
