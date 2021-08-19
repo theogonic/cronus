@@ -72,13 +72,26 @@ export class TypescriptGenerator extends Generator {
         ),
       );
     }
+    const heritages: ts.HeritageClause[] = [];
+    if (schema.extends) {
+      schema.extends.forEach((ext) => {
+        heritages.push(
+          ts.factory.createHeritageClause(ts.SyntaxKind.ExtendsKeyword, [
+            ts.factory.createExpressionWithTypeArguments(
+              ts.factory.createIdentifier(ext),
+              undefined,
+            ),
+          ]),
+        );
+      });
+    }
 
     const node = ts.factory.createInterfaceDeclaration(
       undefined,
       [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
       ts.factory.createIdentifier(overrideName || schema.name),
       undefined,
-      undefined,
+      heritages,
       propSigs,
     );
 

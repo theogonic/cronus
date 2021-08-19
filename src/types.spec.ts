@@ -2,41 +2,48 @@ import * as yaml from 'js-yaml';
 import { RawTscaDef, TscaDef } from './types';
 
 describe('TscaDef', () => {
-  it('add def only schema happy', () => {
+  it('add def only type happy', () => {
     const content = `
-schemas:
-  HelloRequest:
+types:
+  User:
     properties:
       id:
         type: string
     
     `;
     const rawTscaDef = yaml.load(content) as RawTscaDef;
-    const tscaDef = new TscaDef('abc.yaml', '', rawTscaDef);
-    expect(tscaDef.schemas.length).toBe(1);
+    const tscaDef = TscaDef.fromRaw(rawTscaDef, {
+      src: 'abc.yaml',
+    });
+    expect(tscaDef.types.length).toBe(1);
     expect(tscaDef.usecases.length).toBe(0);
-
-    const schema = tscaDef.schemas[0];
-    expect(schema.name).toBe('HelloRequest');
-    expect(schema.properties[0].type).toBe('string');
-    expect(schema.properties[0].name).toBe('id');
+    expect(tscaDef.src).toBe('abc.yaml');
+    const types = tscaDef.types[0];
+    expect(types.name).toBe('User');
+    expect(types.properties[0].type).toBe('string');
+    expect(types.properties[0].name).toBe('id');
   });
 
   it('add def only usecases happy', () => {
     const content = `
 usecases:
   user:
-    createUser:
-      req: UserRequest
-      res: UserResponse
-      rest: 'user/:id'
-      gql:
+    methods:
+      createUser:
+        req: 
+          properties:
+            name:
+              type: string
+        res: 
+          properties:
+            id:
+              type: string
     `;
 
     const rawTscaDef = yaml.load(content) as RawTscaDef;
-    const tscaDef = new TscaDef('abc.yaml', '', rawTscaDef);
+    const tscaDef = TscaDef.fromRaw(rawTscaDef, { src: 'abc.yaml' });
 
-    expect(tscaDef.schemas.length).toBe(0);
+    expect(tscaDef.types.length).toBe(0);
     expect(tscaDef.usecases.length).toBe(1);
 
     const usecase = tscaDef.usecases[0];
@@ -45,7 +52,9 @@ usecases:
     expect(usecase.methods.length).toBe(1);
     const method = usecase.methods[0];
     expect(method.name).toBe('createUser');
-    expect(method.req).toBe('UserRequest');
-    expect(method.res).toBe('UserResponse');
+    expect(method.req.properties.length).toBe(1);
+    expect(method.res.properties.length).toBe(1);
+    expect(method.req.properties[0].name).toBe('name');
+    expect(method.res.properties[0].name).toBe('id');
   });
 });

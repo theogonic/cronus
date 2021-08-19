@@ -22,6 +22,10 @@ types:
         type: string
       email:
         type: string
+  BaseRequest:
+    properties:
+      user:
+        type: JwtUser 
 
 schemas:
   UserResponse:
@@ -38,52 +42,73 @@ schemas:
 
 
 usecases:
-  user:
-    createUser:
-      req:
-        properties:
-          id:
-            type: integer
-          name:
-            type: string
-          age:
-            type: integer
-      res:
-        $ref: '#/schemas/UserResponse'
-      gen:
-        rest: 
-          method: post
-          path: 'users'
-        gql:
-    getUser:
-      req:
-        properties:
-          id:
-            type: integer
-      res:
-        $ref: '#/schemas/UserResponse'
-      gen:
-        rest:
-          method: get
-          path: 'user/:id'
-    listUsers:
-      req:
-        $ref: '#/schemas/ListUserRequest'
-      res:
-        properties:
-          users:
-            type: array
-            items:
-              type: User
-          total:
-            type: number
-      gen:
-        rest:
-          method: get
-          path: users
-          query: 
-            - id
-            - name
+  userUsercase:
+    rules:
+      - pattern: ".*"
+        method:
+          req:
+            extends:
+              - BaseRequest
+            flatExtends:
+          gen:
+            rest:
+              extraImports:
+                - from: ""
+                  names:
+              methodDecorators:
+                - from: ""
+                  name: ""
+
+              paramDecorators:
+                - from: ""
+                  name: ""
+                  assignToReqProp: "user"
+    methods:
+      createUser:
+        req:
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            age:
+              type: integer
+        res:
+          $ref: '#/schemas/UserResponse'
+        gen:
+          rest: 
+            method: post
+            path: 'users'
+          gql:
+      getUser:
+        req:
+          properties:
+            id:
+              type: integer
+        res:
+          $ref: '#/schemas/UserResponse'
+        gen:
+          rest:
+            method: get
+            path: 'user/:id'
+      listUsers:
+        req:
+          $ref: '#/schemas/ListUserRequest'
+        res:
+          properties:
+            users:
+              type: array
+              items:
+                type: User
+            total:
+              type: number
+        gen:
+          rest:
+            method: get
+            path: users
+            query: 
+              - id
+              - name
 
 
-  
+    

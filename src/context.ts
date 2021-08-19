@@ -37,8 +37,8 @@ export class GContext {
     def.types.forEach((tySchema) => {
       if (tySchema.name in this.types) {
         throw new Error(`found duplicated type '${tySchema.name}' in 
-        '${this.types[tySchema.name].srcFile}'
-        '${tySchema.srcFile}'
+        '${this.types[tySchema.name].src}'
+        '${tySchema.src}'
         `);
       }
       this.types[tySchema.name] = tySchema;
@@ -91,6 +91,9 @@ export class GContext {
     const existedImports = fileCtx.imports;
     if (imports) {
       for (const imp of imports) {
+        if (!imp.items) {
+          continue;
+        }
         for (const item of imp.items) {
           if (!(imp.from in existedImports)) {
             existedImports[imp.from] = [];

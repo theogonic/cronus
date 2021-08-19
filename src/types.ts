@@ -1,9 +1,41 @@
-export type RawTscaUsecase = Record<string, RawTscaMethod>;
+export interface RawTscaUsecase {
+  methods?: Record<string, RawTscaMethod>;
+  res?: RawTscaSchema;
+  req?: RawTscaSchema;
+  rules?: TscaUsecaseRule[];
+}
+
+export interface TscaUsecaseRule {
+  pattern?: string;
+  method: RawTscaMethod;
+}
+
+interface RawTsImport {
+  from?: string;
+  names?: string[];
+}
+
+export interface TsItem {
+  type: 'string' | 'ident' | 'object';
+  value: string | Record<string, unknown>;
+}
+export interface TsDecoratorDecl {
+  from: string;
+  name: string;
+  params?: TsItem[];
+}
+
+export interface TscaMethodRestParamDecoratorDecl extends TsDecoratorDecl {
+  reqProp: string;
+}
 
 export interface RawTscaMethodRest {
   method: 'get' | 'post' | 'put' | 'delete';
   path: string;
   query?: string[];
+  extraImports?: RawTsImport[];
+  methodDecorators?: TsDecoratorDecl[];
+  paramDecorators?: TscaMethodRestParamDecoratorDecl[];
 }
 
 export interface RawTscaMethodGql {
@@ -43,6 +75,8 @@ export interface RawTscaSchema {
   namespace?: string;
   enum?: TscaSchemaEnumItem[];
   gen?: TscaSchemaGen;
+  extends?: string[];
+  flatExtends?: string[];
 }
 
 export interface RawTscaDef {
@@ -60,15 +94,19 @@ export interface RawTscaDef {
 
 interface BaseTscaDefProp {
   name?: string;
-  srcFile: string;
+  // source file
+  src: string;
+  parent?: BaseTscaDefComponent;
 }
 
 abstract class BaseTscaDefComponent {
-  public readonly srcFile: string;
+  public readonly src: string;
   public readonly name: string;
+  public readonly parent: BaseTscaDefComponent;
   constructor(prop: BaseTscaDefProp) {
-    this.srcFile = prop.srcFile;
+    this.src = prop.src;
     this.name = prop.name;
+    this.parent = prop.parent;
   }
 }
 
@@ -87,14 +125,11 @@ export class TscaDef extends BaseTscaDefComponent {
     for (const name in types) {
       if (Object.prototype.hasOwnProperty.call(types, name)) {
         const t = types[name];
-        const child = TscaSchema.fromRaw(
-          t,
-          {
-            srcFile: prop.srcFile,
-            name,
-          },
-          null,
-        );
+        const child = TscaSchema.fromRaw(t, {
+          src: prop.src,
+          name,
+          parent: null,
+        });
         def.types.push(child);
       }
     }
@@ -103,7 +138,7 @@ export class TscaDef extends BaseTscaDefComponent {
       if (Object.prototype.hasOwnProperty.call(usecases, name)) {
         const usecase = usecases[name];
         const child = TscaUsecase.fromRaw(usecase, {
-          srcFile: prop.srcFile,
+          src: prop.src,
           name,
         });
         def.usecases.push(child);
@@ -116,19 +151,25 @@ export class TscaDef extends BaseTscaDefComponent {
 
 export class TscaUsecase extends BaseTscaDefComponent {
   methods: TscaMethod[] = [];
+  rules?: TscaUsecaseRule[];
 
   static fromRaw(raw: RawTscaUsecase, prop: BaseTscaDefProp): TscaUsecase {
     const u = new TscaUsecase(prop);
-    for (const metholdName in raw) {
-      if (Object.prototype.hasOwnProperty.call(raw, metholdName)) {
-        const rawMethod = raw[metholdName];
-        const method = TscaMethod.fromRaw(rawMethod, {
-          srcFile: prop.srcFile,
-          name: metholdName,
-        });
-        u.methods.push(method);
+    u.rules = raw.rules;
+    if (raw.methods) {
+      for (const metholdName in raw.methods) {
+        if (Object.prototype.hasOwnProperty.call(raw.methods, metholdName)) {
+          const rawMethod = raw.methods[metholdName];
+          const method = TscaMethod.fromRaw(rawMethod, {
+            src: prop.src,
+            name: metholdName,
+            parent: u,
+          });
+          u.methods.push(method);
+        }
       }
     }
+
     return u;
   }
 }
@@ -141,7 +182,8 @@ export class TscaSchema extends BaseTscaDefComponent {
   namespace: string;
   gen?: TscaSchemaGen;
   enum?: TscaSchemaEnumItem[];
-  parent?: TscaSchema;
+  extends?: string[];
+  flatExtends?: string[];
   getPropByName(name: string): TscaSchema {
     const prop = this.properties?.find((prop) => prop.name === name);
     if (!prop) {
@@ -149,41 +191,49 @@ export class TscaSchema extends BaseTscaDefComponent {
     }
     return prop;
   }
-  static fromRaw(
-    raw: RawTscaSchema,
-    prop: BaseTscaDefProp,
-    parent: TscaSchema,
-  ): TscaSchema {
+  inheritFrom(schema: RawTscaSchema): void {
+    this.extends = schema.extends;
+    this.flatExtends = schema.flatExtends;
+    if (schema.properties) {
+      for (const prop in schema.properties) {
+        if (Object.prototype.hasOwnProperty.call(schema.properties, prop)) {
+          const childSchema = schema.properties[prop];
+          if (prop in this.properties) {
+            throw new Error(
+              `found duplicated property '${prop}' in type '${this.name}'`,
+            );
+          }
+          schema.properties[prop] = childSchema;
+        }
+      }
+    }
+  }
+  static fromRaw(raw: RawTscaSchema, prop: BaseTscaDefProp): TscaSchema {
     const { properties, type, namespace, items, required, gen } = raw;
     const schema = new TscaSchema(prop);
+    schema.extends = raw.extends;
+    schema.flatExtends = raw.flatExtends;
     schema.type = type;
     schema.enum = raw['enum'];
     schema.namespace = namespace;
     schema.required = required;
-    schema.parent = parent;
     if (items) {
-      schema.items = TscaSchema.fromRaw(
-        items,
-        {
-          srcFile: prop.srcFile,
-          name: '',
-        },
-        schema,
-      );
+      schema.items = TscaSchema.fromRaw(items, {
+        src: prop.src,
+        name: '',
+        parent: schema,
+      });
     }
     schema.gen = gen;
 
     if (properties) {
       for (const propName in properties) {
         if (Object.prototype.hasOwnProperty.call(properties, propName)) {
-          const childSchema = TscaSchema.fromRaw(
-            properties[propName],
-            {
-              srcFile: prop.srcFile,
-              name: propName,
-            },
-            schema,
-          );
+          const childSchema = TscaSchema.fromRaw(properties[propName], {
+            src: prop.src,
+            name: propName,
+            parent: schema,
+          });
 
           schema.properties.push(childSchema);
         }
@@ -199,29 +249,93 @@ export class TscaMethod extends BaseTscaDefComponent {
   gql?: any;
   req: TscaSchema;
   res: TscaSchema;
-
+  readonly parent: TscaUsecase;
   static fromRaw(raw: RawTscaMethod, prop: BaseTscaDefProp): TscaMethod {
     const method = new TscaMethod(prop);
-    method.req = TscaSchema.fromRaw(
-      raw.req,
-      {
-        srcFile: prop.srcFile,
-        name: '',
-      },
-      null,
-    );
 
-    method.res = TscaSchema.fromRaw(
-      raw.res,
-      {
-        srcFile: prop.srcFile,
-        name: '',
-      },
-      null,
-    );
+    method.req = TscaSchema.fromRaw(raw.req, {
+      src: prop.src,
+      name: '',
+      parent: null,
+    });
+
+    method.res = TscaSchema.fromRaw(raw.res, {
+      src: prop.src,
+      name: '',
+      parent: null,
+    });
 
     method.gen = raw.gen;
 
+    applyRulesToMethod(method.parent.rules, method);
     return method;
   }
+}
+
+function applyRulesToMethod(
+  rules: TscaUsecaseRule[],
+  method: TscaMethod,
+): void {
+  if (!rules) {
+    return;
+  }
+  if (!method) {
+    throw new Error(`unexpected null method found`);
+  }
+
+  rules
+    .filter((rule) => new RegExp(rule.pattern).test(method.name))
+    .forEach((rule) => applyRuleToMethod(rule, method));
+}
+
+function applyRuleToMethod(rule: TscaUsecaseRule, method: TscaMethod): void {
+  if (rule.method.req) {
+    method.req.inheritFrom(rule.method.req);
+  }
+
+  if (rule.method.res) {
+    method.res.inheritFrom(rule.method.res);
+  }
+
+  if (rule.method.gen) {
+    if (rule.method.gen.rest) {
+      const rest = rule.method.gen.rest;
+      method.gen.rest = inheritFromRest(method.gen.rest, rest);
+    }
+  }
+}
+
+function inheritFromRest(
+  curr: RawTscaMethodRest,
+  from: RawTscaMethodRest,
+): RawTscaMethodRest {
+  const newRest = { ...curr };
+  if (from.extraImports) {
+    if (!newRest.extraImports) {
+      newRest.extraImports = [];
+    }
+    newRest.extraImports = [...newRest.extraImports, ...from.extraImports];
+  }
+
+  if (from.methodDecorators) {
+    if (!newRest.methodDecorators) {
+      newRest.methodDecorators = [];
+    }
+    newRest.methodDecorators = [
+      ...newRest.methodDecorators,
+      ...from.methodDecorators,
+    ];
+  }
+
+  if (from.paramDecorators) {
+    if (!newRest.paramDecorators) {
+      newRest.paramDecorators = [];
+    }
+    newRest.paramDecorators = [
+      ...newRest.paramDecorators,
+      ...from.paramDecorators,
+    ];
+  }
+
+  return newRest;
 }

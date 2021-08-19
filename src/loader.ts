@@ -13,13 +13,13 @@ function loadYamlFromFile<T = Record<string, unknown>>(yamlFile: string): T {
       `expect number, but found ${typeof raw} from yaml file '${yamlFile}'`,
     );
   }
-  return (raw as unknown) as T;
+  return raw as unknown as T;
 }
 
 export async function loadDefFromYaml(defFile?: string): Promise<TscaDef> {
   const raw = loadYamlFromFile<RawTscaDef>(defFile);
   const derefRaw = (await refParser.dereference(raw)) as RawTscaDef;
-  return TscaDef.fromRaw(derefRaw, { srcFile: defFile });
+  return TscaDef.fromRaw(derefRaw, { src: defFile });
 }
 
 export async function loadDefs(globs: string[]): Promise<TscaDef[]> {

@@ -1,4 +1,12 @@
 types:
+  JwtUser:
+    properties:
+      id: 
+        type: string
+      email:
+        type: string
+      org:
+        type: string
   GeneralEntityStatus:
     enum:
       - name: active

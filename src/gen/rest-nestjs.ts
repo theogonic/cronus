@@ -6,6 +6,7 @@ import {
   TscaMethod,
   TscaSchema,
   TscaUsecase,
+  TsDecoratorDecl,
 } from '../types';
 import * as _ from 'lodash';
 import { GContext } from '../context';
@@ -309,6 +310,17 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
     ctx.addNodesToTsFile(this.output, node);
   }
 
+  private genExtraImports(ctx: GContext, method: TscaMethod): void {
+    if (method.gen.rest.extraImports) {
+      method.gen.rest.extraImports.forEach((ei) => {
+        ctx.addImportsToTsFile(this.output, {
+          from: ei.from,
+          items: ei.names,
+        });
+      });
+    }
+  }
+
   private getUsecaseInstanceVarName(u: TscaUsecase): string {
     return _.camelCase(this.getUsecaseTypeName(u));
   }
@@ -328,11 +340,115 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
     }
   }
 
+  private getRestMethodDecorators(
+    ctx: GContext,
+    method: TscaMethod,
+  ): ts.Decorator[] {
+    const decorators: ts.Decorator[] = [];
+
+    // nestjs http type decorator (get, post, etc..)
+    decorators.push(
+      ts.factory.createDecorator(
+        ts.factory.createCallExpression(
+          ts.factory.createIdentifier(
+            this.getNestjsHttpMethodDecoratorName(method.gen?.rest),
+          ),
+          undefined,
+          [ts.factory.createStringLiteral(method.gen?.rest.path)],
+        ),
+      ),
+    );
+
+    // nestjs return type decorator
+    const resTypeName = this.getDtoTypeNameFromName(
+      this.getTscaMethodResponseTypeName(method),
+    );
+    decorators.push(
+      ts.factory.createDecorator(
+        ts.factory.createCallExpression(
+          ts.factory.createIdentifier('ApiOkResponse'),
+          undefined,
+          [
+            ts.factory.createObjectLiteralExpression(
+              [
+                ts.factory.createPropertyAssignment(
+                  ts.factory.createIdentifier('type'),
+                  ts.factory.createIdentifier(resTypeName),
+                ),
+              ],
+              false,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    // user custom decorators
+    const { methodDecorators } = method.gen.rest;
+    if (methodDecorators) {
+      const mds = methodDecorators.map((md) =>
+        this.decoratorDeclToDecorator(ctx, md),
+      );
+      decorators.push(...mds);
+    }
+
+    return decorators;
+  }
+
+  private decoratorDeclToDecorator(
+    ctx: GContext,
+    decl: TsDecoratorDecl,
+  ): ts.Decorator {
+    ctx.addImportsToTsFile(this.output, {
+      from: decl.from,
+      items: [decl.name],
+    });
+
+    let args: ts.Expression[];
+    if (decl.params) {
+      args = decl.params.map((param) => {
+        if (param.type == 'string') {
+          if (typeof param.value !== 'string') {
+            throw new Error('expect param is string');
+          }
+          return ts.factory.createStringLiteral(param.value);
+        } else if (param.type == 'ident') {
+          if (typeof param.value !== 'string') {
+            throw new Error('expect param is string');
+          }
+          return ts.factory.createIdentifier(param.value);
+        } else if (param.type == 'object') {
+          const elmts: ts.ObjectLiteralElementLike[] = [];
+          return ts.factory.createObjectLiteralExpression(
+            [
+              // TODO
+              // ts.factory.createPropertyAssignment(
+              //   ts.factory.createIdentifier('type'),
+              //   ts.factory.createIdentifier(resTypeName),
+              // ),
+            ],
+            false,
+          );
+        } else {
+          throw new Error(`found unsupported param type ${param.type}`);
+        }
+      });
+    }
+
+    return ts.factory.createDecorator(
+      ts.factory.createCallExpression(
+        ts.factory.createIdentifier(decl.name),
+        undefined,
+        args,
+      ),
+    );
+  }
   private genTscaMethod(
     ctx: GContext,
     u: TscaUsecase,
     method: TscaMethod,
   ): ts.MethodDeclaration {
+    this.genExtraImports(ctx, method);
     const reqTypeName = this.getDtoTypeNameFromName(
       this.getTscaMethodRequestTypeName(method),
     );
@@ -343,36 +459,9 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
     this.genTscaSchemaToDto(ctx, this.output, method.res, resTypeName);
 
     const paramNodes = this.genTscaMethodParameters(ctx, u, method);
+    const methodDecorators = this.getRestMethodDecorators(ctx, method);
     return ts.factory.createMethodDeclaration(
-      [
-        ts.factory.createDecorator(
-          ts.factory.createCallExpression(
-            ts.factory.createIdentifier(
-              this.getNestjsHttpMethodDecoratorName(method.gen?.rest),
-            ),
-            undefined,
-            [ts.factory.createStringLiteral(method.gen?.rest.path)],
-          ),
-        ),
-
-        ts.factory.createDecorator(
-          ts.factory.createCallExpression(
-            ts.factory.createIdentifier('ApiOkResponse'),
-            undefined,
-            [
-              ts.factory.createObjectLiteralExpression(
-                [
-                  ts.factory.createPropertyAssignment(
-                    ts.factory.createIdentifier('type'),
-                    ts.factory.createIdentifier(resTypeName),
-                  ),
-                ],
-                false,
-              ),
-            ],
-          ),
-        ),
-      ],
+      methodDecorators,
       undefined,
       undefined,
       ts.factory.createIdentifier(method.name),

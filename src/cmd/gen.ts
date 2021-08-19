@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { Command, CommandProvider } from 'nestjs-eclih';
+import { Command, RootCommand } from 'nestjs-eclih';
 import { dumpContext } from '../util/context';
 import { GContext } from '../context';
 import { loadGenerationConfig, loadDefs } from '../loader';
@@ -19,12 +19,11 @@ GeneralEntityGenerator;
 GraphQLSchemaGenerator;
 RestNestjsGenerator;
 
-@CommandProvider()
+@Command()
 export class GenCmdProvider {
   private readonly logger = new Logger(GenCmdProvider.name);
 
-  @Command({
-    nameAndArgs: 'gen',
+  @RootCommand({
     options: [
       {
         nameAndArgs: '--config <file>',

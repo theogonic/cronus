@@ -32,7 +32,7 @@
     "globby": "11.0.4",
     "js-yaml": "4.1.0",
     "lodash": "4.17.21",
-    "nestjs-eclih": "0.0.14",
+    "nestjs-eclih": "1.0.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "7.3.0",
