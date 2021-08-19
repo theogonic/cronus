@@ -8,8 +8,6 @@ types:
     gen:
       general-entity:
     properties:
-      meta: 
-        type: GeneralEntityMetadata
       tags:
         type: array
         items:

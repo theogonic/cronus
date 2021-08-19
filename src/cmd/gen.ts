@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { Command, RootCommand } from 'nestjs-eclih';
 import { dumpContext } from '../util/context';
 import { GContext } from '../context';
-import { loadGenerationConfig, loadDefs } from '../loader';
+import { loadGConfig, loadDefsFromGConfig } from '../loader';
 import { getInstantiatedGenerators } from '../config';
 import {
   TypescriptGenerator,
@@ -32,9 +32,9 @@ export class GenCmdProvider {
     ],
   })
   async gen({ config }) {
-    const gConfig = loadGenerationConfig(config);
+    const gConfig = loadGConfig(config);
     const generators = getInstantiatedGenerators(gConfig);
-    const defs = await loadDefs(gConfig.defs);
+    const defs = await loadDefsFromGConfig(gConfig);
     if (defs.length == 0) {
       throw new Error('no defs found');
     }

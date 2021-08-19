@@ -184,10 +184,12 @@ export class TscaSchema extends BaseTscaDefComponent {
   enum?: TscaSchemaEnumItem[];
   extends?: string[];
   flatExtends?: string[];
-  getPropByName(name: string): TscaSchema {
+  getPropByName(name: string, allowNotExist = false): TscaSchema {
     const prop = this.properties?.find((prop) => prop.name === name);
-    if (!prop) {
-      throw new Error(`cannot find '${name}' in properties of '${this.type}'`);
+    if (!prop && !allowNotExist) {
+      throw new Error(
+        `cannot find '${name}' in properties of type '${this.name}'`,
+      );
     }
     return prop;
   }
@@ -239,6 +241,8 @@ export class TscaSchema extends BaseTscaDefComponent {
         }
       }
     }
+
+    autoCompleteMetaIfGe(schema);
 
     return schema;
   }
@@ -305,6 +309,35 @@ function applyRuleToMethod(rule: TscaUsecaseRule, method: TscaMethod): void {
   }
 }
 
+/**
+ * Add meta: GeneralObjectMeta to schema properties if schema is marked with gen general-entity
+ */
+
+function autoCompleteMetaIfGe(schema: TscaSchema) {
+  if (!schema.gen) {
+    return;
+  }
+  if ('general-entity' in schema.gen) {
+    const metaSchema = schema.getPropByName('meta', true);
+    if (metaSchema) {
+      if (metaSchema.type !== 'GeneralObjectMeta') {
+        throw new Error(
+          `type of 'meta' in type '${schema.name}' expected to be 'GeneralObjectMeta'`,
+        );
+      }
+    } else {
+      if (!schema.properties) {
+        schema.properties = [];
+      }
+      const autoCreatedMetaSchema = new TscaSchema({
+        src: schema.src,
+        name: 'meta',
+      });
+      autoCreatedMetaSchema.type = 'GeneralObjectMeta';
+      schema.properties.push(autoCreatedMetaSchema);
+    }
+  }
+}
 function inheritFromRest(
   curr: RawTscaMethodRest,
   from: RawTscaMethodRest,

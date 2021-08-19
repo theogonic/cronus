@@ -67,7 +67,9 @@ export class TypescriptGenerator extends Generator {
         ts.factory.createPropertySignature(
           undefined,
           ts.factory.createIdentifier(propSchema.name),
-          undefined,
+          propSchema.required
+            ? undefined
+            : ts.factory.createToken(ts.SyntaxKind.QuestionToken),
           this.genTscaSchema(ctx, def, dstFile, propSchema, null),
         ),
       );

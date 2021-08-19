@@ -1,9 +1,10 @@
 import { RawTscaDef, TscaDef } from './types';
 import * as yaml from 'js-yaml';
 import * as fs from 'fs';
+import * as path from 'path';
 import refParser from '@apidevtools/json-schema-ref-parser';
 import * as globby from 'globby';
-import { GenerationConfig } from './config';
+import { GConfig, GeneralEntityGeneratorConfig } from './config';
 
 function loadYamlFromFile<T = Record<string, unknown>>(yamlFile: string): T {
   const content = fs.readFileSync(yamlFile, 'utf8');
@@ -22,18 +23,47 @@ export async function loadDefFromYaml(defFile?: string): Promise<TscaDef> {
   return TscaDef.fromRaw(derefRaw, { src: defFile });
 }
 
-export async function loadDefs(globs: string[]): Promise<TscaDef[]> {
+async function loadDefsFromGlobs(globs: string[]): Promise<TscaDef[]> {
   const paths = await globby(globs, { absolute: true });
   return Promise.all(paths.map(loadDefFromYaml));
+}
+
+export async function loadDefsFromGConfig(
+  gConfig: GConfig,
+): Promise<TscaDef[]> {
+  const globs = [...gConfig.defs];
+  const geGeneratorConfig = gConfig.generators[
+    'general-entity'
+  ] as GeneralEntityGeneratorConfig;
+  if (geGeneratorConfig) {
+    if (geGeneratorConfig.geZeusDir) {
+      globs.push(`${geGeneratorConfig.geZeusDir}/**/*.yaml`);
+    }
+  }
+  return loadDefsFromGlobs(globs);
 }
 
 /**
  * Load generation cofiguration from yaml file
  */
-export function loadGenerationConfig(configFile?: string): GenerationConfig {
+export function loadGConfig(configFile?: string): GConfig {
   if (!configFile) {
     configFile = 'tsca.yaml';
   }
-  const raw = loadYamlFromFile<GenerationConfig>(configFile);
-  return raw;
+  const gConfig = loadYamlFromFile<GConfig>(configFile);
+  const geGeneratorConfig = gConfig.generators[
+    'general-entity'
+  ] as GeneralEntityGeneratorConfig;
+  if (geGeneratorConfig) {
+    if (!geGeneratorConfig.geZeusDir) {
+      geGeneratorConfig.geZeusDir = path.dirname(
+        require.resolve('@theogonic/gaea/assets/zeus/types.yaml'),
+      );
+    }
+    if (!geGeneratorConfig.geImport) {
+      geGeneratorConfig.geImport = '@theogonic/gaea';
+    }
+  }
+
+  return gConfig;
 }

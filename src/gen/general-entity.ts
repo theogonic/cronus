@@ -2,16 +2,10 @@ import { GContext } from 'src/context';
 import { TscaDef, TscaSchema } from 'src/types';
 import { Generator } from './base';
 import { Register } from '../decorators';
-import { BaseGeneratorConfig } from 'src/config';
 import * as ts from 'typescript';
+import { GeneralEntityGeneratorConfig } from 'src/config';
 
-interface GeneralEntityGeneratorConfig extends BaseGeneratorConfig {
-  generalEntityImport: string;
-  tsTypeImport: string;
-}
-
-const EntityToExtendTy = 'BaseGeneralEntity';
-const EntityMetadataTy = 'GeneralEntityMetadata';
+const EntityToExtendTy = 'BaseGeneralObject';
 const EntityMetaVar = 'meta';
 const EntityObjVar = 'obj';
 
@@ -26,8 +20,8 @@ export class GeneralEntityGenerator extends Generator<GeneralEntityGeneratorConf
 
   initImport(ctx: GContext) {
     ctx.addImportsToTsFile(this.output, {
-      items: [EntityToExtendTy, EntityMetadataTy],
-      from: this.config.generalEntityImport,
+      items: [EntityToExtendTy],
+      from: this.config.geImport,
     });
   }
 
@@ -133,9 +127,14 @@ export class GeneralEntityGenerator extends Generator<GeneralEntityGeneratorConf
               undefined,
               ts.factory.createIdentifier(EntityMetaVar),
               undefined,
-              ts.factory.createTypeReferenceNode(
-                ts.factory.createIdentifier(EntityMetadataTy),
-                undefined,
+              ts.factory.createIndexedAccessTypeNode(
+                ts.factory.createTypeReferenceNode(
+                  ts.factory.createIdentifier(EntityToExtendTy),
+                  undefined,
+                ),
+                ts.factory.createLiteralTypeNode(
+                  ts.factory.createStringLiteral(EntityMetaVar),
+                ),
               ),
               undefined,
             ),

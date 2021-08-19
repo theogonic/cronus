@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import { GenerationConfig } from './config';
+import { GConfig } from './config';
 import { TscaDef, TscaSchema } from './types';
 
 export interface TsFileContext {
@@ -27,7 +27,7 @@ export class GContext {
   // schema name => schema
   types: Record<string, TscaSchema>;
 
-  constructor(private readonly gConfig: GenerationConfig) {
+  constructor(private readonly gConfig: GConfig) {
     this.tsFiles = {};
     this.textFiles = {};
     this.types = {};
