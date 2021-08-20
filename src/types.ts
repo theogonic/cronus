@@ -49,8 +49,8 @@ export interface TscaMethodGen {
 
 export interface RawTscaMethod {
   gen?: TscaMethodGen;
-  req: RawTscaSchema;
-  res: RawTscaSchema;
+  req?: RawTscaSchema;
+  res?: RawTscaSchema;
 }
 
 export interface RawTscaSchemaGql {
@@ -251,23 +251,29 @@ export class TscaSchema extends BaseTscaDefComponent {
 export class TscaMethod extends BaseTscaDefComponent {
   gen?: TscaMethodGen;
   gql?: any;
-  req: TscaSchema;
-  res: TscaSchema;
+  req?: TscaSchema;
+  res?: TscaSchema;
   readonly parent: TscaUsecase;
   static fromRaw(raw: RawTscaMethod, prop: BaseTscaDefProp): TscaMethod {
     const method = new TscaMethod(prop);
+    if (!raw) {
+      raw = {};
+    }
+    if (raw.req) {
+      method.req = TscaSchema.fromRaw(raw.req, {
+        src: prop.src,
+        name: '',
+        parent: null,
+      });
+    }
 
-    method.req = TscaSchema.fromRaw(raw.req, {
-      src: prop.src,
-      name: '',
-      parent: null,
-    });
-
-    method.res = TscaSchema.fromRaw(raw.res, {
-      src: prop.src,
-      name: '',
-      parent: null,
-    });
+    if (raw.res) {
+      method.res = TscaSchema.fromRaw(raw.res, {
+        src: prop.src,
+        name: '',
+        parent: null,
+      });
+    }
 
     method.gen = raw.gen;
 
@@ -294,17 +300,36 @@ function applyRulesToMethod(
 
 function applyRuleToMethod(rule: TscaUsecaseRule, method: TscaMethod): void {
   if (rule.method.req) {
-    method.req.inheritFrom(rule.method.req);
+    if (method.req) {
+      method.req.inheritFrom(rule.method.req);
+    } else {
+      method.req = TscaSchema.fromRaw(rule.method.req, {
+        src: method.src,
+      });
+    }
   }
 
   if (rule.method.res) {
-    method.res.inheritFrom(rule.method.res);
+    if (method.res) {
+      method.res.inheritFrom(rule.method.res);
+    } else {
+      method.res = TscaSchema.fromRaw(rule.method.res, {
+        src: method.src,
+      });
+    }
   }
 
   if (rule.method.gen) {
     if (rule.method.gen.rest) {
       const rest = rule.method.gen.rest;
-      method.gen.rest = inheritFromRest(method.gen.rest, rest);
+      if (method.gen?.rest) {
+        method.gen.rest = inheritFromRest(method.gen.rest, rest);
+      } else {
+        if (!method.gen) {
+          method.gen = {};
+        }
+        method.gen.rest = rest;
+      }
     }
   }
 }

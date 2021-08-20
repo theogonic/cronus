@@ -136,37 +136,47 @@ export class TypescriptGenerator extends Generator {
     u: TscaUsecase,
     method: TscaMethod,
   ): ts.TypeElement {
-    const reqTypeName = this.getTscaMethodRequestTypeName(method);
-    const resTypeName = this.getTscaMethodResponseTypeName(method);
-    this.genTscaSchema(ctx, def, this.output, method.req, reqTypeName);
-    this.genTscaSchema(ctx, def, this.output, method.res, resTypeName);
+    let resTypeName: string;
+    let reqTypeName: string;
+    if (method.req && method.req.properties) {
+      reqTypeName = this.getTscaMethodRequestTypeName(method);
+      this.genTscaSchema(ctx, def, this.output, method.req, reqTypeName);
+    }
+    if (method.res && method.res.properties) {
+      resTypeName = this.getTscaMethodResponseTypeName(method);
+      this.genTscaSchema(ctx, def, this.output, method.res, resTypeName);
+    }
     return ts.factory.createMethodSignature(
       undefined,
       ts.factory.createIdentifier(method.name),
       undefined,
       undefined,
-      [
-        ts.factory.createParameterDeclaration(
-          undefined,
-          undefined,
-          undefined,
-          ts.factory.createIdentifier('request'),
-          undefined,
-          ts.factory.createTypeReferenceNode(
-            ts.factory.createIdentifier(reqTypeName),
-            undefined,
-          ),
-          undefined,
-        ),
-      ],
+      reqTypeName
+        ? [
+            ts.factory.createParameterDeclaration(
+              undefined,
+              undefined,
+              undefined,
+              ts.factory.createIdentifier('request'),
+              undefined,
+              ts.factory.createTypeReferenceNode(
+                ts.factory.createIdentifier(reqTypeName),
+                undefined,
+              ),
+              undefined,
+            ),
+          ]
+        : undefined,
       ts.factory.createTypeReferenceNode(
         ts.factory.createIdentifier('Promise'),
-        [
-          ts.factory.createTypeReferenceNode(
-            ts.factory.createIdentifier(resTypeName),
-            undefined,
-          ),
-        ],
+        resTypeName
+          ? [
+              ts.factory.createTypeReferenceNode(
+                ts.factory.createIdentifier(resTypeName),
+                undefined,
+              ),
+            ]
+          : [ts.factory.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword)],
       ),
     );
   }

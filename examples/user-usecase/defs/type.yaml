@@ -107,6 +107,12 @@ usecases:
             query: 
               - id
               - name
-
+      voidRetMethod:
+        req:
+        res:
+        gen:
+          rest:
+            method: get
+            path: abc
 
     

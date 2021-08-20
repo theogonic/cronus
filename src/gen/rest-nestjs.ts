@@ -112,6 +112,9 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
     schema: TscaSchema,
     overrideTypeName: string,
   ): ts.TypeNode {
+    if (!schema) {
+      return ts.factory.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword);
+    }
     if (!dstFile) {
       dstFile = this.output;
     }
@@ -360,28 +363,30 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
     );
 
     // nestjs return type decorator
-    const resTypeName = this.getDtoTypeNameFromName(
-      this.getTscaMethodResponseTypeName(method),
-    );
-    decorators.push(
-      ts.factory.createDecorator(
-        ts.factory.createCallExpression(
-          ts.factory.createIdentifier('ApiOkResponse'),
-          undefined,
-          [
-            ts.factory.createObjectLiteralExpression(
-              [
-                ts.factory.createPropertyAssignment(
-                  ts.factory.createIdentifier('type'),
-                  ts.factory.createIdentifier(resTypeName),
-                ),
-              ],
-              false,
-            ),
-          ],
+    if (method.res && method.res.properties) {
+      const resTypeName = this.getDtoTypeNameFromName(
+        this.getTscaMethodResponseTypeName(method),
+      );
+      decorators.push(
+        ts.factory.createDecorator(
+          ts.factory.createCallExpression(
+            ts.factory.createIdentifier('ApiOkResponse'),
+            undefined,
+            [
+              ts.factory.createObjectLiteralExpression(
+                [
+                  ts.factory.createPropertyAssignment(
+                    ts.factory.createIdentifier('type'),
+                    ts.factory.createIdentifier(resTypeName),
+                  ),
+                ],
+                false,
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }
 
     // user custom decorators
     const { methodDecorators } = method.gen.rest;
