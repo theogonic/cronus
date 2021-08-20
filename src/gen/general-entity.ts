@@ -6,6 +6,7 @@ import * as ts from 'typescript';
 import { GeneralEntityGeneratorConfig } from 'src/config';
 
 const EntityToExtendTy = 'BaseGeneralObject';
+const BaseDaoTy = 'BaseGeneralObjectDao';
 const EntityMetaVar = 'meta';
 const EntityObjVar = 'obj';
 
@@ -15,12 +16,15 @@ export class GeneralEntityGenerator extends Generator<GeneralEntityGeneratorConf
     this.initImport(ctx);
     def.types
       .filter((ty) => ty.gen?.['general-entity'] !== undefined)
-      .forEach((ty) => this.genTscaSchemaToGeneralEntity(ctx, ty));
+      .forEach((ty) => {
+        this.genGeneralEntity(ctx, ty);
+        this.genGeneralEntityDao(ctx, ty);
+      });
   }
 
   initImport(ctx: GContext) {
     ctx.addImportsToTsFile(this.output, {
-      items: [EntityToExtendTy],
+      items: [EntityToExtendTy, BaseDaoTy],
       from: this.config.geImport,
     });
   }
@@ -35,6 +39,10 @@ export class GeneralEntityGenerator extends Generator<GeneralEntityGeneratorConf
 
   private getGeneralEntityTy(schema: TscaSchema): string {
     return schema.name + 'Entity';
+  }
+
+  private getGeneralEntityDao(schema: TscaSchema): string {
+    return this.getGeneralEntityTy(schema) + 'Dao';
   }
 
   genObjAssignments(schema: TscaSchema): ts.ExpressionStatement[] {
@@ -87,7 +95,41 @@ export class GeneralEntityGenerator extends Generator<GeneralEntityGeneratorConf
     return propDecls;
   }
 
-  genTscaSchemaToGeneralEntity(ctx: GContext, schema: TscaSchema): void {
+  genGeneralEntityDao(ctx: GContext, schema: TscaSchema): void {
+    const daoDecl = ts.factory.createClassDeclaration(
+      undefined,
+      [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
+      ts.factory.createIdentifier(this.getGeneralEntityDao(schema)),
+      undefined,
+      [
+        ts.factory.createHeritageClause(ts.SyntaxKind.ExtendsKeyword, [
+          ts.factory.createExpressionWithTypeArguments(
+            ts.factory.createIdentifier(BaseDaoTy),
+            [
+              ts.factory.createTypeReferenceNode(
+                ts.factory.createIdentifier(this.getGeneralEntityTy(schema)),
+                undefined,
+              ),
+            ],
+          ),
+        ]),
+      ],
+      [
+        ts.factory.createPropertyDeclaration(
+          undefined,
+          undefined,
+          ts.factory.createIdentifier('target'),
+          undefined,
+          undefined,
+          ts.factory.createIdentifier(this.getGeneralEntityTy(schema)),
+        ),
+      ],
+    );
+
+    ctx.addNodesToTsFile(this.output, daoDecl);
+  }
+
+  genGeneralEntity(ctx: GContext, schema: TscaSchema): void {
     this.checkTscaSchemaIsGeneralEntity(schema);
     ctx.addImportsToTsFile(this.output, {
       items: [schema.name],
