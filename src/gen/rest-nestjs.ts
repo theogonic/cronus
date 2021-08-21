@@ -507,6 +507,9 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
    * Ex. user/:id/profile/:prop => [id, prop]
    */
   private parseRestPathVars(restPath: string): string[] {
+    if (!restPath) {
+      return [];
+    }
     return restPath
       .split('/')
       .filter((s) => s.startsWith(':'))
