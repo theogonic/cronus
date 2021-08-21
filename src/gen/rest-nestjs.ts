@@ -222,6 +222,37 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
       ),
     );
   }
+
+  private genCtrlClsDecorators(ctx: GContext, u: TscaUsecase): ts.Decorator[] {
+    const decorators: ts.Decorator[] = [];
+
+    decorators.push(
+      ts.factory.createDecorator(
+        ts.factory.createCallExpression(
+          ts.factory.createIdentifier('Controller'),
+          undefined,
+          [ts.factory.createStringLiteral(u.gen?.rest?.apiPrefix || u.name)],
+        ),
+      ),
+    );
+
+    if (u.gen?.rest?.apiTags) {
+      const apiTagArgs = u.gen?.rest?.apiTags.map((t) =>
+        ts.factory.createStringLiteral(t),
+      );
+      decorators.push(
+        ts.factory.createDecorator(
+          ts.factory.createCallExpression(
+            ts.factory.createIdentifier('ApiTags'),
+            undefined,
+            apiTagArgs,
+          ),
+        ),
+      );
+    }
+
+    return decorators;
+  }
   /**
    * Generate a Nestjs REST controller for the given Usecase
    * Examples:
@@ -249,23 +280,10 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
     const methodNodes = u.methods
       .filter((m) => m.gen?.rest)
       .map((m) => this.genTscaMethod(ctx, u, m));
+
+    const decorators = this.genCtrlClsDecorators(ctx, u);
     const node = ts.factory.createClassDeclaration(
-      [
-        ts.factory.createDecorator(
-          ts.factory.createCallExpression(
-            ts.factory.createIdentifier('ApiTags'),
-            undefined,
-            [ts.factory.createStringLiteral(u.name)],
-          ),
-        ),
-        ts.factory.createDecorator(
-          ts.factory.createCallExpression(
-            ts.factory.createIdentifier('Controller'),
-            undefined,
-            [ts.factory.createStringLiteral(u.gen?.rest?.apiPrefix || u.name)],
-          ),
-        ),
-      ],
+      decorators,
       [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
       ts.factory.createIdentifier(_.upperFirst(u.name) + 'Controller'),
       undefined,

@@ -39,6 +39,7 @@ export interface RawTscaMethodRest {
 
 export interface RawTscaUsecaseRest {
   apiPrefix: string;
+  apiTags: string[];
 }
 
 export interface RawTscaMethodGql {

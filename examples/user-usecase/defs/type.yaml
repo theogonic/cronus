@@ -44,6 +44,8 @@ usecases:
     gen:
       rest:
         apiPrefix: user
+        apiTags:
+          - user
     rules:
       - pattern: ".*"
         method:
