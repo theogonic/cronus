@@ -31,7 +31,7 @@ async function loadDefsFromGlobs(globs: string[]): Promise<TscaDef[]> {
 export async function loadDefsFromGConfig(
   gConfig: GConfig,
 ): Promise<TscaDef[]> {
-  const globs = [...gConfig.defs];
+  const globs = [];
   const geGeneratorConfig = gConfig.generators[
     'general-entity'
   ] as GeneralEntityGeneratorConfig;
@@ -40,6 +40,8 @@ export async function loadDefsFromGConfig(
       globs.push(`${geGeneratorConfig.geZeusDir}/**/*.yaml`);
     }
   }
+  // make sure geZeusDir is first one if exist
+  globs.push(...gConfig.defs);
   return loadDefsFromGlobs(globs);
 }
 
