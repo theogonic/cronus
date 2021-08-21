@@ -4,9 +4,11 @@ import {
   RawTscaMethodRest,
   TscaDef,
   TscaMethod,
+  TscaMethodRestParamDecoratorDecl,
   TscaSchema,
   TscaUsecase,
   TsDecoratorDecl,
+  TsItem,
 } from '../types';
 import * as _ from 'lodash';
 import { GContext } from '../context';
@@ -418,6 +420,35 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
     return decorators;
   }
 
+  private genExprsFromTsItems(items: TsItem[]): ts.Expression[] {
+    return items.map((param) => {
+      if (param.type == 'string') {
+        if (typeof param.value !== 'string') {
+          throw new Error('expect param is string');
+        }
+        return ts.factory.createStringLiteral(param.value);
+      } else if (param.type == 'ident') {
+        if (typeof param.value !== 'string') {
+          throw new Error('expect param is string');
+        }
+        return ts.factory.createIdentifier(param.value);
+      } else if (param.type == 'object') {
+        const elmts: ts.ObjectLiteralElementLike[] = [];
+        return ts.factory.createObjectLiteralExpression(
+          [
+            // TODO
+            // ts.factory.createPropertyAssignment(
+            //   ts.factory.createIdentifier('type'),
+            //   ts.factory.createIdentifier(resTypeName),
+            // ),
+          ],
+          false,
+        );
+      } else {
+        throw new Error(`found unsupported param type ${param.type}`);
+      }
+    });
+  }
   private decoratorDeclToDecorator(
     ctx: GContext,
     decl: TsDecoratorDecl,
@@ -429,33 +460,7 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
 
     let args: ts.Expression[];
     if (decl.params) {
-      args = decl.params.map((param) => {
-        if (param.type == 'string') {
-          if (typeof param.value !== 'string') {
-            throw new Error('expect param is string');
-          }
-          return ts.factory.createStringLiteral(param.value);
-        } else if (param.type == 'ident') {
-          if (typeof param.value !== 'string') {
-            throw new Error('expect param is string');
-          }
-          return ts.factory.createIdentifier(param.value);
-        } else if (param.type == 'object') {
-          const elmts: ts.ObjectLiteralElementLike[] = [];
-          return ts.factory.createObjectLiteralExpression(
-            [
-              // TODO
-              // ts.factory.createPropertyAssignment(
-              //   ts.factory.createIdentifier('type'),
-              //   ts.factory.createIdentifier(resTypeName),
-              // ),
-            ],
-            false,
-          );
-        } else {
-          throw new Error(`found unsupported param type ${param.type}`);
-        }
-      });
+      args = this.genExprsFromTsItems(decl.params);
     }
 
     return ts.factory.createDecorator(
@@ -668,7 +673,30 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
       }
     }
 
+    // user custom param with decorator
+    if (method.gen.rest?.paramDecorators) {
+      const paramNodes = method.gen.rest.paramDecorators.map((d) =>
+        this.genCustomParams(ctx, d),
+      );
+      nodes.push(...paramNodes);
+    }
     return nodes;
+  }
+
+  private genCustomParams(
+    ctx: GContext,
+    decl: TscaMethodRestParamDecoratorDecl,
+  ): ts.ParameterDeclaration {
+    const decorator = this.decoratorDeclToDecorator(ctx, decl);
+    return ts.factory.createParameterDeclaration(
+      [decorator],
+      undefined,
+      undefined,
+      ts.factory.createIdentifier(decl.reqProp),
+      undefined,
+      undefined,
+      undefined,
+    );
   }
 
   private genTscaMethodRequestObjectLiteralElementLikes(
@@ -708,6 +736,14 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
         ),
       );
     }
+
+    if (method.gen.rest.paramDecorators) {
+      const customParams = method.gen.rest.paramDecorators.map((decl) =>
+        ts.factory.createShorthandPropertyAssignment(decl.reqProp, undefined),
+      );
+      nodes.push(...customParams);
+    }
+
     return nodes;
   }
 

@@ -63,9 +63,9 @@ usecases:
                   name: ""
 
               paramDecorators:
-                - from: ""
-                  name: ""
-                  assignToReqProp: "user"
+                - from: "@somewhere/interesting"
+                  name: "User"
+                  reqProp: "user"
     methods:
       createUser:
         req:
