@@ -41,6 +41,9 @@ schemas:
 
 usecases:
   userUsercase:
+    gen:
+      rest:
+        apiPrefix: user
     rules:
       - pattern: ".*"
         method:

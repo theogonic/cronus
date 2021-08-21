@@ -1,8 +1,7 @@
 export interface RawTscaUsecase {
   methods?: Record<string, RawTscaMethod>;
-  res?: RawTscaSchema;
-  req?: RawTscaSchema;
   rules?: TscaUsecaseRule[];
+  gen?: TscaUsecaseGen;
 }
 
 export interface TscaUsecaseRule {
@@ -38,6 +37,10 @@ export interface RawTscaMethodRest {
   paramDecorators?: TscaMethodRestParamDecoratorDecl[];
 }
 
+export interface RawTscaUsecaseRest {
+  apiPrefix: string;
+}
+
 export interface RawTscaMethodGql {
   type: 'mutation' | 'query';
 }
@@ -61,6 +64,10 @@ export interface RawTscaSchemaGql {
 interface TscaSchemaGen {
   gql?: RawTscaSchemaGql;
   'general-entity': {};
+}
+
+interface TscaUsecaseGen {
+  rest?: RawTscaUsecaseRest;
 }
 
 interface TscaSchemaEnumItem {
@@ -152,10 +159,11 @@ export class TscaDef extends BaseTscaDefComponent {
 export class TscaUsecase extends BaseTscaDefComponent {
   methods: TscaMethod[] = [];
   rules?: TscaUsecaseRule[];
-
+  gen?: TscaUsecaseGen;
   static fromRaw(raw: RawTscaUsecase, prop: BaseTscaDefProp): TscaUsecase {
     const u = new TscaUsecase(prop);
     u.rules = raw.rules;
+    u.gen = raw.gen;
     if (raw.methods) {
       for (const metholdName in raw.methods) {
         if (Object.prototype.hasOwnProperty.call(raw.methods, metholdName)) {

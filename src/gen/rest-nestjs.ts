@@ -262,7 +262,7 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
           ts.factory.createCallExpression(
             ts.factory.createIdentifier('Controller'),
             undefined,
-            [ts.factory.createStringLiteral(u.name)],
+            [ts.factory.createStringLiteral(u.gen?.rest?.apiPrefix || u.name)],
           ),
         ),
       ],
@@ -730,8 +730,7 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
             ts.NodeFlags.Const,
           ),
         ),
-
-        ts.factory.createExpressionStatement(
+        ts.factory.createReturnStatement(
           ts.factory.createCallExpression(
             ts.factory.createPropertyAccessExpression(
               ts.factory.createPropertyAccessExpression(
