@@ -55,13 +55,12 @@ usecases:
             flatExtends:
           gen:
             rest:
-              extraImports:
-                - from: ""
-                  names:
-              methodDecorators:
-                - from: ""
-                  name: ""
-
+              # extraImports:
+              #   - from: ""
+              #     names:
+              # methodDecorators:
+              #   - from: ""
+              #     name: "
               paramDecorators:
                 - from: "@somewhere/interesting"
                   name: "User"

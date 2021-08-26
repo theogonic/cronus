@@ -1,0 +1,33 @@
+enum GeneralObjectStatus {
+    Active    
+Deleted 
+    }
+type GeneralObjectMeta {
+  id: String
+  userId: String
+  typeId: String
+  status: GeneralObjectStatus
+  updatedAt: Int
+  createdAt: Int
+}
+type JwtUser {
+  id: String
+  email: String
+  org: String
+}
+enum UserType {
+    Normal    
+Admin 
+    }
+type User {
+  tags: [String]
+  profile: UserProfile
+  meta: GeneralObjectMeta
+}
+type UserProfile {
+  name: String
+  email: String
+}
+type BaseRequest {
+  user: JwtUser
+}

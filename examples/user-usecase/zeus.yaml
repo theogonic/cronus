@@ -1,0 +1,16 @@
+defs:
+  - examples/user-usecase/defs/**/*.yaml
+generators:
+  ts:
+    output: examples/generated/types.ts
+  gql:
+    output: examples/generated/schema.graphql
+  rest-nestjs:
+    output: examples/generated/controllers.ts
+    tsTypeImport: './types'
+  gql-nestjs:
+    output: examples/generated/gql-resolvers.ts
+  general-entity:
+    output: examples/generated/entities.ts
+    tsTypeImport: './types'
+    generalEntityImport: "@lib/ge"
