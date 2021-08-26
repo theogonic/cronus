@@ -10,12 +10,17 @@ export class GraphQLSchemaGenerator extends Generator {
   }
 
   private genTscaSchema(ctx: GContext, schema: TscaSchema) {
-    let str = this.tscaSchemaToGqlSchema(schema);
+    let str: string;
+    if (schema.enum) {
+      str = this.genGqlEnum(schema);
+    } else {
+      str = this.genGqlType(schema);
+    }
     str += '\n';
     ctx.addStrToTextFile(this.output, str);
   }
 
-  private tscaSchemaToGqlSchema(schema: TscaSchema): string {
+  private genGqlType(schema: TscaSchema): string {
     let schemaStr = `type ${schema.name} {\n`;
     schema.properties?.forEach((prop) => {
       const gqlTy = this.getGqlType(prop);
@@ -24,6 +29,14 @@ export class GraphQLSchemaGenerator extends Generator {
     });
     schemaStr += '}';
     return schemaStr;
+  }
+
+  private genGqlEnum(schema: TscaSchema): string {
+    const enumContent = schema.enum.map((e) => e.name).join('    \n');
+    const enumStr = `enum ${schema.name} {
+    ${enumContent} 
+    }`;
+    return enumStr;
   }
 
   private getGqlType(schema: TscaSchema): string {
