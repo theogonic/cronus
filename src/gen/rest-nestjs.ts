@@ -538,6 +538,9 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
       if (vProp.type == 'number' || vProp.type == 'integer') {
         args.push(ts.factory.createIdentifier('ParseIntPipe'));
         vPropKind = ts.SyntaxKind.NumberKeyword;
+      } else if (vProp.type == 'boolean') {
+        args.push(ts.factory.createIdentifier('ParseBoolPipe'));
+        vPropKind = ts.SyntaxKind.BooleanKeyword;
       } else {
         vPropKind = ts.SyntaxKind.StringKeyword;
       }
