@@ -34,7 +34,7 @@ export class GraphQLSchemaGenerator extends Generator {
   private genGqlEnum(schema: TscaSchema): string {
     const enumContent = schema.enum.map((e) => e.name).join('    \n');
     const enumStr = `enum ${schema.name} {
-    ${enumContent} 
+      ${enumContent} 
     }`;
     return enumStr;
   }

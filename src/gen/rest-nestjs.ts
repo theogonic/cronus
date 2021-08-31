@@ -47,6 +47,7 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
           'Query',
           'Body',
           'ParseIntPipe',
+          'ParseBoolPipe',
         ],
       },
     );
