@@ -123,6 +123,10 @@ type JwtUser {
   email: String
   org: String
 }
+
+type Query {
+  hello(request: Request): Response
+}
 ```
 
 ### general-entity
