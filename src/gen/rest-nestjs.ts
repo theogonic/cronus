@@ -22,6 +22,8 @@ interface RestNestjsGeneratorConfig extends BaseGeneratorConfig {
 
 @Register('rest-nestjs')
 export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
+  public before(ctx: GContext) {}
+  public after(ctx: GContext) {}
   protected genTscaDef(ctx: GContext, def: TscaDef): void {
     ctx.addImportsToTsFile(
       this.output,

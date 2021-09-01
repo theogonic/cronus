@@ -27,10 +27,14 @@ export class GContext {
   // schema name => schema
   types: Record<string, TscaSchema>;
 
+  // generator extension
+  genExt: Record<string, unknown>;
+
   constructor(private readonly gConfig: GConfig) {
     this.tsFiles = {};
     this.textFiles = {};
     this.types = {};
+    this.genExt = {};
   }
 
   addTypesFromDef(def: TscaDef): void {

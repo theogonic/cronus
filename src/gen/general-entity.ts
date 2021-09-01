@@ -12,6 +12,8 @@ const EntityObjVar = 'obj';
 
 @Register('general-entity')
 export class GeneralEntityGenerator extends Generator<GeneralEntityGeneratorConfig> {
+  public before(ctx: GContext) {}
+  public after(ctx: GContext) {}
   protected genTscaDef(ctx: GContext, def: TscaDef) {
     this.initImport(ctx);
     def.types

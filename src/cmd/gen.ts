@@ -40,7 +40,12 @@ export class GenCmdProvider {
     }
     const ctx = new GContext(gConfig);
     defs.forEach((def) => ctx.addTypesFromDef(def));
-    generators.forEach((gnrt) => gnrt.generate(ctx, ...defs));
+
+    generators.forEach((gnrt) => {
+      gnrt.before(ctx);
+      gnrt.generate(ctx, ...defs);
+      gnrt.after(ctx);
+    });
     dumpContext(ctx, '.');
   }
 }

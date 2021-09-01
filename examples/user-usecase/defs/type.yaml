@@ -82,6 +82,7 @@ usecases:
             method: post
             path: 'users'
           gql:
+            type: mutation
       getUser:
         req:
           properties:
@@ -93,6 +94,8 @@ usecases:
           rest:
             method: get
             path: 'user/:id'
+          gql:
+            type: query
       listUsers:
         req:
           $ref: '#/schemas/ListUserRequest'

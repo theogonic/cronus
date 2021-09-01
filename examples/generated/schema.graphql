@@ -1,5 +1,5 @@
 enum GeneralObjectStatus {
-    Active    
+      Active    
 Deleted 
     }
 type GeneralObjectMeta {
@@ -16,7 +16,7 @@ type JwtUser {
   org: String
 }
 enum UserType {
-    Normal    
+      Normal    
 Admin 
     }
 type User {
@@ -31,3 +31,26 @@ type UserProfile {
 type BaseRequest {
   user: JwtUser
 }
+input GetUserRequest {
+  id: Int
+}
+type GetUserResponse {
+  user: User
+}
+input CreateUserRequest {
+  id: Int
+  name: String
+  age: Int
+}
+type CreateUserResponse {
+  user: User
+}
+
+      type Query {
+        getUser(request: GetUserRequest): GetUserResponse
+      }
+    
+      type Mutation {
+        createUser(request: CreateUserRequest): CreateUserResponse
+      }
+    

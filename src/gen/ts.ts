@@ -7,6 +7,8 @@ import { Register } from '../decorators';
 
 @Register('ts')
 export class TypescriptGenerator extends Generator {
+  public before(ctx: GContext) {}
+  public after(ctx: GContext) {}
   protected genTscaDef(ctx: GContext, def: TscaDef) {
     def.usecases.forEach((u) => this.genTscaUsecase(ctx, def, u));
     def.types.forEach((e) => this.genTscaSchema(ctx, def, null, e, null));

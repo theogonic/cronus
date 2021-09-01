@@ -259,7 +259,6 @@ export class TscaSchema extends BaseTscaDefComponent {
 
 export class TscaMethod extends BaseTscaDefComponent {
   gen?: TscaMethodGen;
-  gql?: any;
   req?: TscaSchema;
   res?: TscaSchema;
   readonly parent: TscaUsecase;
@@ -284,7 +283,7 @@ export class TscaMethod extends BaseTscaDefComponent {
       });
     }
 
-    method.gen = raw.gen;
+    method.gen = raw.gen || {};
 
     applyRulesToMethod(method.parent.rules, method);
     return method;

@@ -15,6 +15,12 @@ export abstract class Generator<
 
   protected abstract genTscaDef(ctx: GContext, def: TscaDef);
 
+  // before will be called before `generate`
+  public abstract before(ctx: GContext);
+
+  // after will be called after `generate`
+  public abstract after(ctx: GContext);
+
   constructor(protected readonly config: C) {}
 
   public generate(ctx: GContext, ...defs: TscaDef[]): void {
