@@ -96,6 +96,15 @@ usecases:
             path: 'user/:id'
           gql:
             type: query
+      me:
+        res:
+          $ref: '#/schemas/UserResponse'
+        gen:
+          rest:
+            method: get
+            path: 'me'
+          gql:
+            type: query
       listUsers:
         req:
           $ref: '#/schemas/ListUserRequest'

@@ -31,10 +31,16 @@ type UserProfile {
 type BaseRequest {
   user: JwtUser
 }
+type GetUserResponse {
+  user: User
+}
 input GetUserRequest {
   id: Int
 }
-type GetUserResponse {
+type MeResponse {
+  user: User
+}
+type CreateUserResponse {
   user: User
 }
 input CreateUserRequest {
@@ -42,12 +48,10 @@ input CreateUserRequest {
   name: String
   age: Int
 }
-type CreateUserResponse {
-  user: User
-}
 
       type Query {
         getUser(request: GetUserRequest): GetUserResponse
+me: MeResponse
       }
     
       type Mutation {

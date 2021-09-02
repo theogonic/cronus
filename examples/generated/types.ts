@@ -29,6 +29,11 @@ export interface GetUserRequest extends BaseRequest {
 export interface GetUserResponse {
     user?: User;
 }
+export interface MeRequest extends BaseRequest {
+}
+export interface MeResponse {
+    user?: User;
+}
 export interface ListUsersRequest extends BaseRequest {
     id?: number;
     name?: string;
@@ -42,6 +47,7 @@ export interface VoidRetMethodRequest extends BaseRequest {
 export interface UserUsercase {
     createUser(request: CreateUserRequest): Promise<CreateUserResponse>;
     getUser(request: GetUserRequest): Promise<GetUserResponse>;
+    me(request: MeRequest): Promise<MeResponse>;
     listUsers(request: ListUsersRequest): Promise<ListUsersResponse>;
     voidRetMethod(request: VoidRetMethodRequest): Promise<void>;
 }

@@ -100,11 +100,13 @@ export class GraphQLSchemaGenerator extends Generator {
   }
 
   private genGqlQueryAndMut(ctx: GContext, method: TscaMethod): string {
-    const reqName = this.getTscaMethodRequestTypeName(method);
     const resName = this.getTscaMethodResponseTypeName(method);
-    this.genTscaSchema(ctx, method.req, reqName, 'input');
     this.genTscaSchema(ctx, method.res, resName);
-
+    if (!method.req || method.req.properties?.length == 0) {
+      return `${method.name}: ${resName}`;
+    }
+    const reqName = this.getTscaMethodRequestTypeName(method);
+    this.genTscaSchema(ctx, method.req, reqName, 'input');
     return `${method.name}(request: ${reqName}): ${resName}`;
   }
 

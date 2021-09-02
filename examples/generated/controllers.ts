@@ -1,6 +1,6 @@
 import { ApiTags, ApiPropertyOptional, ApiProperty, ApiOkResponse } from "@nestjs/swagger";
 import { Inject, Controller, Get, Post, Delete, Put, Param, Query, Body, ParseIntPipe, ParseBoolPipe } from "@nestjs/common";
-import { GeneralObjectStatus, UserUsercase, USER_USERCASE, CreateUserRequest, GetUserRequest, ListUsersRequest, VoidRetMethodRequest } from "./types";
+import { GeneralObjectStatus, UserUsercase, USER_USERCASE, CreateUserRequest, GetUserRequest, MeRequest, ListUsersRequest, VoidRetMethodRequest } from "./types";
 import { User } from "@somewhere/interesting";
 export class GeneralObjectMetaDto {
     @ApiPropertyOptional()
@@ -70,6 +70,12 @@ export class GetUserResponseDto {
     @ApiPropertyOptional()
     user: UserDto;
 }
+export class MeRequestDto {
+}
+export class MeResponseDto {
+    @ApiPropertyOptional()
+    user: UserDto;
+}
 export class ListUsersRequestDto {
     @ApiPropertyOptional()
     id: number;
@@ -117,6 +123,16 @@ export class UserUsercaseController {
             user
         } as GetUserRequest;
         return this.userUsercase.getUser(ucReq);
+    }
+    @Get("me")
+    @ApiOkResponse({ type: MeResponseDto })
+    me(
+    @User()
+    user) {
+        const ucReq = {
+            user
+        } as MeRequest;
+        return this.userUsercase.me(ucReq);
     }
     @Get("users")
     @ApiOkResponse({ type: ListUsersResponseDto })

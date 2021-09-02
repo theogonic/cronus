@@ -185,7 +185,7 @@ export class TscaUsecase extends BaseTscaDefComponent {
 
 export class TscaSchema extends BaseTscaDefComponent {
   type: string;
-  items: TscaSchema;
+  items?: TscaSchema;
   properties?: TscaSchema[] = [];
   required: boolean;
   namespace: string;
@@ -193,6 +193,15 @@ export class TscaSchema extends BaseTscaDefComponent {
   enum?: TscaSchemaEnumItem[];
   extends?: string[];
   flatExtends?: string[];
+  isVoid(): boolean {
+    return (
+      !this.items &&
+      !this.properties &&
+      !this.enum &&
+      !this.extends &&
+      !this.flatExtends
+    );
+  }
   getPropByName(name: string, allowNotExist = false): TscaSchema {
     const prop = this.properties?.find((prop) => prop.name === name);
     if (!prop && !allowNotExist) {
