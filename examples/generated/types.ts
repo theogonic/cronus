@@ -17,8 +17,7 @@ export interface JwtUser {
 }
 export interface CreateUserRequest extends BaseRequest {
     id?: number;
-    name?: string;
-    age?: number;
+    user?: UserChange;
 }
 export interface CreateUserResponse {
     user?: User;
@@ -67,4 +66,7 @@ export interface UserProfile {
 }
 export interface BaseRequest {
     user?: JwtUser;
+}
+export interface UserChange {
+    name?: string;
 }

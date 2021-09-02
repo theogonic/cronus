@@ -6,6 +6,8 @@ import { Register } from '../decorators';
 interface GraphQLSchemaGeneratorExtension {
   queries: string[];
   mutations: string[];
+  // types mentioned in input, which need to generate input version
+  typeToInput: string[];
 }
 
 @Register('gql')
@@ -14,11 +16,24 @@ export class GraphQLSchemaGenerator extends Generator {
     ctx.genExt['gql'] = {
       queries: [],
       mutations: [],
+      typeToInput: [],
     } as GraphQLSchemaGeneratorExtension;
   }
   public after(ctx: GContext) {
     const ext = ctx.genExt['gql'] as GraphQLSchemaGeneratorExtension;
 
+    if (ext.typeToInput) {
+      ext.typeToInput.forEach((ty) => {
+        const schema = ctx.getTypeSchemaByName(ty);
+        const str = this.genGqlType(
+          ctx,
+          schema,
+          this.getGqlInputTypeName(schema.name),
+          'input',
+        );
+        ctx.addStrToTextFile(this.output, str);
+      });
+    }
     if (ext.queries) {
       const queryStr = this.genGqlTypeRaw('Query', ext.queries);
       ctx.addStrToTextFile(this.output, queryStr);
@@ -37,6 +52,11 @@ export class GraphQLSchemaGenerator extends Generator {
       }
     `;
   }
+
+  private getGqlInputTypeName(tName: string): string {
+    return `${tName}Input`;
+  }
+
   protected genTscaDef(ctx: GContext, def: TscaDef) {
     def.types.forEach((ty) => this.genTscaSchema(ctx, ty, null));
     const methods = def.usecases
@@ -70,20 +90,28 @@ export class GraphQLSchemaGenerator extends Generator {
     if (schema.enum) {
       str = this.genGqlEnum(schema);
     } else {
-      str = this.genGqlType(schema, overrideName, type);
+      str = this.genGqlType(ctx, schema, overrideName, type);
     }
     str += '\n';
     ctx.addStrToTextFile(this.output, str);
   }
 
   private genGqlType(
+    ctx: GContext,
     schema: TscaSchema,
     overrideName: string,
     type = 'type',
   ): string {
     let schemaStr = `${type} ${overrideName || schema.name} {\n`;
     schema.properties?.forEach((prop) => {
-      const gqlTy = this.getGqlType(prop);
+      // to see if we need to generate input version of this type
+      if (type == 'input' && !this.isPrimitiveGqlTyoe(prop)) {
+        const ext = ctx.genExt['gql'] as GraphQLSchemaGeneratorExtension;
+        if (!ext.typeToInput.includes(prop.type)) {
+          ext.typeToInput.push(prop.type);
+        }
+      }
+      const gqlTy = this.getGqlType(prop, type == 'input');
       const child = `  ${prop.name}: ${gqlTy}\n`;
       schemaStr += child;
     });
@@ -110,7 +138,15 @@ export class GraphQLSchemaGenerator extends Generator {
     return `${method.name}(request: ${reqName}): ${resName}`;
   }
 
-  private getGqlType(schema: TscaSchema): string {
+  private isPrimitiveGqlTyoe(schema: TscaSchema): boolean {
+    if (schema.type == 'array') {
+      return this.isPrimitiveGqlTyoe(schema.items);
+    }
+    const types = ['string', 'number', 'integer', 'boolean'];
+    return types.includes(schema.type);
+  }
+
+  private getGqlType(schema: TscaSchema, input: boolean): string {
     if (schema.gen?.gql && schema.gen?.gql.type) {
       return schema.gen?.gql.type;
     }
@@ -125,9 +161,12 @@ export class GraphQLSchemaGenerator extends Generator {
       case 'object':
         throw new Error('anonymous object decleration is not allowed');
       case 'array':
-        const itemType = this.getGqlType(schema.items);
+        const itemType = this.getGqlType(schema.items, input);
         return `[${itemType}]`;
       default:
+        if (input) {
+          return this.getGqlInputTypeName(schema.type);
+        }
         return schema.type;
     }
   }

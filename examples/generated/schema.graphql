@@ -31,6 +31,9 @@ type UserProfile {
 type BaseRequest {
   user: JwtUser
 }
+type UserChange {
+  name: String
+}
 type GetUserResponse {
   user: User
 }
@@ -45,10 +48,11 @@ type CreateUserResponse {
 }
 input CreateUserRequest {
   id: Int
-  name: String
-  age: Int
+  user: UserChangeInput
 }
-
+input UserChangeInput {
+  name: String
+}
       type Query {
         getUser(request: GetUserRequest): GetUserResponse
 me: MeResponse

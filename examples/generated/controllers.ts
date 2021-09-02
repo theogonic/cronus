@@ -42,13 +42,15 @@ export class BaseRequestDto {
     @ApiPropertyOptional()
     user: JwtUserDto;
 }
+export class UserChangeDto {
+    @ApiPropertyOptional()
+    name: string;
+}
 export class CreateUserRequestDto {
     @ApiPropertyOptional()
     id: number;
     @ApiPropertyOptional()
-    name: string;
-    @ApiPropertyOptional()
-    age: number;
+    user: UserChangeDto;
 }
 export class CreateUserResponseDto {
     @ApiPropertyOptional()
@@ -58,9 +60,7 @@ export class CreateUserRequestBodyDto {
     @ApiPropertyOptional()
     id: number;
     @ApiPropertyOptional()
-    name: string;
-    @ApiPropertyOptional()
-    age: number;
+    user: UserChangeDto;
 }
 export class GetUserRequestDto {
     @ApiPropertyOptional()
@@ -105,8 +105,7 @@ export class UserUsercaseController {
     user) {
         const ucReq = {
             id: body.id,
-            name: body.name,
-            age: body.age,
+            user: body.user,
             user
         } as CreateUserRequest;
         return this.userUsercase.createUser(ucReq);

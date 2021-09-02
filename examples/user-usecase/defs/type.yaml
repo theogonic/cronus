@@ -23,7 +23,11 @@ types:
   BaseRequest:
     properties:
       user:
-        type: JwtUser 
+        type: JwtUser
+  UserChange:
+    properties:
+      name: 
+        type: string
 
 schemas:
   UserResponse:
@@ -71,10 +75,8 @@ usecases:
           properties:
             id:
               type: integer
-            name:
-              type: string
-            age:
-              type: integer
+            user:
+              type: UserChange
         res:
           $ref: '#/schemas/UserResponse'
         gen:
