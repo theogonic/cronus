@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import * as fs from 'fs';
 import * as path from 'path';
-import { createImport } from './ts-type';
+import { getImportDecl } from './ts-type';
 import { GContext, TsFileContext } from '../context';
 
 export function dumpContext(ctx: GContext, outputDir: string): void {
@@ -64,8 +64,8 @@ export function dumpTsByTsFileContext(
   // Handle import first
   for (const importPath in fileCtx.imports) {
     if (Object.prototype.hasOwnProperty.call(fileCtx.imports, importPath)) {
-      const importItems = fileCtx.imports[importPath];
-      const importNode = createImport(importItems, importPath);
+      const imp = fileCtx.imports[importPath];
+      const importNode = getImportDecl(imp);
       const res = printer.printNode(
         ts.EmitHint.Unspecified,
         importNode,

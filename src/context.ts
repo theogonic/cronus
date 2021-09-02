@@ -6,12 +6,13 @@ export interface TsFileContext {
   nodes: ts.Node[];
 
   // import path(from) => a list of import item
-  imports: Record<string, string[]>;
+  imports: Record<string, TsImport>;
 }
 
 export interface TsImport {
   from: string;
   items: string[];
+  default?: string;
 }
 
 /**
@@ -100,11 +101,18 @@ export class GContext {
         }
         for (const item of imp.items) {
           if (!(imp.from in existedImports)) {
-            existedImports[imp.from] = [];
+            existedImports[imp.from] = {
+              from: imp.from,
+              items: [],
+            };
           }
-          if (!existedImports[imp.from].includes(item)) {
-            existedImports[imp.from].push(item);
+          if (!existedImports[imp.from].items.includes(item)) {
+            existedImports[imp.from].items.push(item);
           }
+        }
+
+        if (imp.default) {
+          existedImports[imp.from].default = imp.default;
         }
       }
     }

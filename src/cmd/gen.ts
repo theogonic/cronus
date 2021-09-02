@@ -10,6 +10,7 @@ import {
   GeneralEntityGenerator,
   GraphQLSchemaGenerator,
   RestNestjsGenerator,
+  RestClientGenerator,
 } from '../gen';
 
 // to trigger decorator
@@ -18,6 +19,7 @@ GraphQLNestjsTsDefGenerator;
 GeneralEntityGenerator;
 GraphQLSchemaGenerator;
 RestNestjsGenerator;
+RestClientGenerator;
 
 @Command()
 export class GenCmdProvider {

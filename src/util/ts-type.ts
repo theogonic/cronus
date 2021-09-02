@@ -1,17 +1,15 @@
+import { TsImport } from '../context';
 import * as ts from 'typescript';
 
-export function createImport(
-  names: string[],
-  from: string,
-): ts.ImportDeclaration {
+export function getImportDecl(imp: TsImport): ts.ImportDeclaration {
   return ts.factory.createImportDeclaration(
     undefined,
     undefined,
     ts.factory.createImportClause(
       false,
-      undefined,
+      imp.default ? ts.factory.createIdentifier(imp.default) : undefined,
       ts.factory.createNamedImports(
-        names.map((name) =>
+        imp.items.map((name) =>
           ts.factory.createImportSpecifier(
             undefined,
             ts.factory.createIdentifier(name),
@@ -19,6 +17,6 @@ export function createImport(
         ),
       ),
     ),
-    ts.factory.createStringLiteral(from),
+    ts.factory.createStringLiteral(imp.from),
   );
 }

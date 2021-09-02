@@ -5,7 +5,13 @@ import { Register } from '../decorators';
 
 @Register('gql-nestjs')
 export class GraphQLNestjsTsDefGenerator extends Generator {
-  public before(ctx: GContext) {}
-  public after(ctx: GContext) {}
-  protected genTscaDef(content: GContext, def: TscaDef) {}
+  public before(ctx: GContext) {
+    ctx;
+  }
+  public after(ctx: GContext) {
+    ctx;
+  }
+  protected genTscaDef(ctx: GContext, def: TscaDef) {
+    ctx;
+  }
 }
