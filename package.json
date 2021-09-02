@@ -1,6 +1,6 @@
 {
   "name": "@theogonic/zeus",
-  "version": "0.0.29",
+  "version": "0.0.30",
   "description": "Clean Architecture & Low Code",
   "author": "Shihao Xia <charlesxsh@hotmail.com>",
   "license": "MIT",
@@ -38,7 +38,7 @@
     "rimraf": "3.0.2",
     "rxjs": "7.3.0",
     "typescript": "4.3.5",
-    "axios":"0.21.1"
+    "axios": "0.21.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.1.1",
