@@ -45,6 +45,8 @@ export class BaseRequestDto {
 export class UserChangeDto {
     @ApiPropertyOptional()
     name: string;
+    @ApiPropertyOptional()
+    profile: UserProfileDto;
 }
 export class CreateUserRequestDto {
     @ApiPropertyOptional()

@@ -28,6 +28,8 @@ types:
     properties:
       name: 
         type: string
+      profile:
+          type: UserProfile
 
 schemas:
   UserResponse:

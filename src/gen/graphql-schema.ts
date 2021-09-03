@@ -22,17 +22,17 @@ export class GraphQLSchemaGenerator extends Generator {
   public after(ctx: GContext) {
     const ext = ctx.genExt['gql'] as GraphQLSchemaGeneratorExtension;
 
-    if (ext.typeToInput) {
-      ext.typeToInput.forEach((ty) => {
-        const schema = ctx.getTypeSchemaByName(ty);
-        const str = this.genGqlType(
-          ctx,
-          schema,
-          this.getGqlInputTypeName(schema.name),
-          'input',
-        );
-        ctx.addStrToTextFile(this.output, str);
-      });
+    while (ext.typeToInput.length > 0) {
+      const ty = ext.typeToInput.pop();
+
+      const schema = ctx.getTypeSchemaByName(ty);
+      const str = this.genGqlType(
+        ctx,
+        schema,
+        this.getGqlInputTypeName(schema.name),
+        'input',
+      );
+      ctx.addStrToTextFile(this.output, str);
     }
     if (ext.queries) {
       const queryStr = this.genGqlTypeRaw('Query', ext.queries);
@@ -115,7 +115,7 @@ export class GraphQLSchemaGenerator extends Generator {
       const child = `  ${prop.name}: ${gqlTy}\n`;
       schemaStr += child;
     });
-    schemaStr += '}';
+    schemaStr += '}\n';
     return schemaStr;
   }
 

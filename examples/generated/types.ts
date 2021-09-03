@@ -69,4 +69,5 @@ export interface BaseRequest {
 }
 export interface UserChange {
     name?: string;
+    profile?: UserProfile;
 }

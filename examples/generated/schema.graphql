@@ -10,11 +10,13 @@ type GeneralObjectMeta {
   updatedAt: Int
   createdAt: Int
 }
+
 type JwtUser {
   id: String
   email: String
   org: String
 }
+
 enum UserType {
       Normal    
 Admin 
@@ -24,35 +26,51 @@ type User {
   profile: UserProfile
   meta: GeneralObjectMeta
 }
+
 type UserProfile {
   name: String
   email: String
 }
+
 type BaseRequest {
   user: JwtUser
 }
+
 type UserChange {
   name: String
+  profile: UserProfile
 }
+
 type GetUserResponse {
   user: User
 }
+
 input GetUserRequest {
   id: Int
 }
+
 type MeResponse {
   user: User
 }
+
 type CreateUserResponse {
   user: User
 }
+
 input CreateUserRequest {
   id: Int
   user: UserChangeInput
 }
+
 input UserChangeInput {
   name: String
+  profile: UserProfileInput
 }
+input UserProfileInput {
+  name: String
+  email: String
+}
+
       type Query {
         getUser(request: GetUserRequest): GetUserResponse
 me: MeResponse
