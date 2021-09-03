@@ -104,8 +104,9 @@ export class GraphQLSchemaGenerator extends Generator {
   ): string {
     let schemaStr = `${type} ${overrideName || schema.name} {\n`;
     schema.properties?.forEach((prop) => {
+      let inputSuffix = false;
       // to see if we need to generate input version of this type
-      if (type == 'input' && !this.isPrimitiveGqlTyoe(prop)) {
+      if (type == 'input' && !this.isPrimitiveGqlType(prop)) {
         const ext = ctx.genExt['gql'] as GraphQLSchemaGeneratorExtension;
         let ty: string;
         if (prop.type == 'array') {
@@ -113,11 +114,16 @@ export class GraphQLSchemaGenerator extends Generator {
         } else {
           ty = prop.type;
         }
-        if (!ext.typeToInput.includes(ty)) {
-          ext.typeToInput.push(ty);
+        const refSchema = ctx.getTypeSchemaByName(ty);
+
+        if (!refSchema.enum) {
+          inputSuffix = true;
+          if (!ext.typeToInput.includes(ty)) {
+            ext.typeToInput.push(ty);
+          }
         }
       }
-      const gqlTy = this.getGqlType(prop, type == 'input');
+      const gqlTy = this.getGqlType(prop, inputSuffix);
       const child = `  ${prop.name}: ${gqlTy}\n`;
       schemaStr += child;
     });
@@ -144,9 +150,9 @@ export class GraphQLSchemaGenerator extends Generator {
     return `${method.name}(request: ${reqName}): ${resName}`;
   }
 
-  private isPrimitiveGqlTyoe(schema: TscaSchema): boolean {
+  private isPrimitiveGqlType(schema: TscaSchema): boolean {
     if (schema.type == 'array') {
-      return this.isPrimitiveGqlTyoe(schema.items);
+      return this.isPrimitiveGqlType(schema.items);
     }
     const types = ['string', 'number', 'integer', 'boolean'];
     return types.includes(schema.type);
@@ -170,7 +176,7 @@ export class GraphQLSchemaGenerator extends Generator {
         const itemType = this.getGqlType(schema.items, input);
         return `[${itemType}]`;
       default:
-        if (input) {
+        if (input && !schema.enum) {
           return this.getGqlInputTypeName(schema.type);
         }
         return schema.type;

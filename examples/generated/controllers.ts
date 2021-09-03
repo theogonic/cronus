@@ -1,6 +1,6 @@
 import { ApiTags, ApiPropertyOptional, ApiProperty, ApiOkResponse } from "@nestjs/swagger";
 import { Inject, Controller, Get, Post, Delete, Put, Param, Query, Body, ParseIntPipe, ParseBoolPipe } from "@nestjs/common";
-import { GeneralObjectStatus, UserUsercase, USER_USERCASE, CreateUserRequest, GetUserRequest, MeRequest, ListUsersRequest, VoidRetMethodRequest } from "./types";
+import { GeneralObjectStatus, UserType, UserUsercase, USER_USERCASE, CreateUserRequest, GetUserRequest, MeRequest, ListUsersRequest, VoidRetMethodRequest } from "./types";
 import { User } from "@somewhere/interesting";
 export class GeneralObjectMetaDto {
     @ApiPropertyOptional()
@@ -37,6 +37,8 @@ export class UserProfileDto {
     name: string;
     @ApiPropertyOptional()
     email: string;
+    @ApiPropertyOptional({ enum: UserType })
+    type: UserType;
 }
 export class BaseRequestDto {
     @ApiPropertyOptional()

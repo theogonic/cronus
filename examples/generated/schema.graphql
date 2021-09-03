@@ -30,6 +30,7 @@ type User {
 type UserProfile {
   name: String
   email: String
+  type: UserType
 }
 
 type BaseRequest {
@@ -69,6 +70,7 @@ input UserChangeInput {
 input UserProfileInput {
   name: String
   email: String
+  type: UserType
 }
 
       type Query {

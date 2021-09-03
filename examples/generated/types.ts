@@ -63,6 +63,7 @@ export interface User {
 export interface UserProfile {
     name?: string;
     email?: string;
+    type?: UserType;
 }
 export interface BaseRequest {
     user?: JwtUser;

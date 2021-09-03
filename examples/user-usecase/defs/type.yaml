@@ -1,6 +1,5 @@
 types:
   UserType:
-    type: string
     enum:
       - name: Normal
       - name: Admin
@@ -20,6 +19,8 @@ types:
         type: string
       email:
         type: string
+      type:
+        type: UserType
   BaseRequest:
     properties:
       user:
