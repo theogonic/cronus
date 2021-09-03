@@ -107,8 +107,14 @@ export class GraphQLSchemaGenerator extends Generator {
       // to see if we need to generate input version of this type
       if (type == 'input' && !this.isPrimitiveGqlTyoe(prop)) {
         const ext = ctx.genExt['gql'] as GraphQLSchemaGeneratorExtension;
-        if (!ext.typeToInput.includes(prop.type)) {
-          ext.typeToInput.push(prop.type);
+        let ty: string;
+        if (prop.type == 'array') {
+          ty = prop.items.type;
+        } else {
+          ty = prop.type;
+        }
+        if (!ext.typeToInput.includes(ty)) {
+          ext.typeToInput.push(ty);
         }
       }
       const gqlTy = this.getGqlType(prop, type == 'input');
