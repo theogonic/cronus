@@ -6,6 +6,10 @@ types:
   User:
     gen:
       general-entity:
+      gql:
+        properties:
+          id:
+            type: ID
     properties:
       tags:
         type: array

@@ -59,7 +59,11 @@ export interface RawTscaMethod {
 
 export interface RawTscaSchemaGql {
   // special graphql type, like ID, Float, or other custom scalar
-  type: string;
+  type?: string;
+  directives?: string;
+  // custom output graphql file
+  output?: string;
+  properties?: Record<string, RawTscaSchema>;
 }
 
 interface TscaSchemaGen {
@@ -67,8 +71,13 @@ interface TscaSchemaGen {
   'general-entity': {};
 }
 
+interface RawTscaUsecaseGql {
+  output?: string;
+}
+
 interface TscaUsecaseGen {
   rest?: RawTscaUsecaseRest;
+  gql?: RawTscaUsecaseGql;
 }
 
 interface TscaSchemaEnumItem {
@@ -211,23 +220,37 @@ export class TscaSchema extends BaseTscaDefComponent {
     }
     return prop;
   }
-  inheritFrom(schema: RawTscaSchema): void {
+
+  addProp(prop: TscaSchema) {
+    if (this.getPropByName(prop.name, true)) {
+      throw new Error(
+        `${prop.name} already existed in type ${this.name || this.type}`,
+      );
+    }
+    this.properties.push(prop);
+  }
+
+  inheritFromRaw(schema: RawTscaSchema): void {
     this.extends = schema.extends;
     this.flatExtends = schema.flatExtends;
     if (schema.properties) {
       for (const prop in schema.properties) {
         if (Object.prototype.hasOwnProperty.call(schema.properties, prop)) {
           const childSchema = schema.properties[prop];
-          if (prop in this.properties) {
+          if (this.getPropByName(prop, true)) {
             throw new Error(
               `found duplicated property '${prop}' in type '${this.name}'`,
             );
           }
-          schema.properties[prop] = childSchema;
+
+          this.addProp(
+            TscaSchema.fromRaw(childSchema, { src: this.src, name: prop }),
+          );
         }
       }
     }
   }
+
   static fromRaw(raw: RawTscaSchema, prop: BaseTscaDefProp): TscaSchema {
     const { properties, type, namespace, items, required, gen } = raw;
     const schema = new TscaSchema(prop);
@@ -318,7 +341,7 @@ function applyRulesToMethod(
 function applyRuleToMethod(rule: TscaUsecaseRule, method: TscaMethod): void {
   if (rule.method.req) {
     if (method.req) {
-      method.req.inheritFrom(rule.method.req);
+      method.req.inheritFromRaw(rule.method.req);
     } else {
       method.req = TscaSchema.fromRaw(rule.method.req, {
         src: method.src,
@@ -328,7 +351,7 @@ function applyRuleToMethod(rule: TscaUsecaseRule, method: TscaMethod): void {
 
   if (rule.method.res) {
     if (method.res) {
-      method.res.inheritFrom(rule.method.res);
+      method.res.inheritFromRaw(rule.method.res);
     } else {
       method.res = TscaSchema.fromRaw(rule.method.res, {
         src: method.src,
@@ -351,10 +374,21 @@ function applyRuleToMethod(rule: TscaUsecaseRule, method: TscaMethod): void {
   }
 }
 
+export function newSchemaWithExtraProp(
+  schema: TscaSchema,
+  properties: Record<string, RawTscaSchema>,
+): TscaSchema {
+  const clone: TscaSchema = Object.assign(
+    Object.create(Object.getPrototypeOf(schema)),
+    schema,
+  );
+  clone.inheritFromRaw({ properties });
+  return clone;
+}
+
 /**
  * Add meta: GeneralObjectMeta to schema properties if schema is marked with gen general-entity
  */
-
 function autoCompleteMetaIfGe(schema: TscaSchema) {
   if (!schema.gen) {
     return;
