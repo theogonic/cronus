@@ -27,7 +27,7 @@
     "@nestjs/core": "8.0.6",
     "@nestjs/platform-express": "8.0.6",
     "@nestjs/swagger": "5.0.9",
-    "@theogonic/gaea": "0.0.4",
+    "@theogonic/gaea": "0.0.8",
     "ajv": "8.6.2",
     "glob": "7.1.7",
     "globby": "11.0.4",
