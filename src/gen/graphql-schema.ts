@@ -1,4 +1,5 @@
 import { GContext } from '../context';
+import { Register } from '../decorators';
 import {
   newSchemaWithExtraProp,
   TscaDef,
@@ -6,7 +7,6 @@ import {
   TscaSchema,
 } from '../types';
 import { Generator } from './base';
-import { Register } from '../decorators';
 
 interface GraphQLSchemaGeneratorExtension {
   // graphql files => types, queries and mutations
@@ -21,6 +21,8 @@ interface GraphQLSchemaGeneratorExtension {
 
   // types mentioned in input, which need to generate input version
   typeToInput: string[];
+  // a list of types that already generated corresponding input types
+  generatedInputs: Record<string, boolean>;
 }
 
 @Register('gql')
@@ -29,6 +31,7 @@ export class GraphQLSchemaGenerator extends Generator {
     ctx.genExt['gql'] = {
       files: {},
       typeToInput: [],
+      generatedInputs: {},
     } as GraphQLSchemaGeneratorExtension;
   }
   public after(ctx: GContext) {
@@ -36,14 +39,10 @@ export class GraphQLSchemaGenerator extends Generator {
 
     while (ext.typeToInput.length > 0) {
       const ty = ext.typeToInput.pop();
-
+      ext.generatedInputs[ty] = true;
       const schema = ctx.getTypeSchemaByName(ty);
-      const str = this.genGqlType(
-        ctx,
-        schema,
-        this.getGqlInputTypeName(schema.name),
-        'input',
-      );
+      const inputTyName = this.getGqlInputTypeName(schema.name);
+      const str = this.genGqlType(ctx, schema, inputTyName, 'input');
       ctx.addStrToTextFile(this.output, str);
     }
 
@@ -126,7 +125,7 @@ type ${typeName} {
     type = 'type',
   ): string {
     let schemaStr = `${type} ${overrideName || schema.name} ${
-      schema.gen?.gql.directives || ''
+      schema.gen?.gql?.directives || ''
     } {\n`;
     schema.properties?.forEach((prop) => {
       let inputSuffix = false;
@@ -143,8 +142,11 @@ type ${typeName} {
 
         if (!refSchema.enum) {
           inputSuffix = true;
-          if (!ext.typeToInput.includes(ty)) {
-            ext.typeToInput.push(ty);
+
+          if (!(ty in ext.generatedInputs)) {
+            if (!ext.typeToInput.includes(ty)) {
+              ext.typeToInput.push(ty);
+            }
           }
         }
       }

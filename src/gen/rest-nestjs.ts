@@ -366,7 +366,7 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
       case 'delete':
         return 'Delete';
       default:
-        throw new Error(`found unsupport http methold: ${rest.method}`);
+        throw new Error(`found unsupport http method: ${rest.method}`);
     }
   }
 

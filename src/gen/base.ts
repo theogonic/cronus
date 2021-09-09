@@ -1,10 +1,9 @@
-import { TscaDef, TscaMethod, TscaSchema, TscaUsecase } from '../types';
-import * as ts from 'typescript';
-import * as _ from 'lodash';
-import * as path from 'path';
-import { GContext } from '../context';
-import { BaseGeneratorConfig } from '../config';
 import { Logger } from '@nestjs/common';
+import * as _ from 'lodash';
+import * as ts from 'typescript';
+import { BaseGeneratorConfig } from '../config';
+import { GContext } from '../context';
+import { TscaDef, TscaMethod, TscaSchema, TscaUsecase } from '../types';
 
 export abstract class Generator<
   C extends BaseGeneratorConfig = BaseGeneratorConfig,
@@ -124,6 +123,7 @@ export abstract class Generator<
         'anonymous enum (defined in properties of a type) is not allowed',
       );
     }
+
     switch (schema.type) {
       case 'string':
         return ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
@@ -143,6 +143,12 @@ export abstract class Generator<
         }
         break;
       case 'array':
+        if(!schema.items){
+          throw new Error(`missing items for type '${schema.name}'`)
+        }
+        if(!schema.items.type){
+          throw new Error(`missing items's type for '${schema.name}'`)
+        }
         const itemType = this.getTsTypeNodeFromSchemaWithType(
           ctx,
           file,
@@ -152,6 +158,7 @@ export abstract class Generator<
         return ts.factory.createArrayTypeNode(itemType);
 
       default:
+        
         return this.handleUserDefinedSchemaType(
           ctx,
           file,
