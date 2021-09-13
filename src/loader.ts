@@ -59,8 +59,14 @@ export function loadGConfig(configFile?: string): GConfig {
   if (geGeneratorConfig) {
     if (!geGeneratorConfig.geZeusDir) {
       geGeneratorConfig.geZeusDir = path.dirname(
-        require.resolve('@theogonic/gaea/assets/zeus/types.yaml'),
+        require.resolve(
+          path.normalize('@theogonic/gaea/assets/zeus/types.yaml'),
+        ),
       );
+
+      if (!fs.existsSync(geGeneratorConfig.geZeusDir)) {
+        throw new Error(`cannot find zeus types dir from '@theogonic/gaea'`);
+      }
     }
     if (!geGeneratorConfig.geImport) {
       geGeneratorConfig.geImport = '@theogonic/gaea';
