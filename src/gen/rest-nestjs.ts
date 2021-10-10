@@ -351,10 +351,6 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
     }
   }
 
-  private getUsecaseInstanceVarName(u: TscaUsecase): string {
-    return _.camelCase(this.getUsecaseTypeName(u));
-  }
-
   private getNestjsHttpMethodDecoratorName(rest: RawTscaMethodRest): string {
     switch (rest.method) {
       case 'get':

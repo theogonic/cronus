@@ -5,6 +5,9 @@ generators:
     output: examples/generated/types.ts
   gql:
     output: examples/generated/schema.graphql
+  gql-resolver: # TODO?: Combine gql and gql-resolver into gql-nestjs
+    output: examples/generated/resolvers.ts
+    tsTypeImport: "./types"
   rest-nestjs:
     output: examples/generated/controllers.ts
     tsTypeImport: './types'

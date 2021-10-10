@@ -7,17 +7,20 @@ import { getInstantiatedGenerators } from '../config';
 import {
   TypescriptGenerator,
   GraphQLNestjsTsDefGenerator,
+  // GraphQLResolverGenerator,
   GeneralEntityGenerator,
   GraphQLSchemaGenerator,
   RestNestjsGenerator,
   RestClientGenerator,
 } from '../gen';
+import { GraphQLResolverGenerator } from '../gen/graphql-resolver' // TODO: Fix import
 
 // to trigger decorator
 TypescriptGenerator;
 GraphQLNestjsTsDefGenerator;
 GeneralEntityGenerator;
 GraphQLSchemaGenerator;
+GraphQLResolverGenerator;
 RestNestjsGenerator;
 RestClientGenerator;
 

@@ -25,10 +25,12 @@
     "@apidevtools/json-schema-ref-parser": "9.0.9",
     "@nestjs/common": "8.0.6",
     "@nestjs/core": "8.0.6",
+    "@nestjs/graphql": "^9.0.5",
     "@nestjs/platform-express": "8.0.6",
     "@nestjs/swagger": "5.0.9",
     "@theogonic/gaea": "0.0.8",
     "ajv": "8.6.2",
+    "axios": "0.21.1",
     "glob": "7.1.7",
     "globby": "11.0.4",
     "js-yaml": "4.1.0",
@@ -37,8 +39,7 @@
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "7.3.0",
-    "typescript": "4.3.5",
-    "axios": "0.21.1"
+    "typescript": "4.3.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^8.1.1",

@@ -7,7 +7,7 @@ import { TscaDef, TscaMethod, TscaSchema, TscaUsecase } from '../types';
 
 export abstract class Generator<
   C extends BaseGeneratorConfig = BaseGeneratorConfig,
-> {
+  > {
   protected readonly logger = new Logger(
     Object.getPrototypeOf(this).constructor.name,
   );
@@ -20,7 +20,7 @@ export abstract class Generator<
   // after will be called after `generate`
   public abstract after(ctx: GContext);
 
-  constructor(protected readonly config: C) {}
+  constructor(protected readonly config: C) { }
 
   public generate(ctx: GContext, ...defs: TscaDef[]): void {
     defs.forEach((def) => this.genTscaDef(ctx, def));
@@ -44,6 +44,10 @@ export abstract class Generator<
       return [null, type];
     }
     return [type.substring(0, idx), type.substring(idx + 1)];
+  }
+
+  protected getUsecaseInstanceVarName(u: TscaUsecase): string {
+    return _.camelCase(this.getUsecaseTypeName(u));
   }
 
   protected getUsecaseTypeName(usecase: TscaUsecase) {
@@ -143,10 +147,10 @@ export abstract class Generator<
         }
         break;
       case 'array':
-        if(!schema.items){
+        if (!schema.items) {
           throw new Error(`missing items for type '${schema.name}'`)
         }
-        if(!schema.items.type){
+        if (!schema.items.type) {
           throw new Error(`missing items's type for '${schema.name}'`)
         }
         const itemType = this.getTsTypeNodeFromSchemaWithType(
@@ -158,7 +162,7 @@ export abstract class Generator<
         return ts.factory.createArrayTypeNode(itemType);
 
       default:
-        
+
         return this.handleUserDefinedSchemaType(
           ctx,
           file,
