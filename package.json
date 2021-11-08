@@ -1,6 +1,6 @@
 {
   "name": "@theogonic/zeus",
-  "version": "0.0.38",
+  "version": "0.0.39",
   "description": "Clean Architecture & Low Code",
   "author": "Shihao Xia <charlesxsh@hotmail.com>",
   "license": "MIT",
@@ -65,8 +65,8 @@
     "ts-loader": "9.2.5",
     "ts-node": "10.2.0",
     "tsconfig-paths": "^3.10.1",
-    "graphql":"15.5.1",
-    "apollo-server-express":"3.5.0"
+    "graphql": "15.5.1",
+    "apollo-server-express": "3.5.0"
   },
   "jest": {
     "moduleFileExtensions": [
