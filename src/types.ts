@@ -46,6 +46,11 @@ export interface RawTscaMethodGql {
   type: 'mutation' | 'query';
 }
 
+export interface RawTscaUsecaseGqlNestjs {
+  invokerContext: string;
+  invokerType: string;
+}
+
 export interface TscaMethodGen {
   rest?: RawTscaMethodRest;
   gql?: RawTscaMethodGql;
@@ -78,6 +83,7 @@ interface RawTscaUsecaseGql {
 interface TscaUsecaseGen {
   rest?: RawTscaUsecaseRest;
   gql?: RawTscaUsecaseGql;
+  gqlNestjs?: RawTscaUsecaseGqlNestjs;
 }
 
 interface TscaSchemaEnumItem {

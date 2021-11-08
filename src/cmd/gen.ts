@@ -6,19 +6,19 @@ import { loadGConfig, loadDefsFromGConfig } from '../loader';
 import { getInstantiatedGenerators } from '../config';
 import {
   TypescriptGenerator,
-  GraphQLNestjsTsDefGenerator,
+  GraphQLNestJsGenerator,
   GeneralEntityGenerator,
   GraphQLSchemaGenerator,
-  RestNestjsGenerator,
+  RestNestJsGenerator,
   RestClientGenerator,
 } from '../gen';
 
 // to trigger decorator
 TypescriptGenerator;
-GraphQLNestjsTsDefGenerator;
+GraphQLNestJsGenerator;
 GeneralEntityGenerator;
 GraphQLSchemaGenerator;
-RestNestjsGenerator;
+RestNestJsGenerator;
 RestClientGenerator;
 
 @Command()

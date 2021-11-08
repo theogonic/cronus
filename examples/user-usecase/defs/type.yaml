@@ -53,6 +53,9 @@ usecases:
         apiPrefix: user
         apiTags:
           - user
+      gqlResolver:
+        invokerContext: user
+        invokerType: JwtUser
     rules:
       - pattern: ".*"
         method:

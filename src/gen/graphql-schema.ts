@@ -56,11 +56,29 @@ export class GraphQLSchemaGenerator extends Generator {
         if (queries.length != 0) {
           const queryStr = this.genGqlTypeRaw('Query', queries);
           ctx.addStrToTextFile(key, queryStr);
+        } else {
+          ctx.addStrToTextFile(
+            key,
+            `
+            type Query {
+              _dummy: Boolean
+            }
+          `,
+          );
         }
 
         if (mutations.length != 0) {
           const mutationStr = this.genGqlTypeRaw('Mutation', mutations);
           ctx.addStrToTextFile(key, mutationStr);
+        } else {
+          ctx.addStrToTextFile(
+            key,
+            `
+            type Mutation {
+              _dummy: Boolean
+            }
+          `,
+          );
         }
       }
     }

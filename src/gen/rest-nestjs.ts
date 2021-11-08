@@ -21,7 +21,7 @@ interface RestNestjsGeneratorConfig extends BaseGeneratorConfig {
 }
 
 @Register('rest-nestjs')
-export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
+export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
   public before(ctx: GContext) {
     ctx;
   }
@@ -349,10 +349,6 @@ export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
         });
       });
     }
-  }
-
-  private getUsecaseInstanceVarName(u: TscaUsecase): string {
-    return _.camelCase(this.getUsecaseTypeName(u));
   }
 
   private getNestjsHttpMethodDecoratorName(rest: RawTscaMethodRest): string {
