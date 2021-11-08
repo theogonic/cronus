@@ -19,7 +19,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e:pre": "./zeus --config test/example-service/zeus.yaml"
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "9.0.9",
@@ -63,7 +64,9 @@
     "ts-jest": "^27.0.4",
     "ts-loader": "9.2.5",
     "ts-node": "10.2.0",
-    "tsconfig-paths": "^3.10.1"
+    "tsconfig-paths": "^3.10.1",
+    "graphql":"15.5.1",
+    "apollo-server-express":"3.5.0"
   },
   "jest": {
     "moduleFileExtensions": [

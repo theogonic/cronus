@@ -53,7 +53,7 @@ usecases:
         apiPrefix: user
         apiTags:
           - user
-      resolver:
+      gqlResolver:
         invokerContext: user
         invokerType: JwtUser
     rules:

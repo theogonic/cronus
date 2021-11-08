@@ -6,22 +6,19 @@ import { loadGConfig, loadDefsFromGConfig } from '../loader';
 import { getInstantiatedGenerators } from '../config';
 import {
   TypescriptGenerator,
-  GraphQLNestjsTsDefGenerator,
-  // GraphQLResolverGenerator,
+  GraphQLNestJsGenerator,
   GeneralEntityGenerator,
   GraphQLSchemaGenerator,
-  RestNestjsGenerator,
+  RestNestJsGenerator,
   RestClientGenerator,
 } from '../gen';
-import { GraphQLResolverGenerator } from '../gen/graphql-resolver' // TODO: Fix import
 
 // to trigger decorator
 TypescriptGenerator;
-GraphQLNestjsTsDefGenerator;
+GraphQLNestJsGenerator;
 GeneralEntityGenerator;
 GraphQLSchemaGenerator;
-GraphQLResolverGenerator;
-RestNestjsGenerator;
+RestNestJsGenerator;
 RestClientGenerator;
 
 @Command()

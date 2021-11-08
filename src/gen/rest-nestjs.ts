@@ -21,7 +21,7 @@ interface RestNestjsGeneratorConfig extends BaseGeneratorConfig {
 }
 
 @Register('rest-nestjs')
-export class RestNestjsGenerator extends Generator<RestNestjsGeneratorConfig> {
+export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
   public before(ctx: GContext) {
     ctx;
   }
