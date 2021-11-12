@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
-import { UserUsercase } from "./types";
+import { CreateUserRequest, CreateUserResponse, GetUserRequest, GetUserResponse, MeRequest, MeResponse, ListUsersRequest, ListUsersResponse, VoidRetMethodRequest, VoidRetMethodResponse, UserUsercase } from "./types";
 export abstract class BaseRestClient {
     protected instance: AxiosInstance;
     constructor(config: AxiosRequestConfig) {
@@ -7,4 +7,14 @@ export abstract class BaseRestClient {
     }
 }
 export class UserUsercaseRestClient extends BaseRestClient implements UserUsercase {
+    createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
+    }
+    getUser(request: GetUserRequest): Promise<GetUserResponse> {
+    }
+    me(request: MeRequest): Promise<MeResponse> {
+    }
+    listUsers(request: ListUsersRequest): Promise<ListUsersResponse> {
+    }
+    voidRetMethod(request: VoidRetMethodRequest): Promise<VoidRetMethodResponse> {
+    }
 }

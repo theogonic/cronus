@@ -25,7 +25,7 @@ export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
     const baseClientNode = this.getBaseRestClient();
     ctx.addNodesToTsFile(this.output, baseClientNode);
   }
-  public after(ctx: GContext) {}
+  public after(ctx: GContext) { }
 
   private getBaseRestClient(): ts.ClassDeclaration {
     return ts.factory.createClassDeclaration(
@@ -127,8 +127,57 @@ export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
     return this.getUsecaseTypeName(u) + 'RestClient';
   }
 
+  // Generate REST implementations of defined method interface
+  private genTscaMethod(ctx: GContext, u: TscaUsecase, method: TscaMethod): ts.MethodDeclaration {
+    const reqVarType = this.getTscaMethodRequestTypeName(method);
+    const resVarType = this.getTscaMethodResponseTypeName(method);
+
+    // Add imports of method request types
+    ctx.addImportsToTsFile(this.output, {
+      from: this.config.tsTypeImport,
+      items: [reqVarType, resVarType],
+    });
+
+    return ts.factory.createMethodDeclaration(
+      undefined,
+      undefined,
+      undefined,
+      ts.factory.createIdentifier(method.name),
+      undefined,
+      undefined,
+      [ts.factory.createParameterDeclaration(
+        undefined,
+        undefined,
+        undefined,
+        ts.factory.createIdentifier("request"),
+        undefined,
+        ts.factory.createTypeReferenceNode(
+          ts.factory.createIdentifier(this.getTscaMethodRequestTypeName(method)),
+          undefined
+        ),
+        undefined
+      )],
+      ts.factory.createTypeReferenceNode(
+        ts.factory.createIdentifier("Promise"),
+        [ts.factory.createTypeReferenceNode(
+          ts.factory.createIdentifier(this.getTscaMethodResponseTypeName(method)),
+          undefined
+        )]
+      ),
+      ts.factory.createBlock(
+        [],
+        true
+      )
+    );
+  }
+
   private getRestClient(ctx: GContext, u: TscaUsecase): ts.ClassDeclaration {
     const interfaceName = this.getUsecaseTypeName(u);
+
+    const methodNodes = u.methods
+      .filter((m) => m.gen?.rest)
+      .map((m) => this.genTscaMethod(ctx, u, m));
+
     ctx.addImportsToTsFile(this.output, {
       from: this.config.tsTypeImport,
       items: [interfaceName],
@@ -153,7 +202,7 @@ export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
           ),
         ]),
       ],
-      [],
+      [...methodNodes],
     );
   }
 }
