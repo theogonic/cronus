@@ -46,8 +46,8 @@ export interface RawTscaMethodGql {
 }
 
 export interface RawTscaUsecaseGqlNestjs {
-  invokerContext: string;
-  invokerType: string;
+  // any context's property want to pass to request
+  ctx2req?: Record<string, string>;
 }
 
 export interface TscaMethodGen {
@@ -88,7 +88,7 @@ interface TscaUsecaseGen {
   ts?: RawTscaUsecaseTs;
   rest?: RawTscaUsecaseRest;
   gql?: RawTscaUsecaseGql;
-  gqlNestjs?: RawTscaUsecaseGqlNestjs;
+  gql_resolver?: RawTscaUsecaseGqlNestjs;
 }
 
 interface TscaSchemaEnumItem {

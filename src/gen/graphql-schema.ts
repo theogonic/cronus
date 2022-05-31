@@ -142,7 +142,7 @@ type ${typeName} {
     overrideName: string,
     type = 'type',
   ): string {
-    let federationKeyAnnotationStr: string = null;
+    let federationKeyAnnotationStr = '';
     if (schema.gen?.gql?.fedFields) {
       federationKeyAnnotationStr = `@key(fields: "${schema.gen.gql.fedFields}")`;
     }
@@ -225,7 +225,15 @@ enum ${schema.name} {
     if (schema.type == 'array') {
       return this.isPrimitiveGqlType(schema.items);
     }
-    const types = ['string', 'number', 'integer', 'boolean', 'ID', 'float'];
+    const types = [
+      'string',
+      'number',
+      'integer',
+      'boolean',
+      'ID',
+      'float',
+      'bool',
+    ];
     return types.includes(schema.type);
   }
 
@@ -243,6 +251,7 @@ enum ${schema.name} {
       case 'number':
       case 'integer':
         return 'Int';
+      case 'bool':
       case 'boolean':
         return 'Boolean';
       case 'object':

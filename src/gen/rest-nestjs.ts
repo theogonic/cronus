@@ -183,8 +183,8 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
           objType = 'String';
           break;
         }
-        case 'integer':
         case 'float':
+        case 'integer':
         case 'number': {
           objType = 'Number';
           break;
@@ -545,10 +545,16 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       const vProp = method.req.getPropByName(v);
       let vPropKind: ts.SyntaxKind;
 
-      if (vProp.type == 'number' || vProp.type == 'integer') {
+      if (
+        vProp.type == 'number' ||
+        vProp.type == 'integer' ||
+        vProp.type == 'i32' ||
+        vProp.type == 'int32' ||
+        vProp.type == 'float'
+      ) {
         args.push(ts.factory.createIdentifier('ParseIntPipe'));
         vPropKind = ts.SyntaxKind.NumberKeyword;
-      } else if (vProp.type == 'boolean') {
+      } else if (vProp.type == 'boolean' || vProp.type == 'bool') {
         args.push(ts.factory.createIdentifier('ParseBoolPipe'));
         vPropKind = ts.SyntaxKind.BooleanKeyword;
       } else {
@@ -775,10 +781,15 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       );
     }
 
-    if (method.gen.rest.reqParams) {
-      const { reqParams } = method.gen.rest;
-      for (const key in reqParams) {
-        if (Object.prototype.hasOwnProperty.call(reqParams, key)) {
+    const allReqParams = {
+      ...(u.gen?.rest?.reqParams || {}),
+      ...(method.gen?.rest?.reqParams || {}),
+    };
+
+    for (const key in allReqParams) {
+      if (Object.prototype.hasOwnProperty.call(allReqParams, key)) {
+        const element = allReqParams[key];
+        if (element.decorator) {
           nodes.push(
             ts.factory.createShorthandPropertyAssignment(key, undefined),
           );

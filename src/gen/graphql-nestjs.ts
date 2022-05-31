@@ -43,7 +43,7 @@ export class GraphQLNestJsGenerator extends Generator<GraphQLResolverGeneratorCo
 
     // Build a `method_name`Resolver for each usecase that contains Resolver generator
     def.usecases
-      .filter((u) => u.gen?.gqlNestjs !== undefined)
+      .filter((u) => u.gen?.gql_resolver !== undefined)
       .map((u) => this.genTscaUsecase(ctx, u));
   }
 
@@ -52,9 +52,7 @@ export class GraphQLNestJsGenerator extends Generator<GraphQLResolverGeneratorCo
       this.getUsecaseTypeName(u),
       this.getUsecaseTypeTokenName(u),
     ];
-    if (u.gen?.gqlNestjs?.invokerType) {
-      importItems.push(u.gen.gqlNestjs.invokerType);
-    }
+
     // Import types and services
     ctx.addImportsToTsFile(this.output, {
       from: this.config.tsTypeImport,
@@ -152,43 +150,45 @@ export class GraphQLNestJsGenerator extends Generator<GraphQLResolverGeneratorCo
       ts.factory.createSpreadAssignment(ts.factory.createIdentifier('request')),
     ];
 
-    if (u.gen.gqlNestjs?.invokerContext) {
-      // optional to add invoker context
-      // fixme: we should not limit custom parameters to only "invoker context"
-      // see examples of rest generator: custom parameters
-      parameters.push(
-        ts.factory.createParameterDeclaration(
-          [
-            ts.factory.createDecorator(
-              ts.factory.createCallExpression(
-                ts.factory.createIdentifier('Context'),
-                undefined,
-                [
-                  ts.factory.createStringLiteral(
-                    u.gen.gqlNestjs.invokerContext,
-                  ),
-                ],
-              ),
-            ),
-          ],
-          undefined,
-          undefined,
-          ts.factory.createIdentifier('invoker'),
-          undefined,
-          ts.factory.createTypeReferenceNode(
-            ts.factory.createIdentifier(u.gen.gqlNestjs.invokerType),
-            undefined,
-          ),
-          undefined,
-        ),
-      );
+    if (u.gen.gql_resolver?.ctx2req) {
+      const { ctx2req } = u.gen.gql_resolver;
 
-      objLiterals.push(
-        ts.factory.createShorthandPropertyAssignment(
-          ts.factory.createIdentifier('invoker'),
-          undefined,
-        ),
-      );
+      for (const ctxKey in ctx2req) {
+        if (Object.prototype.hasOwnProperty.call(ctx2req, ctxKey)) {
+          const reqKey = ctx2req[ctxKey];
+
+          parameters.push(
+            ts.factory.createParameterDeclaration(
+              [
+                ts.factory.createDecorator(
+                  ts.factory.createCallExpression(
+                    ts.factory.createIdentifier('Context'),
+                    undefined,
+                    [ts.factory.createStringLiteral(ctxKey)],
+                  ),
+                ),
+              ],
+              undefined,
+              undefined,
+              ts.factory.createIdentifier(reqKey),
+              undefined,
+              undefined,
+              // ts.factory.createTypeReferenceNode(
+              //   ts.factory.createIdentifier(u.gen.gql_resolver.invokerType),
+              //   undefined,
+              // ),
+              undefined,
+            ),
+          );
+
+          objLiterals.push(
+            ts.factory.createShorthandPropertyAssignment(
+              ts.factory.createIdentifier(reqKey),
+              undefined,
+            ),
+          );
+        }
+      }
     }
 
     const node = ts.factory.createMethodDeclaration(

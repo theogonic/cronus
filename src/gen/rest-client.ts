@@ -15,7 +15,6 @@ interface RestClientGeneratorConfig extends BaseGeneratorConfig {
 export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
   protected genTscaDef(ctx: GContext, def: TscaDef) {
     const classes = def.usecases.map((u) => this.getRestClient(ctx, u));
-    def.types.forEach((i) => this.genTscaSchemaToDto(ctx, null, i, null));
     ctx.addNodesToTsFile(this.output, ...classes);
   }
   public before(ctx: GContext) {
@@ -23,18 +22,12 @@ export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
       from: 'axios',
       default: 'axios',
       items: ['AxiosInstance', 'AxiosRequestConfig'],
-    },
-      {
-        from: '@nestjs/swagger',
-        items: [
-          'ApiPropertyOptional',
-        ],
-      });
+    });
     const baseClientNode = this.getBaseRestClient();
 
     ctx.addNodesToTsFile(this.output, baseClientNode);
   }
-  public after(ctx: GContext) { }
+  public after(ctx: GContext) {}
 
   private getBaseRestClient(): ts.ClassDeclaration {
     return ts.factory.createClassDeclaration(
@@ -106,181 +99,107 @@ export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
     return this.getUsecaseTypeName(u) + 'RestClient';
   }
 
-  protected getDtoTypeNameFromName(type: string): string {
-    return type + 'Dto';
-  }
-
-  protected getDtoTypeNameFromSchema(
+  private genTscaMethodBlock(
     ctx: GContext,
-    schema: TscaSchema,
-  ): string {
-    let typeName: string;
+    u: TscaUsecase,
+    m: TscaMethod,
+  ): ts.Statement[] {
+    const stmts: ts.Statement[] = [];
 
-    if (schema.type === 'array') {
-      typeName = schema.items.type;
-    } else {
-      typeName = schema.type;
-    }
-
-    let dtoTypeName: string;
-
-    if (!isPrimitiveType(typeName)) {
-      const refTySchema = ctx.getTypeSchemaByName(typeName);
-      if (refTySchema.enum) {
-        // is enum
-        // 1. use original name instead of suffix 'Dto'
-        // 2. import from tsType package
-        dtoTypeName = this.getNamespaceAndTypeFromUserDefinedType(typeName)[1];
-        ctx.addImportsToTsFile(this.output, {
-          from: this.config.tsTypeImport,
-          items: [dtoTypeName],
-        });
-      } else {
-        dtoTypeName = this.getDtoTypeNameFromName(
-          this.getNamespaceAndTypeFromUserDefinedType(typeName)[1],
-        );
-      }
-    }
-    return dtoTypeName;
-  }
-
-  getDtoDecoratorFromSchema(ctx: GContext, schema: TscaSchema): ts.Decorator {
-    const args: ts.Expression[] = [];
-    if (schema.type == 'array') {
-      let objType: string;
-
-      switch (schema.items.type) {
-        case 'string': {
-          objType = 'String';
-          break;
-        }
-        case 'integer':
-        case 'number': {
-          objType = 'Number';
-          break;
-        }
-        default:
-          objType = this.getDtoTypeNameFromSchema(ctx, schema.items);
-      }
-      args.push(
-        ts.factory.createObjectLiteralExpression(
-          [
-            ts.factory.createPropertyAssignment(
-              ts.factory.createIdentifier('type'),
-              ts.factory.createArrayLiteralExpression(
-                [ts.factory.createIdentifier(objType)],
-                false,
+    if (!m.gen.rest) {
+      stmts.push(
+        ts.factory.createThrowStatement(
+          ts.factory.createNewExpression(
+            ts.factory.createIdentifier('Error'),
+            undefined,
+            [
+              ts.factory.createStringLiteral(
+                'this method does not have rest generation setting in zeus definition.',
               ),
-            ),
-          ],
-          false,
+            ],
+          ),
         ),
       );
-    } else if (!isPrimitiveType(schema.type)) {
-      const refTySchema = ctx.getTypeSchemaByName(schema.type);
-      if (refTySchema.enum) {
-        args.push(
+      return stmts;
+    }
+
+    const axiosReqCallStmt = ts.factory.createAwaitExpression(
+      ts.factory.createCallExpression(
+        ts.factory.createPropertyAccessExpression(
+          ts.factory.createPropertyAccessExpression(
+            ts.factory.createThis(),
+            ts.factory.createIdentifier('instance'),
+          ),
+          ts.factory.createIdentifier('request'),
+        ),
+        undefined,
+        [
           ts.factory.createObjectLiteralExpression(
             [
               ts.factory.createPropertyAssignment(
-                ts.factory.createIdentifier('enum'),
-                ts.factory.createIdentifier(schema.type),
+                ts.factory.createIdentifier('url'),
+                ts.factory.createTemplateExpression(
+                  ts.factory.createTemplateHead('aa/', 'aa/'),
+                  [
+                    ts.factory.createTemplateSpan(
+                      ts.factory.createPropertyAccessExpression(
+                        ts.factory.createIdentifier('request'),
+                        ts.factory.createIdentifier('userId'),
+                      ),
+                      ts.factory.createTemplateTail('', ''),
+                    ),
+                  ],
+                ),
+              ),
+              ts.factory.createPropertyAssignment(
+                ts.factory.createIdentifier('method'),
+                ts.factory.createStringLiteral(m.gen.rest.method),
+              ),
+              ts.factory.createPropertyAssignment(
+                ts.factory.createIdentifier('data'),
+                ts.factory.createObjectLiteralExpression([], false),
               ),
             ],
-            false,
+            true,
           ),
-        );
-      }
-    }
-    return ts.factory.createDecorator(
-      ts.factory.createCallExpression(
-        schema.required
-          ? ts.factory.createIdentifier('ApiProperty')
-          : ts.factory.createIdentifier('ApiPropertyOptional'),
-        undefined,
-        args,
+        ],
       ),
     );
-  }
-
-  /**
- * Generate a Nestjs DTO for the given UsecaseParamType
- * Examples:
- * export class CreateCatDto {
-      @ApiProperty()
-      name: string;
-
-      @ApiProperty()
-      age: number;
-
-      @ApiProperty()
-      breed: string;
-  }
- * @param upt UsecaseParam 
- * @returns Typescript AST Node
- */
-  protected genTscaSchemaToDto(
-    ctx: GContext,
-    dstFile: string,
-    schema: TscaSchema,
-    overrideTypeName: string,
-  ): ts.TypeNode {
-    if (!schema) {
-      return ts.factory.createKeywordTypeNode(ts.SyntaxKind.VoidKeyword);
-    }
-    if (!dstFile) {
-      dstFile = this.output;
-    }
-
-    if (schema.enum) {
-      return ts.factory.createTypeReferenceNode(schema.name);
-    }
-    if (schema.type) {
-      const dtoTypeName = this.getDtoTypeNameFromSchema(ctx, schema);
-
-      return this.getTsTypeNodeFromSchemaWithType(
-        ctx,
-        dstFile,
-        schema,
-        dtoTypeName,
-      );
-    }
-    let properties: ts.ClassElement[] = [];
-
-    if (schema.properties) {
-      properties = schema.properties.map((child) => {
-        const decorator = this.getDtoDecoratorFromSchema(ctx, child);
-        return ts.factory.createPropertyDeclaration(
-          [decorator],
-          undefined,
-          ts.factory.createIdentifier(child.name),
-          undefined,
-          this.genTscaSchemaToDto(ctx, dstFile, child, null),
-          undefined,
-        );
-      });
-    }
-
-    const dtoName =
-      overrideTypeName || this.getDtoTypeNameFromName(schema.name);
-    const node = ts.factory.createClassDeclaration(
-      null,
-      [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
-      ts.factory.createIdentifier(dtoName),
-      null,
-      null,
-      properties,
+    const resStmt = ts.factory.createVariableStatement(
+      undefined,
+      ts.factory.createVariableDeclarationList(
+        [
+          ts.factory.createVariableDeclaration(
+            ts.factory.createIdentifier('res'),
+            undefined,
+            undefined,
+            axiosReqCallStmt,
+          ),
+        ],
+        ts.NodeFlags.Const,
+      ),
     );
 
-    ctx.addNodesToTsFile(dstFile, node);
+    const retStmt = ts.factory.createReturnStatement(
+      ts.factory.createPropertyAccessExpression(
+        ts.factory.createIdentifier('res'),
+        ts.factory.createIdentifier('data'),
+      ),
+    );
+    stmts.push(resStmt);
+    stmts.push(retStmt);
 
-    return ts.factory.createTypeReferenceNode(dtoName);
+    return stmts;
   }
 
   // Generate REST implementations of defined method interface
-  private genTscaMethod(ctx: GContext, u: TscaUsecase, method: TscaMethod): ts.MethodDeclaration {
-    const reqTypeName = this.getTscaMethodRequestTypeName(method);
-    const resTypeName = this.getTscaMethodResponseTypeName(method);
+  private genTscaMethod(
+    ctx: GContext,
+    u: TscaUsecase,
+    m: TscaMethod,
+  ): ts.MethodDeclaration {
+    const reqTypeName = this.getTscaMethodRequestTypeName(m);
+    const resTypeName = this.getTscaMethodResponseTypeName(m);
 
     // Add imports of method request types
     ctx.addImportsToTsFile(this.output, {
@@ -288,48 +207,44 @@ export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
       items: [reqTypeName, resTypeName],
     });
 
-    const reqDtoTypeName = this.getDtoTypeNameFromName(reqTypeName);
-    this.genTscaSchemaToDto(ctx, this.output, method.req, reqDtoTypeName);
-
     return ts.factory.createMethodDeclaration(
       undefined,
+      [ts.factory.createModifier(ts.SyntaxKind.AsyncKeyword)],
+      undefined,
+      ts.factory.createIdentifier(m.name),
       undefined,
       undefined,
-      ts.factory.createIdentifier(method.name),
-      undefined,
-      undefined,
-      [ts.factory.createParameterDeclaration(
-        undefined,
-        undefined,
-        undefined,
-        ts.factory.createIdentifier("request"),
-        undefined,
-        ts.factory.createTypeReferenceNode(
-          ts.factory.createIdentifier(this.getTscaMethodRequestTypeName(method)),
-          undefined
+      [
+        ts.factory.createParameterDeclaration(
+          undefined,
+          undefined,
+          undefined,
+          ts.factory.createIdentifier('request'),
+          undefined,
+          ts.factory.createTypeReferenceNode(
+            ts.factory.createIdentifier(this.getTscaMethodRequestTypeName(m)),
+            undefined,
+          ),
+          undefined,
         ),
-        undefined
-      )],
+      ],
       ts.factory.createTypeReferenceNode(
-        ts.factory.createIdentifier("Promise"),
-        [ts.factory.createTypeReferenceNode(
-          ts.factory.createIdentifier(this.getTscaMethodResponseTypeName(method)),
-          undefined
-        )]
+        ts.factory.createIdentifier('Promise'),
+        [
+          ts.factory.createTypeReferenceNode(
+            ts.factory.createIdentifier(this.getTscaMethodResponseTypeName(m)),
+            undefined,
+          ),
+        ],
       ),
-      ts.factory.createBlock(
-        [],
-        true
-      )
+      ts.factory.createBlock(this.genTscaMethodBlock(ctx, u, m), true),
     );
   }
 
   private getRestClient(ctx: GContext, u: TscaUsecase): ts.ClassDeclaration {
     const interfaceName = this.getUsecaseTypeName(u);
 
-    const methodNodes = u.methods
-      .filter((m) => m.gen?.rest)
-      .map((m) => this.genTscaMethod(ctx, u, m));
+    const methodNodes = u.methods.map((m) => this.genTscaMethod(ctx, u, m));
 
     ctx.addImportsToTsFile(this.output, {
       from: this.config.tsTypeImport,

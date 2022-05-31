@@ -133,6 +133,9 @@ export abstract class Generator<
       case 'string':
         return ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
       case 'number':
+      case 'float':
+      case 'i32':
+      case 'int32':
       case 'integer':
         if (schema.enum && schema.parent) {
           throw new Error(
@@ -140,6 +143,7 @@ export abstract class Generator<
           );
         }
         return ts.factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
+      case 'bool':
       case 'boolean':
         return ts.factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword);
       case 'object':

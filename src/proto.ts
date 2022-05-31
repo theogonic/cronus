@@ -15,7 +15,8 @@ export class Proto2Tsca {
     usecases: {},
     schemas: {},
   };
-  importedProtoFiles = {};
+  importedProtoFiles: Record<string, unknown> = {};
+  ident2ProtoMsgDefs: Record<string, pp.MessageDefinition> = {};
 
   async loadProtoFile(protoFile: string): Promise<void> {
     const content = await fs.readFile(protoFile, 'utf8');
@@ -60,6 +61,7 @@ export class Proto2Tsca {
                 element as pp.MessageDefinition,
               );
               rawTscaDef.types[name] = schema;
+              this.ident2ProtoMsgDefs[name] = element as pp.MessageDefinition;
               break;
             }
 
@@ -84,6 +86,7 @@ export class Proto2Tsca {
             const [name, usecase] = protoSvcDef2RawTscaUsecase(
               element as pp.ServiceDefinition,
               this.rawTscaDef.types,
+              this.ident2ProtoMsgDefs,
             );
             rawTscaDef.usecases[name] = usecase;
             break;
@@ -120,6 +123,7 @@ export class Proto2Tsca {
 function protoSvcDef2RawTscaUsecase(
   svcDef: pp.ServiceDefinition,
   ident2TscaTypes: Record<string, RawTscaSchema>,
+  ident2ProtoMsgDefs: Record<string, pp.MessageDefinition>,
 ): [string, RawTscaUsecase] {
   const rawTscaSvcDef: RawTscaUsecase = {
     gen: {},
@@ -127,17 +131,69 @@ function protoSvcDef2RawTscaUsecase(
   };
   for (const key in svcDef.methods) {
     if (Object.prototype.hasOwnProperty.call(svcDef.methods, key)) {
-      const element = svcDef.methods[key];
+      const protoMethod = svcDef.methods[key];
       rawTscaSvcDef.methods[key] = {
-        req: ident2TscaTypes[element.requestType.value],
-        res: ident2TscaTypes[element.responseType.value],
+        req: ident2TscaTypes[protoMethod.requestType.value],
+        res: ident2TscaTypes[protoMethod.responseType.value],
+        gen: {},
       };
+      const rawTscaMethod = rawTscaSvcDef.methods[key];
 
-      delete ident2TscaTypes[element.requestType.value];
-      delete ident2TscaTypes[element.responseType.value];
+      const reqProtoMsg = ident2ProtoMsgDefs[protoMethod.requestType.value];
+      for (const msgFieldKey in reqProtoMsg.fields) {
+        if (
+          Object.prototype.hasOwnProperty.call(reqProtoMsg.fields, msgFieldKey)
+        ) {
+          const msgField = reqProtoMsg.fields[msgFieldKey];
+          for (const msgFieldOpKey in msgField.options) {
+            if (
+              Object.prototype.hasOwnProperty.call(
+                msgField.options,
+                msgFieldOpKey,
+              )
+            ) {
+              const [option] = parseProtoOptionKey(msgFieldOpKey);
+              if (option === 'zeus.rest.query') {
+                if (!('rest' in rawTscaMethod.gen)) {
+                  rawTscaMethod.gen.rest = {} as any;
+                }
+                if (!('query' in rawTscaMethod.gen.rest)) {
+                  rawTscaMethod.gen.rest.query = [];
+                }
+                rawTscaMethod.gen.rest.query.push(msgField.name);
+              }
+            }
+          }
+        }
+      }
+
+      delete ident2TscaTypes[protoMethod.requestType.value];
+      delete ident2TscaTypes[protoMethod.responseType.value];
+
+      // check method level option
+      if (protoMethod.options) {
+        for (const key in protoMethod.options) {
+          if (Object.prototype.hasOwnProperty.call(protoMethod.options, key)) {
+            const element = protoMethod.options[key];
+            const [option, path] = parseProtoOptionKey(key);
+            if (option === 'zeus.rest') {
+              if (!('rest' in rawTscaMethod.gen)) {
+                rawTscaMethod.gen.rest = {} as any;
+              }
+              assignByObjPath(rawTscaMethod.gen.rest, path, element);
+            } else if (option === 'zeus.gql') {
+              if (!('gql' in rawTscaMethod.gen)) {
+                rawTscaMethod.gen.gql = {} as any;
+              }
+              assignByObjPath(rawTscaMethod.gen.gql, path, element);
+            }
+          }
+        }
+      }
     }
   }
 
+  // check service level option
   if (svcDef.options) {
     for (const key in svcDef.options) {
       if (Object.prototype.hasOwnProperty.call(svcDef.options, key)) {
@@ -159,6 +215,11 @@ function protoSvcDef2RawTscaUsecase(
             rawTscaSvcDef.gen.gql = {};
           }
           assignByObjPath(rawTscaSvcDef.gen.gql, path, element);
+        } else if (option === 'zeus.gql_resolver') {
+          if (!('gql_resolver' in rawTscaSvcDef.gen)) {
+            rawTscaSvcDef.gen.gql_resolver = {};
+          }
+          assignByObjPath(rawTscaSvcDef.gen.gql_resolver, path, element);
         }
       }
     }

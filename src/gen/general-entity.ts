@@ -17,7 +17,7 @@ export class GeneralEntityGenerator extends Generator<GeneralEntityGeneratorConf
   protected genTscaDef(ctx: GContext, def: TscaDef) {
     this.initImport(ctx);
     def.types
-      .filter((ty) => ty.gen?.['general-entity'] !== undefined)
+      .filter((ty) => ty.gen?.['general_entity'] !== undefined)
       .forEach((ty) => {
         this.genGeneralEntity(ctx, ty);
         this.genGeneralEntityDao(ctx, ty);
