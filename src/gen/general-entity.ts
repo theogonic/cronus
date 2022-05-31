@@ -10,7 +10,7 @@ const BaseDaoTy = 'BaseGeneralObjectDao';
 const EntityMetaVar = 'meta';
 const EntityObjVar = 'obj';
 
-@Register('general-entity')
+@Register('general_entity')
 export class GeneralEntityGenerator extends Generator<GeneralEntityGeneratorConfig> {
   public before(ctx: GContext) {}
   public after(ctx: GContext) {}

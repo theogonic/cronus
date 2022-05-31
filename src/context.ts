@@ -52,7 +52,7 @@ export class GContext {
 
   getTypeSchemaByName(name: string): TscaSchema {
     if (!(name in this.types)) {
-      throw new Error(`cannot find type '${name}'`);
+      throw new Error(`cannot find type '${JSON.stringify(name)}'`);
     }
     return this.types[name];
   }

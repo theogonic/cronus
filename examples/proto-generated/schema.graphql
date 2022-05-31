@@ -1,0 +1,88 @@
+type JwtUser null {
+  id: String
+  email: String
+  org: String
+  roles: [String]
+}
+
+type BaseServiceRequest null {
+  invoker: JwtUser
+}
+
+
+enum AddressType {
+  Work
+  Home
+  School 
+}
+type LatLng null {
+  lat: Float
+  lon: Float
+}
+
+type Address null {
+  street1: String
+  street2: String
+  city: String
+  state: String
+  country: String
+  zipcode: String
+}
+
+type Location null {
+  latlng: LatLng
+  url: String
+  addr: Address
+}
+
+type TypedAddress null {
+  type: AddressType
+  addr: Address
+}
+
+
+enum PhoneType {
+  Personal 
+}
+type TypedPhone null {
+  type: PhoneType
+  number: String
+}
+
+type UserChange null {
+  avatarUrl: String
+  name: String
+  phones: [TypedPhone]
+  desc: String
+  addrs: [TypedAddress]
+  onboarded: bool
+  fvrActIds: [String]
+  fvrCatIds: [String]
+  ethnicity: String
+  occupation: String
+  careerLevel: String
+}
+
+
+enum GeneralObjectStatus {
+  Active
+  Deleted 
+}
+type GeneralObjectMeta null {
+  id: String
+  userId: String
+  typeId: String
+  status: GeneralObjectStatus
+  updatedAt: Utc
+  createdAt: Utc
+}
+
+
+            type Query {
+              _dummy: Boolean
+            }
+          
+            type Mutation {
+              _dummy: Boolean
+            }
+          

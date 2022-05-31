@@ -33,7 +33,7 @@ export async function loadDefsFromGConfig(
 ): Promise<TscaDef[]> {
   const globs = [];
   const geGeneratorConfig = gConfig.generators[
-    'general-entity'
+    'general_entity'
   ] as GeneralEntityGeneratorConfig;
   if (geGeneratorConfig) {
     if (geGeneratorConfig.geZeusDir) {
@@ -45,16 +45,9 @@ export async function loadDefsFromGConfig(
   return loadDefsFromGlobs(globs);
 }
 
-/**
- * Load generation cofiguration from yaml file
- */
-export function loadGConfig(configFile?: string): GConfig {
-  if (!configFile) {
-    configFile = 'tsca.yaml';
-  }
-  const gConfig = loadYamlFromFile<GConfig>(configFile);
+export function autoCompleteTheogonicGaea(gConfig: GConfig) {
   const geGeneratorConfig = gConfig.generators[
-    'general-entity'
+    'general_entity'
   ] as GeneralEntityGeneratorConfig;
   if (geGeneratorConfig) {
     if (!geGeneratorConfig.geZeusDir) {
@@ -72,6 +65,14 @@ export function loadGConfig(configFile?: string): GConfig {
       geGeneratorConfig.geImport = '@theogonic/gaea';
     }
   }
-
+}
+/**
+ * Load generation cofiguration from yaml file
+ */
+export function loadGConfig(configFile?: string): GConfig {
+  if (!configFile) {
+    configFile = 'tsca.yaml';
+  }
+  const gConfig = loadYamlFromFile<GConfig>(configFile);
   return gConfig;
 }

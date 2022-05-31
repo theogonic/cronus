@@ -1,0 +1,172 @@
+syntax = 'proto3';
+import "common.proto";
+import "address.proto";
+
+enum PhoneType {
+    Personal = 0;
+}
+
+message TypedPhone {
+    PhoneType type = 0;
+    string number = 1;
+}
+
+message User {
+    option (zeus.ge) = true;
+    option (zeus.gql) = {
+        output: "backend/resources/libs/std/generated/user.graphql",
+        fedFields: "id",
+        properties: {
+            id: {
+                type: "ID!"
+            },
+            favoriteActivities: {
+                type : "array",
+                items : {
+                    type : "Activity"
+                }
+            }
+        }
+    };
+
+    string avatarUrl = 0;
+    string name = 1;
+    repeated TypedPhone phones = 2;
+    string desc = 3;
+    repeated TypedAddress addrs = 4;
+    bool onboarded = 5;
+    repeated string fvrActIds = 6;
+    repeated string fvrCatIds = 7;
+    string ethnicity = 8;
+    string occupation = 9;
+    string careerLevel = 10;
+}
+
+message UserChange {
+    string avatarUrl = 0;
+    string name = 1;
+    repeated TypedPhone phones = 2;
+    string desc = 3;
+    repeated TypedAddress addrs = 4;
+    bool onboarded = 5;
+    repeated string fvrActIds = 6;
+    repeated string fvrCatIds = 7;
+    string ethnicity = 8;
+    string occupation = 9;
+    string careerLevel = 10;
+}
+
+
+message CreateUserRequest {
+    string userId = 0;
+}
+
+message CreateUserResponse {
+    User user = 0;
+}
+
+message GetUserRequest {
+    string userId = 0 [(zeus.rest.query) = true];
+}
+
+message GetUserResponse {
+    User user = 0;
+}
+
+message UpdateUserRequest {
+    string id = 0;
+    UserChange user = 1;
+}
+
+message UpdateUserResponse {
+    User user = 0;
+}
+
+message ListUsersRequest {
+    string id = 0 [(zeus.rest.query) = true];
+    string name = 1 [(zeus.rest.query) = true];
+    int32 limit = 2 [(zeus.rest.query) = true];
+    string nextToken = 3 [(zeus.rest.query) = true];
+}
+
+message ListUsersResponse {
+    i32 totalCount = 0;
+    string nextToken = 1;
+    repeated User items = 2;
+}
+
+message AddFvrActRequest {
+    string activityId = 0;
+}
+
+message AddFvrActResponse {
+    string activityId = 0;
+}
+
+message DelFvrActRequest {
+    string activityId = 0;
+}
+
+message DelFvrActResponse {
+    string activityId = 0;
+}
+
+
+service UserService {
+    option (zeus.rest) = {
+        apiPrefix: "user",
+        apiTag:"user",
+        reqParams: {
+            invoker: {
+                decorator: {
+                    from: "@lib/std/decorators",
+                    name: "User"
+                }
+            }
+        }
+    };
+
+    option (zeus.ts) = {
+        reqExtends: {
+            BaseServiceRequest: ""
+        }
+    };
+
+    option (zeus.gql) = {
+        output: "backend/resources/libs/std/generated/user.graphql"
+    };
+
+    rpc createUser(CreateUserRequest) returns (CreateUserResponse);
+    rpc getUser(GetUserRequest) returns (GetUserResponse) {
+        option (zeus.rest) = {
+            method: "get",
+            path: "user/:userId"
+        };
+
+        option (zeus.gql) = {
+            type: "query"
+        };
+    }
+    rpc updateUser(UpdateUserRequest) returns (UpdateUserResponse) {
+        option (zeus.gql) = {
+            type: "mutation"
+        };
+    }
+    rpc listUsers(ListUsersRequest) returns (ListUsersResponse) {
+        option (zeus.rest) = {
+            method: "get",
+            path: "users"
+        };
+
+    }
+    rpc addFvrAct(AddFvrActRequest) returns (AddFvrActResponse) {
+        option (zeus.gql) = {
+            type: "mutation"
+        };
+    }
+    rpc delFvrAct(DelFvrActRequest) returns (DelFvrActResponse) {
+        option (zeus.gql) = {
+            type: "mutation"
+        };
+    }
+}

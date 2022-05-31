@@ -10,7 +10,7 @@ interface GraphQLResolverGeneratorConfig extends BaseGeneratorConfig {
   tsTypeImport: string;
 }
 
-@Register('gql-nestjs')
+@Register('gql_nestjs')
 export class GraphQLNestJsGenerator extends Generator<GraphQLResolverGeneratorConfig> {
   public before(ctx: GContext) {
     ctx.addImportsToTsFile(

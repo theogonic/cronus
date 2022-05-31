@@ -1,10 +1,10 @@
 import { Generator } from './base';
 import * as ts from 'typescript';
 import {
+  RawTscaCustomAssignment,
   RawTscaMethodRest,
   TscaDef,
   TscaMethod,
-  TscaMethodRestParamDecoratorDecl,
   TscaSchema,
   TscaUsecase,
   TsDecoratorDecl,
@@ -20,7 +20,7 @@ interface RestNestjsGeneratorConfig extends BaseGeneratorConfig {
   tsTypeImport: string;
 }
 
-@Register('rest-nestjs')
+@Register('rest_nestjs')
 export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
   public before(ctx: GContext) {
     ctx;
@@ -184,6 +184,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
           break;
         }
         case 'integer':
+        case 'float':
         case 'number': {
           objType = 'Number';
           break;
@@ -342,12 +343,16 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
 
   private genExtraImports(ctx: GContext, method: TscaMethod): void {
     if (method.gen.rest.extraImports) {
-      method.gen.rest.extraImports.forEach((ei) => {
-        ctx.addImportsToTsFile(this.output, {
-          from: ei.from,
-          items: ei.names,
-        });
-      });
+      const { extraImports } = method.gen.rest;
+      for (const key in extraImports) {
+        if (Object.prototype.hasOwnProperty.call(extraImports, key)) {
+          const from = extraImports[key];
+          ctx.addImportsToTsFile(this.output, {
+            from,
+            items: [key],
+          });
+        }
+      }
     }
   }
 
@@ -414,10 +419,12 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     // user custom decorators
     const { methodDecorators } = method.gen.rest;
     if (methodDecorators) {
-      const mds = methodDecorators.map((md) =>
-        this.decoratorDeclToDecorator(ctx, md),
-      );
-      decorators.push(...mds);
+      for (const key in methodDecorators) {
+        if (Object.prototype.hasOwnProperty.call(methodDecorators, key)) {
+          const decl = methodDecorators[key];
+          decorators.push(this.decoratorDeclToDecorator(ctx, decl));
+        }
+      }
     }
 
     return decorators;
@@ -685,30 +692,49 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       }
     }
 
+    const customReqParams = {
+      ...(u.gen?.rest?.reqParams || {}),
+      ...(method.gen?.rest?.reqParams || {}),
+    };
+
     // user custom param with decorator
-    if (method.gen.rest?.paramDecorators) {
-      const paramNodes = method.gen.rest.paramDecorators.map((d) =>
-        this.genCustomParams(ctx, d),
-      );
-      nodes.push(...paramNodes);
+
+    for (const key in customReqParams) {
+      if (Object.prototype.hasOwnProperty.call(customReqParams, key)) {
+        const element = customReqParams[key];
+        if (element.decorator) {
+          nodes.push(this.genCustomParamByDecoratorAssign(ctx, key, element));
+        }
+      }
     }
+
     return nodes;
   }
 
-  private genCustomParams(
+  private genCustomParamByDecoratorAssign(
     ctx: GContext,
-    decl: TscaMethodRestParamDecoratorDecl,
+    reqParam: string,
+    customAssign: RawTscaCustomAssignment,
   ): ts.ParameterDeclaration {
-    const decorator = this.decoratorDeclToDecorator(ctx, decl);
-    return ts.factory.createParameterDeclaration(
-      [decorator],
-      undefined,
-      undefined,
-      ts.factory.createIdentifier(decl.reqProp),
-      undefined,
-      undefined,
-      undefined,
-    );
+    if (customAssign.decorator) {
+      const decorator = this.decoratorDeclToDecorator(
+        ctx,
+        customAssign.decorator,
+      );
+      return ts.factory.createParameterDeclaration(
+        [decorator],
+        undefined,
+        undefined,
+        ts.factory.createIdentifier(reqParam),
+        undefined,
+        undefined,
+        undefined,
+      );
+    } else {
+      throw new Error(
+        '[internal error] incorrect assignment type, expect decorator',
+      );
+    }
   }
 
   private genTscaMethodRequestObjectLiteralElementLikes(
@@ -749,11 +775,15 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       );
     }
 
-    if (method.gen.rest.paramDecorators) {
-      const customParams = method.gen.rest.paramDecorators.map((decl) =>
-        ts.factory.createShorthandPropertyAssignment(decl.reqProp, undefined),
-      );
-      nodes.push(...customParams);
+    if (method.gen.rest.reqParams) {
+      const { reqParams } = method.gen.rest;
+      for (const key in reqParams) {
+        if (Object.prototype.hasOwnProperty.call(reqParams, key)) {
+          nodes.push(
+            ts.factory.createShorthandPropertyAssignment(key, undefined),
+          );
+        }
+      }
     }
 
     return nodes;

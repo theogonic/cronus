@@ -142,9 +142,13 @@ type ${typeName} {
     overrideName: string,
     type = 'type',
   ): string {
-    let schemaStr = `${type} ${overrideName || schema.name} ${
-      schema.gen?.gql?.directives || ''
-    } {\n`;
+    let federationKeyAnnotationStr: string = null;
+    if (schema.gen?.gql?.fedFields) {
+      federationKeyAnnotationStr = `@key(fields: "${schema.gen.gql.fedFields}")`;
+    }
+    let schemaStr = `${type} ${
+      overrideName || schema.name
+    } ${federationKeyAnnotationStr} {\n`;
     schema.properties?.forEach((prop) => {
       let inputSuffix = false;
       // to see if we need to generate input version of this type

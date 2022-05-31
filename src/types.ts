@@ -1,17 +1,11 @@
 export interface RawTscaUsecase {
   methods?: Record<string, RawTscaMethod>;
-  rules?: TscaUsecaseRule[];
   gen?: TscaUsecaseGen;
 }
 
 export interface TscaUsecaseRule {
   pattern?: string;
   method: RawTscaMethod;
-}
-
-interface RawTsImport {
-  from?: string;
-  names?: string[];
 }
 
 export interface TsItem {
@@ -24,22 +18,27 @@ export interface TsDecoratorDecl {
   params?: TsItem[];
 }
 
-export interface TscaMethodRestParamDecoratorDecl extends TsDecoratorDecl {
-  reqProp: string;
-}
-
 export interface RawTscaMethodRest {
   method: 'get' | 'post' | 'put' | 'delete';
   path: string;
   query?: string[];
-  extraImports?: RawTsImport[];
-  methodDecorators?: TsDecoratorDecl[];
-  paramDecorators?: TscaMethodRestParamDecoratorDecl[];
+  // import -> from
+  extraImports?: Record<string, string>;
+  methodDecorators?: Record<string, TsDecoratorDecl>;
+  reqParams?: Record<string, RawTscaCustomAssignment>;
+}
+
+// This is used for custom assignment for service's request's parameter
+export interface RawTscaCustomAssignment {
+  decorator?: TsDecoratorDecl;
+  // TODO: function call, constant, etc..
 }
 
 export interface RawTscaUsecaseRest {
-  apiPrefix: string;
-  apiTags: string[];
+  apiPrefix?: string;
+  apiTags?: string[];
+  // custom assignment for service's request's parameter
+  reqParams?: Record<string, RawTscaCustomAssignment>;
 }
 
 export interface RawTscaMethodGql {
@@ -65,7 +64,7 @@ export interface RawTscaMethod {
 export interface RawTscaSchemaGql {
   // special graphql type, like ID, Float, or other custom scalar
   type?: string;
-  directives?: string;
+  fedFields?: string;
   // custom output graphql file
   output?: string;
   properties?: Record<string, RawTscaSchema>;
@@ -73,14 +72,20 @@ export interface RawTscaSchemaGql {
 
 interface TscaSchemaGen {
   gql?: RawTscaSchemaGql;
-  'general-entity': {};
+  'general-entity': unknown;
 }
 
 interface RawTscaUsecaseGql {
   output?: string;
 }
 
+interface RawTscaUsecaseTs {
+  // extend ty -> import's from
+  reqExtends?: Record<string, string>;
+}
+
 interface TscaUsecaseGen {
+  ts?: RawTscaUsecaseTs;
   rest?: RawTscaUsecaseRest;
   gql?: RawTscaUsecaseGql;
   gqlNestjs?: RawTscaUsecaseGqlNestjs;
@@ -88,7 +93,7 @@ interface TscaUsecaseGen {
 
 interface TscaSchemaEnumItem {
   name: string;
-  value?: string;
+  value?: string | number;
 }
 export interface RawTscaSchema {
   type?: string;
@@ -98,7 +103,7 @@ export interface RawTscaSchema {
   namespace?: string;
   enum?: TscaSchemaEnumItem[];
   gen?: TscaSchemaGen;
-  extends?: string[];
+  extends?: Record<string, string>;
   flatExtends?: string[];
 }
 
@@ -113,19 +118,22 @@ export interface RawTscaDef {
    * All usecases parsed from the given files
    */
   usecases: Record<string, RawTscaUsecase>;
+
+  schemas: Record<string, RawTscaSchema>;
 }
 
 interface BaseTscaDefProp {
   name?: string;
   // source file
   src: string;
-  parent?: BaseTscaDefComponent;
+  parent?: BaseTscaDefComponent<any>;
 }
 
-abstract class BaseTscaDefComponent {
+abstract class BaseTscaDefComponent<T> {
   public readonly src: string;
   public readonly name: string;
-  public readonly parent: BaseTscaDefComponent;
+  public readonly parent: BaseTscaDefComponent<any>;
+  public raw: T;
   constructor(prop: BaseTscaDefProp) {
     this.src = prop.src;
     this.name = prop.name;
@@ -133,7 +141,7 @@ abstract class BaseTscaDefComponent {
   }
 }
 
-export class TscaDef extends BaseTscaDefComponent {
+export class TscaDef extends BaseTscaDefComponent<RawTscaDef> {
   types: TscaSchema[] = [];
   usecases: TscaUsecase[] = [];
 
@@ -143,7 +151,7 @@ export class TscaDef extends BaseTscaDefComponent {
 
   static fromRaw(raw: RawTscaDef, prop: BaseTscaDefProp): TscaDef {
     const def = new TscaDef(prop);
-
+    def.raw = raw;
     const { types, usecases } = raw;
     for (const name in types) {
       if (Object.prototype.hasOwnProperty.call(types, name)) {
@@ -172,14 +180,13 @@ export class TscaDef extends BaseTscaDefComponent {
   }
 }
 
-export class TscaUsecase extends BaseTscaDefComponent {
+export class TscaUsecase extends BaseTscaDefComponent<RawTscaUsecase> {
   methods: TscaMethod[] = [];
-  rules?: TscaUsecaseRule[];
   gen?: TscaUsecaseGen;
   static fromRaw(raw: RawTscaUsecase, prop: BaseTscaDefProp): TscaUsecase {
     const u = new TscaUsecase(prop);
-    u.rules = raw.rules;
     u.gen = raw.gen;
+    u.raw = raw;
     if (raw.methods) {
       for (const metholdName in raw.methods) {
         if (Object.prototype.hasOwnProperty.call(raw.methods, metholdName)) {
@@ -198,7 +205,7 @@ export class TscaUsecase extends BaseTscaDefComponent {
   }
 }
 
-export class TscaSchema extends BaseTscaDefComponent {
+export class TscaSchema extends BaseTscaDefComponent<RawTscaSchema> {
   type: string;
   items?: TscaSchema;
   properties?: TscaSchema[] = [];
@@ -206,7 +213,8 @@ export class TscaSchema extends BaseTscaDefComponent {
   namespace: string;
   gen?: TscaSchemaGen;
   enum?: TscaSchemaEnumItem[];
-  extends?: string[];
+  // extend class -> optional import's from if need import
+  extends?: Record<string, string>;
   flatExtends?: string[];
   isVoid(): boolean {
     return (
@@ -250,7 +258,10 @@ export class TscaSchema extends BaseTscaDefComponent {
           }
 
           this.addProp(
-            TscaSchema.fromRaw(childSchema, { src: this.src, name: prop }),
+            TscaSchema.fromRaw(childSchema, {
+              src: this.src,
+              name: prop,
+            }),
           );
         }
       }
@@ -260,6 +271,7 @@ export class TscaSchema extends BaseTscaDefComponent {
   static fromRaw(raw: RawTscaSchema, prop: BaseTscaDefProp): TscaSchema {
     const { properties, type, namespace, items, required, gen } = raw;
     const schema = new TscaSchema(prop);
+    schema.raw = raw;
     schema.extends = raw.extends;
     schema.flatExtends = raw.flatExtends;
     schema.type = type;
@@ -295,16 +307,18 @@ export class TscaSchema extends BaseTscaDefComponent {
   }
 }
 
-export class TscaMethod extends BaseTscaDefComponent {
+export class TscaMethod extends BaseTscaDefComponent<RawTscaMethod> {
   gen?: TscaMethodGen;
   req?: TscaSchema;
   res?: TscaSchema;
   readonly parent: TscaUsecase;
   static fromRaw(raw: RawTscaMethod, prop: BaseTscaDefProp): TscaMethod {
     const method = new TscaMethod(prop);
+
     if (!raw) {
       raw = {};
     }
+    method.raw = raw;
     if (raw.req) {
       method.req = TscaSchema.fromRaw(raw.req, {
         src: prop.src,
@@ -323,60 +337,7 @@ export class TscaMethod extends BaseTscaDefComponent {
 
     method.gen = raw.gen || {};
 
-    applyRulesToMethod(method.parent.rules, method);
     return method;
-  }
-}
-
-function applyRulesToMethod(
-  rules: TscaUsecaseRule[],
-  method: TscaMethod,
-): void {
-  if (!rules) {
-    return;
-  }
-  if (!method) {
-    throw new Error(`unexpected null method found`);
-  }
-
-  rules
-    .filter((rule) => new RegExp(rule.pattern).test(method.name))
-    .forEach((rule) => applyRuleToMethod(rule, method));
-}
-
-function applyRuleToMethod(rule: TscaUsecaseRule, method: TscaMethod): void {
-  if (rule.method.req) {
-    if (method.req) {
-      method.req.inheritFromRaw(rule.method.req);
-    } else {
-      method.req = TscaSchema.fromRaw(rule.method.req, {
-        src: method.src,
-      });
-    }
-  }
-
-  if (rule.method.res) {
-    if (method.res) {
-      method.res.inheritFromRaw(rule.method.res);
-    } else {
-      method.res = TscaSchema.fromRaw(rule.method.res, {
-        src: method.src,
-      });
-    }
-  }
-
-  if (rule.method.gen) {
-    if (rule.method.gen.rest) {
-      const rest = rule.method.gen.rest;
-      if (method.gen?.rest) {
-        method.gen.rest = inheritFromRest(method.gen.rest, rest);
-      } else {
-        if (!method.gen) {
-          method.gen = {};
-        }
-        method.gen.rest = rest;
-      }
-    }
   }
 }
 
@@ -384,10 +345,11 @@ export function newSchemaWithExtraProp(
   schema: TscaSchema,
   properties: Record<string, RawTscaSchema>,
 ): TscaSchema {
-  const clone: TscaSchema = Object.assign(
-    Object.create(Object.getPrototypeOf(schema)),
-    schema,
-  );
+  const newRaw = { ...schema.raw };
+  const clone: TscaSchema = TscaSchema.fromRaw(newRaw, {
+    name: schema.name,
+    src: schema.src,
+  });
   clone.inheritFromRaw({ properties });
   return clone;
 }
@@ -399,7 +361,7 @@ function autoCompleteMetaIfGe(schema: TscaSchema) {
   if (!schema.gen) {
     return;
   }
-  if ('general-entity' in schema.gen) {
+  if ('general_entity' in schema.gen) {
     const metaSchema = schema.getPropByName('meta', true);
     if (metaSchema) {
       if (metaSchema.type !== 'GeneralObjectMeta') {
@@ -419,38 +381,4 @@ function autoCompleteMetaIfGe(schema: TscaSchema) {
       schema.properties.push(autoCreatedMetaSchema);
     }
   }
-}
-function inheritFromRest(
-  curr: RawTscaMethodRest,
-  from: RawTscaMethodRest,
-): RawTscaMethodRest {
-  const newRest = { ...curr };
-  if (from.extraImports) {
-    if (!newRest.extraImports) {
-      newRest.extraImports = [];
-    }
-    newRest.extraImports = [...newRest.extraImports, ...from.extraImports];
-  }
-
-  if (from.methodDecorators) {
-    if (!newRest.methodDecorators) {
-      newRest.methodDecorators = [];
-    }
-    newRest.methodDecorators = [
-      ...newRest.methodDecorators,
-      ...from.methodDecorators,
-    ];
-  }
-
-  if (from.paramDecorators) {
-    if (!newRest.paramDecorators) {
-      newRest.paramDecorators = [];
-    }
-    newRest.paramDecorators = [
-      ...newRest.paramDecorators,
-      ...from.paramDecorators,
-    ];
-  }
-
-  return newRest;
 }

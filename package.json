@@ -37,6 +37,8 @@
     "js-yaml": "4.1.0",
     "lodash": "4.17.21",
     "nestjs-eclih": "1.0.0",
+    "proto-parser": "^0.0.8",
+    "protobufjs": "^6.11.3",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "7.3.0",
@@ -55,18 +57,18 @@
     "@types/supertest": "^2.0.11",
     "@typescript-eslint/eslint-plugin": "^4.29.1",
     "@typescript-eslint/parser": "^4.29.1",
+    "apollo-server-express": "3.5.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.4.0",
+    "graphql": "15.5.1",
     "jest": "^27.0.6",
     "prettier": "^2.3.2",
     "supertest": "^6.1.5",
     "ts-jest": "^27.0.4",
     "ts-loader": "9.2.5",
     "ts-node": "10.2.0",
-    "tsconfig-paths": "^3.10.1",
-    "graphql": "15.5.1",
-    "apollo-server-express": "3.5.0"
+    "tsconfig-paths": "^3.10.1"
   },
   "jest": {
     "moduleFileExtensions": [

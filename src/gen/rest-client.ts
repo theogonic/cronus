@@ -10,7 +10,7 @@ interface RestClientGeneratorConfig extends BaseGeneratorConfig {
   tsTypeImport: string;
 }
 
-@Register('rest-client')
+@Register('rest_client')
 export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
   protected genTscaDef(ctx: GContext, def: TscaDef) {
     const classes = def.usecases.map((u) => this.getRestClient(ctx, u));

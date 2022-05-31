@@ -3,8 +3,10 @@ const PrimitiveTypes = [
   'number',
   'bigint',
   'boolean',
+  'bool',
   'integer',
   'array',
+  'float',
 ];
 
 export function isPrimitiveType(type: string): boolean {
