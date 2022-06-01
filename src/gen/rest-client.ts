@@ -1,11 +1,11 @@
 import { GContext } from '../context';
-import { TscaDef, TscaMethod, TscaSchema, TscaUsecase } from '../types';
+import { TscaDef, TscaMethod, TscaMethodGen, TscaUsecase } from '../types';
 import { Register } from '../decorators';
 import { Generator } from './base';
-import { isPrimitiveType } from './utils';
 import * as ts from 'typescript';
 import * as _ from 'lodash';
 import { BaseGeneratorConfig } from '../config';
+import { getTscaMethodRestBodyPropNames, parseRestPathVars } from './utils';
 
 interface RestClientGeneratorConfig extends BaseGeneratorConfig {
   tsTypeImport: string;
@@ -122,6 +122,38 @@ export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
       );
       return stmts;
     }
+    const axiosCfgObjLiteralProps: ts.ObjectLiteralElementLike[] = [
+      ts.factory.createPropertyAssignment(
+        ts.factory.createIdentifier('url'),
+        getTemplateExprForGenRest(m.gen.rest.path, 'request'),
+      ),
+      ts.factory.createPropertyAssignment(
+        ts.factory.createIdentifier('method'),
+        ts.factory.createStringLiteral(m.gen.rest.method),
+      ),
+    ];
+
+    if (m.gen.rest.method != 'get') {
+      axiosCfgObjLiteralProps.push(
+        ts.factory.createShorthandPropertyAssignment(
+          ts.factory.createIdentifier('data'),
+          undefined,
+        ),
+      );
+
+      stmts.push(this.genDataVarStmt(m, 'request'));
+    } else {
+      if (m.gen.rest.query && m.gen.rest.query.length > 0) {
+        axiosCfgObjLiteralProps.push(
+          ts.factory.createShorthandPropertyAssignment(
+            ts.factory.createIdentifier('params'),
+            undefined,
+          ),
+        );
+
+        stmts.push(this.genParamsVarStmt(m, 'request'));
+      }
+    }
 
     const axiosReqCallStmt = ts.factory.createAwaitExpression(
       ts.factory.createCallExpression(
@@ -135,31 +167,7 @@ export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
         undefined,
         [
           ts.factory.createObjectLiteralExpression(
-            [
-              ts.factory.createPropertyAssignment(
-                ts.factory.createIdentifier('url'),
-                ts.factory.createTemplateExpression(
-                  ts.factory.createTemplateHead('aa/', 'aa/'),
-                  [
-                    ts.factory.createTemplateSpan(
-                      ts.factory.createPropertyAccessExpression(
-                        ts.factory.createIdentifier('request'),
-                        ts.factory.createIdentifier('userId'),
-                      ),
-                      ts.factory.createTemplateTail('', ''),
-                    ),
-                  ],
-                ),
-              ),
-              ts.factory.createPropertyAssignment(
-                ts.factory.createIdentifier('method'),
-                ts.factory.createStringLiteral(m.gen.rest.method),
-              ),
-              ts.factory.createPropertyAssignment(
-                ts.factory.createIdentifier('data'),
-                ts.factory.createObjectLiteralExpression([], false),
-              ),
-            ],
+            axiosCfgObjLiteralProps,
             true,
           ),
         ],
@@ -186,10 +194,65 @@ export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
         ts.factory.createIdentifier('data'),
       ),
     );
+
     stmts.push(resStmt);
     stmts.push(retStmt);
 
     return stmts;
+  }
+
+  private genParamsVarStmt(m: TscaMethod, reqObjName: string): ts.Statement {
+    const propAssigns = m.gen.rest.query.map((prop) =>
+      ts.factory.createPropertyAssignment(
+        ts.factory.createIdentifier(prop),
+        ts.factory.createPropertyAccessExpression(
+          ts.factory.createIdentifier(reqObjName),
+          ts.factory.createIdentifier(prop),
+        ),
+      ),
+    );
+    return ts.factory.createVariableStatement(
+      undefined,
+      ts.factory.createVariableDeclarationList(
+        [
+          ts.factory.createVariableDeclaration(
+            ts.factory.createIdentifier('params'),
+            undefined,
+            undefined,
+            ts.factory.createObjectLiteralExpression(propAssigns, true),
+          ),
+        ],
+        ts.NodeFlags.Const,
+      ),
+    );
+  }
+
+  private genDataVarStmt(m: TscaMethod, reqObjName: string): ts.Statement {
+    // filter out properties mentioned in path, query
+    const bodyProps = getTscaMethodRestBodyPropNames(m);
+    const propAssigns = bodyProps.map((prop) =>
+      ts.factory.createPropertyAssignment(
+        ts.factory.createIdentifier(prop),
+        ts.factory.createPropertyAccessExpression(
+          ts.factory.createIdentifier(reqObjName),
+          ts.factory.createIdentifier(prop),
+        ),
+      ),
+    );
+    return ts.factory.createVariableStatement(
+      undefined,
+      ts.factory.createVariableDeclarationList(
+        [
+          ts.factory.createVariableDeclaration(
+            ts.factory.createIdentifier('data'),
+            undefined,
+            undefined,
+            ts.factory.createObjectLiteralExpression(propAssigns, true),
+          ),
+        ],
+        ts.NodeFlags.Const,
+      ),
+    );
   }
 
   // Generate REST implementations of defined method interface
@@ -273,4 +336,73 @@ export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
       [...methodNodes],
     );
   }
+}
+
+/**
+ *
+ * @param path template URL such as "user/:userId" and "users?a={a}"
+ * @param requestObjName request's object/param name
+ * @returns TemplateExpression
+ */
+export function getTemplateExprForGenRest(
+  path: string,
+  requestObjName: string,
+): ts.Expression {
+  let leftIdx = 0;
+  let tempHead = null;
+  const templateSpans: ts.TemplateSpan[] = [];
+
+  while (leftIdx < path.length) {
+    const idx = path.indexOf(':', leftIdx);
+    if (idx != -1) {
+      // found a ':'
+
+      let slashIdx = path.indexOf('/', idx);
+      if (slashIdx == -1) {
+        slashIdx = path.length;
+      }
+      const reqProp = path.substring(idx + 1, slashIdx);
+
+      if (leftIdx == 0 && idx != 0) {
+        // set template head if there are chars before first ':'
+        tempHead = path.substring(leftIdx, idx);
+      }
+
+      const propAccessExpr = ts.factory.createPropertyAccessExpression(
+        ts.factory.createIdentifier(requestObjName),
+        ts.factory.createIdentifier(reqProp),
+      );
+      // try to find next ':'
+      const nextIdx = path.indexOf(':', idx + 1);
+      if (nextIdx == -1) {
+        // if there is no next, all rest of chars can be placed at tail
+        templateSpans.push(
+          ts.factory.createTemplateSpan(
+            propAccessExpr,
+            ts.factory.createTemplateTail(path.substring(slashIdx)),
+          ),
+        );
+        break;
+      } else {
+        // there is a next, all chars before next can be placed in tail
+        templateSpans.push(
+          ts.factory.createTemplateSpan(
+            propAccessExpr,
+            ts.factory.createTemplateMiddle(path.substring(slashIdx, nextIdx)),
+          ),
+        );
+
+        leftIdx = nextIdx;
+      }
+    } else {
+      if (leftIdx == 0) {
+        // does not found ':' at the beginning
+        return ts.factory.createNoSubstitutionTemplateLiteral(path);
+      }
+    }
+  }
+  return ts.factory.createTemplateExpression(
+    ts.factory.createTemplateHead(tempHead ? tempHead : ''),
+    templateSpans,
+  );
 }

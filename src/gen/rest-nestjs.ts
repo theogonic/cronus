@@ -14,7 +14,11 @@ import * as _ from 'lodash';
 import { GContext } from '../context';
 import { Register } from '../decorators';
 import { BaseGeneratorConfig } from 'src/config';
-import { isPrimitiveType } from './utils';
+import {
+  getTscaMethodRestBodyPropNames,
+  isPrimitiveType,
+  parseRestPathVars,
+} from './utils';
 
 interface RestNestjsGeneratorConfig extends BaseGeneratorConfig {
   tsTypeImport: string;
@@ -511,21 +515,6 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     );
   }
 
-  /**
-   * parseRestPathVars find all variables in the given URL path
-   * @param restPath Restful URL path template
-   * Ex. user/:id/profile/:prop => [id, prop]
-   */
-  private parseRestPathVars(restPath: string): string[] {
-    if (!restPath) {
-      return [];
-    }
-    return restPath
-      .split('/')
-      .filter((s) => s.startsWith(':'))
-      .map((s) => s.substr(1));
-  }
-
   private getTscaMetholdRestBodyDtoTypeName(method: TscaMethod): string {
     return this.getTscaMethodRequestTypeName(method) + 'BodyDto';
   }
@@ -581,21 +570,12 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     });
   }
 
-  private getTscaMethodRestBodyPropNames(method: TscaMethod): string[] {
-    const pathVars = this.parseRestPathVars(method.gen?.rest.path);
-    const queryVars = method.gen?.rest.query || [];
-    const req = method.req.properties;
-    return req
-      .filter((r) => !queryVars.includes(r.name) && !pathVars.includes(r.name))
-      .map((schema) => schema.name);
-  }
-
   private genTscaMethodRestBodyParam(
     ctx: GContext,
     method: TscaMethod,
     dstFile: string,
   ): ts.ParameterDeclaration | null {
-    const bodyPropNames = this.getTscaMethodRestBodyPropNames(method);
+    const bodyPropNames = getTscaMethodRestBodyPropNames(method);
     const bodyVars = method.req.properties.filter((r) =>
       bodyPropNames.includes(r.name),
     );
@@ -639,7 +619,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     const nodes: ts.ParameterDeclaration[] = [];
 
     // path variables
-    const pathVars = this.parseRestPathVars(method.gen?.rest.path);
+    const pathVars = parseRestPathVars(method.gen?.rest.path);
 
     if (pathVars) {
       // @Param('id') id: string
@@ -759,7 +739,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       });
     }
 
-    const pathVars = this.parseRestPathVars(method.gen?.rest.path);
+    const pathVars = parseRestPathVars(method.gen?.rest.path);
     if (pathVars) {
       // path variables
       pathVars.forEach((propName) => {
@@ -769,7 +749,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       });
     }
 
-    const bodyVars = this.getTscaMethodRestBodyPropNames(method);
+    const bodyVars = getTscaMethodRestBodyPropNames(method);
     if (bodyVars) {
       bodyVars.forEach((propName) =>
         nodes.push(
