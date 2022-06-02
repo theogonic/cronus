@@ -4,7 +4,7 @@ import {
   newSchemaWithExtraProp,
   TscaDef,
   TscaMethod,
-  TscaSchema
+  TscaSchema,
 } from '../types';
 import { Generator } from './base';
 
@@ -56,29 +56,11 @@ export class GraphQLSchemaGenerator extends Generator {
         if (queries.length != 0) {
           const queryStr = this.genGqlTypeRaw('Query', queries);
           ctx.addStrToTextFile(key, queryStr);
-        } else {
-          ctx.addStrToTextFile(
-            key,
-            `
-            type Query {
-              _dummy: Boolean
-            }
-          `,
-          );
         }
 
         if (mutations.length != 0) {
           const mutationStr = this.genGqlTypeRaw('Mutation', mutations);
           ctx.addStrToTextFile(key, mutationStr);
-        } else {
-          ctx.addStrToTextFile(
-            key,
-            `
-            type Mutation {
-              _dummy: Boolean
-            }
-          `,
-          );
         }
       }
     }
@@ -234,7 +216,7 @@ enum ${schema.name} {
       'float',
       'bool',
       'int32',
-      'i32'
+      'i32',
     ];
     return types.includes(schema.type);
   }

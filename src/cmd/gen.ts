@@ -46,6 +46,7 @@ export class GenCmdProvider {
   })
   async gen({ config, proto, dryRun }) {
     let gConfig: GConfig = null;
+    let protoTscaDef: TscaDef = null;
     const defs: TscaDef[] = [];
     if (config) {
       gConfig = loadGConfig(config);
@@ -53,15 +54,16 @@ export class GenCmdProvider {
       const trans = new Proto2Tsca();
       await trans.loadProtoFile(proto);
       gConfig = trans.gconfig;
-      defs.push(
-        TscaDef.fromRaw(trans.rawTscaDef, {
-          name: '',
-          src: proto,
-        }),
-      );
+      protoTscaDef = TscaDef.fromRaw(trans.rawTscaDef, {
+        name: '',
+        src: proto,
+      });
     }
     autoCompleteTheogonicGaea(gConfig);
     defs.push(...(await loadDefsFromGConfig(gConfig)));
+    if (protoTscaDef) {
+      defs.push(protoTscaDef);
+    }
 
     if (dryRun) {
       console.log(JSON.stringify(gConfig, null, 2));

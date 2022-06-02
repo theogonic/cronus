@@ -11,13 +11,13 @@ import {
   TscaSchema,
   TscaUsecase,
   TsDecoratorDecl,
-  TsItem
+  TsItem,
 } from '../types';
 import { Generator } from './base';
 import {
   getTscaMethodRestBodyPropNames,
   isPrimitiveType,
-  parseRestPathVars
+  parseRestPathVars,
 } from './utils';
 
 interface RestNestjsGeneratorConfig extends BaseGeneratorConfig {
@@ -493,13 +493,13 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     method: TscaMethod,
   ): ts.MethodDeclaration {
     this.genExtraImports(ctx, method);
-    const reqTypeName = this.getDtoTypeNameFromName(
-      this.getTscaMethodRequestTypeName(method),
-    );
+    // const reqTypeName = this.getDtoTypeNameFromName(
+    //   this.getTscaMethodRequestTypeName(method),
+    // );
     const resTypeName = this.getDtoTypeNameFromName(
       this.getTscaMethodResponseTypeName(method),
     );
-    this.genTscaSchemaToDto(ctx, this.output, method.req, reqTypeName);
+    // this.genTscaSchemaToDto(ctx, this.output, method.req, reqTypeName);
     this.genTscaSchemaToDto(ctx, this.output, method.res, resTypeName);
 
     const paramNodes = this.genTscaMethodParameters(ctx, u, method);
