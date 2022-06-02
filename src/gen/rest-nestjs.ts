@@ -1,5 +1,8 @@
-import { Generator } from './base';
+import * as _ from 'lodash';
+import { BaseGeneratorConfig } from 'src/config';
 import * as ts from 'typescript';
+import { GContext } from '../context';
+import { Register } from '../decorators';
 import {
   RawTscaCustomAssignment,
   RawTscaMethodRest,
@@ -8,16 +11,13 @@ import {
   TscaSchema,
   TscaUsecase,
   TsDecoratorDecl,
-  TsItem,
+  TsItem
 } from '../types';
-import * as _ from 'lodash';
-import { GContext } from '../context';
-import { Register } from '../decorators';
-import { BaseGeneratorConfig } from 'src/config';
+import { Generator } from './base';
 import {
   getTscaMethodRestBodyPropNames,
   isPrimitiveType,
-  parseRestPathVars,
+  parseRestPathVars
 } from './utils';
 
 interface RestNestjsGeneratorConfig extends BaseGeneratorConfig {
@@ -187,6 +187,8 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
           objType = 'String';
           break;
         }
+        case 'int32':
+        case 'i32':
         case 'float':
         case 'integer':
         case 'number': {
@@ -502,6 +504,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
 
     const paramNodes = this.genTscaMethodParameters(ctx, u, method);
     const methodDecorators = this.getRestMethodDecorators(ctx, method);
+
     return ts.factory.createMethodDeclaration(
       methodDecorators,
       undefined,

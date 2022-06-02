@@ -4,7 +4,7 @@ import {
   newSchemaWithExtraProp,
   TscaDef,
   TscaMethod,
-  TscaSchema,
+  TscaSchema
 } from '../types';
 import { Generator } from './base';
 
@@ -233,6 +233,8 @@ enum ${schema.name} {
       'ID',
       'float',
       'bool',
+      'int32',
+      'i32'
     ];
     return types.includes(schema.type);
   }
@@ -248,6 +250,8 @@ enum ${schema.name} {
         return 'ID';
       case 'float':
         return 'Float';
+      case 'int32':
+      case 'i32':
       case 'number':
       case 'integer':
         return 'Int';
