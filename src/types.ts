@@ -37,6 +37,8 @@ export interface RawTscaCustomAssignment {
 export interface RawTscaUsecaseRest {
   apiPrefix?: string;
   apiTags?: string[];
+  apiTag?: string;
+  apiBearerAuth?: boolean;
   // custom assignment for service's request's parameter
   reqParams?: Record<string, RawTscaCustomAssignment>;
 }

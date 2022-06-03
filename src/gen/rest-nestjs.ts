@@ -42,6 +42,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
           'ApiPropertyOptional',
           'ApiProperty',
           'ApiOkResponse',
+          'ApiBearerAuth',
         ],
       },
       {
@@ -252,16 +253,34 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       ),
     );
 
-    if (u.gen?.rest?.apiTags) {
-      const apiTagArgs = u.gen?.rest?.apiTags.map((t) =>
-        ts.factory.createStringLiteral(t),
+    if (u.gen?.rest?.apiTags || u.gen?.rest?.apiTag) {
+      let apiTagArgs: ts.StringLiteral[] = [];
+      apiTagArgs = apiTagArgs.concat(
+        ...u.gen?.rest?.apiTags?.map((t) => ts.factory.createStringLiteral(t)),
       );
+
+      if (u.gen.rest.apiTag) {
+        apiTagArgs.push(ts.factory.createStringLiteral(u.gen.rest.apiTag));
+      }
+
       decorators.push(
         ts.factory.createDecorator(
           ts.factory.createCallExpression(
             ts.factory.createIdentifier('ApiTags'),
             undefined,
             apiTagArgs,
+          ),
+        ),
+      );
+    }
+
+    if (u.gen?.rest?.apiBearerAuth) {
+      decorators.push(
+        ts.factory.createDecorator(
+          ts.factory.createCallExpression(
+            ts.factory.createIdentifier('ApiBearerAuth'),
+            undefined,
+            [],
           ),
         ),
       );
@@ -513,7 +532,10 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       undefined,
       undefined,
       paramNodes,
-      undefined,
+      ts.factory.createTypeReferenceNode(
+        ts.factory.createIdentifier(resTypeName),
+        undefined,
+      ),
       this.genTscaMethodBlock(ctx, u, method),
     );
   }
