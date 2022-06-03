@@ -134,10 +134,17 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     }
 
     if (schema.enum) {
+      // no need to generate dto wrapper with enum since it simply a string or number
       return ts.factory.createTypeReferenceNode(schema.name);
     }
     if (schema.type) {
+      // make sure type is import properly
       const dtoTypeName = this.getDtoTypeNameFromSchema(ctx, schema);
+
+      // if type is enum, in dto it should be treated as string for readibility and common framework settings(nestjs)
+      if (ctx.isTypeEnum(schema.type)) {
+        return ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
+      }
 
       return this.getTsTypeNodeFromSchemaWithType(
         ctx,
@@ -155,7 +162,9 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
           [decorator],
           undefined,
           ts.factory.createIdentifier(child.name),
-          undefined,
+          child.required
+            ? undefined
+            : ts.factory.createToken(ts.SyntaxKind.QuestionToken),
           this.genTscaSchemaToDto(ctx, dstFile, child, null),
           undefined,
         );
@@ -164,6 +173,15 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
 
     const dtoName =
       overrideTypeName || this.getDtoTypeNameFromName(schema.name);
+
+    // check if need to generate fromRaw for serial/deserial enum
+    if (ctx.schemaContainsEnumChild(schema)) {
+      ctx.addImportsToTsFile(this.output, {
+        from: this.config.tsTypeImport,
+        items: [schema.name],
+      });
+      properties.push(this.genFromRawMethodForDto(ctx, dtoName, schema));
+    }
     const node = ts.factory.createClassDeclaration(
       null,
       [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
@@ -176,6 +194,124 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     ctx.addNodesToTsFile(dstFile, node);
 
     return ts.factory.createTypeReferenceNode(dtoName);
+  }
+
+  genFromRawMethodBodyForDto(
+    ctx: GContext,
+    dtoType: string,
+    schema: TscaSchema,
+    rawVarName = 'raw',
+  ): ts.Block {
+    const literals: ts.ObjectLiteralElementLike[] = [];
+
+    for (const prop of schema.properties) {
+      let node: ts.ObjectLiteralElementLike = null;
+      const propIdent = ts.factory.createIdentifier(
+        `${rawVarName}.${prop.name}`,
+      );
+      if (prop.type && ctx.isTypeEnum(prop.type)) {
+        // do deserilization
+        node = ts.factory.createPropertyAssignment(
+          ts.factory.createIdentifier(prop.name),
+          ts.factory.createElementAccessExpression(
+            ts.factory.createIdentifier(prop.type),
+            propIdent,
+          ),
+        );
+      } else if (prop.type && ctx.isTypeHasEnumChild(prop.type)) {
+        // call this type's fromRaw
+        node = ts.factory.createPropertyAssignment(
+          prop.name,
+          ts.factory.createCallExpression(
+            ts.factory.createPropertyAccessExpression(
+              ts.factory.createIdentifier(
+                this.getDtoTypeNameFromName(prop.type),
+              ),
+              'fromRaw',
+            ),
+            undefined,
+            [propIdent],
+          ),
+        );
+      } else if (
+        prop.type == 'array' &&
+        ctx.isTypeHasEnumChild(prop.items.type)
+      ) {
+        // if array contains dto with enum, call map and fromRaw
+        node = ts.factory.createPropertyAssignment(
+          ts.factory.createIdentifier(prop.name),
+          ts.factory.createCallExpression(
+            ts.factory.createPropertyAccessExpression(
+              ts.factory.createParenthesizedExpression(
+                ts.factory.createBinaryExpression(
+                  ts.factory.createPropertyAccessExpression(
+                    ts.factory.createIdentifier(rawVarName),
+                    ts.factory.createIdentifier(prop.name),
+                  ),
+                  ts.factory.createToken(ts.SyntaxKind.BarBarToken),
+                  ts.factory.createArrayLiteralExpression([], false),
+                ),
+              ),
+              ts.factory.createIdentifier('map'),
+            ),
+            undefined,
+            [
+              ts.factory.createPropertyAccessExpression(
+                ts.factory.createIdentifier(
+                  this.getDtoTypeNameFromName(prop.items.type),
+                ),
+                ts.factory.createIdentifier('fromRaw'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // normal assign
+        node = ts.factory.createPropertyAssignment(prop.name, propIdent);
+      }
+      literals.push(node);
+    }
+    return ts.factory.createBlock(
+      [
+        ts.factory.createReturnStatement(
+          ts.factory.createObjectLiteralExpression(literals, true),
+        ),
+      ],
+      true,
+    );
+  }
+  genFromRawMethodForDto(
+    ctx: GContext,
+    dtoType: string,
+    schema: TscaSchema,
+  ): ts.MethodDeclaration {
+    return ts.factory.createMethodDeclaration(
+      undefined,
+      [ts.factory.createModifier(ts.SyntaxKind.StaticKeyword)],
+      undefined,
+      ts.factory.createIdentifier('fromRaw'),
+      undefined,
+      undefined,
+      [
+        ts.factory.createParameterDeclaration(
+          undefined,
+          undefined,
+          undefined,
+          ts.factory.createIdentifier('raw'),
+          undefined,
+          ts.factory.createTypeReferenceNode(
+            ts.factory.createIdentifier(schema.name),
+            undefined,
+          ),
+          undefined,
+        ),
+      ],
+      ts.factory.createTypeReferenceNode(
+        ts.factory.createIdentifier(dtoType),
+        undefined,
+      ),
+      this.genFromRawMethodBodyForDto(ctx, dtoType, schema, 'raw'),
+    );
   }
 
   getDtoDecoratorFromSchema(ctx: GContext, schema: TscaSchema): ts.Decorator {
@@ -526,15 +662,20 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
 
     return ts.factory.createMethodDeclaration(
       methodDecorators,
-      undefined,
+      [ts.factory.createModifier(ts.SyntaxKind.AsyncKeyword)],
       undefined,
       ts.factory.createIdentifier(method.name),
       undefined,
       undefined,
       paramNodes,
       ts.factory.createTypeReferenceNode(
-        ts.factory.createIdentifier(resTypeName),
-        undefined,
+        ts.factory.createIdentifier('Promise'),
+        [
+          ts.factory.createTypeReferenceNode(
+            ts.factory.createIdentifier(resTypeName),
+            undefined,
+          ),
+        ],
       ),
       this.genTscaMethodBlock(ctx, u, method),
     );
@@ -758,9 +899,28 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     if (queryVars) {
       // query variables
       queryVars.forEach((propName) => {
-        nodes.push(
-          ts.factory.createShorthandPropertyAssignment(propName, undefined),
-        );
+        if (!method.req || !method.req.properties) {
+          throw new Error(
+            `expect property ${propName} in ${u.name}'s method ${method.name}'s request`,
+          );
+        }
+        const propSchema = method.req.getPropByName(propName);
+        let assignNode: ts.ObjectLiteralElementLike = null;
+        if (ctx.isTypeEnum(propSchema.type)) {
+          assignNode = ts.factory.createPropertyAssignment(
+            ts.factory.createIdentifier(propName),
+            ts.factory.createElementAccessExpression(
+              ts.factory.createIdentifier(propSchema.type),
+              ts.factory.createIdentifier(propName),
+            ),
+          );
+        } else {
+          assignNode = ts.factory.createShorthandPropertyAssignment(
+            propName,
+            undefined,
+          );
+        }
+        nodes.push(assignNode);
       });
     }
 
@@ -776,14 +936,26 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
 
     const bodyVars = getTscaMethodRestBodyPropNames(method);
     if (bodyVars) {
-      bodyVars.forEach((propName) =>
-        nodes.push(
-          ts.factory.createPropertyAssignment(
+      bodyVars.forEach((propName) => {
+        const propSchema = method.req.getPropByName(propName);
+        let assignNode: ts.ObjectLiteralElementLike = null;
+        if (ctx.isTypeEnum(propSchema.type)) {
+          assignNode = ts.factory.createPropertyAssignment(
+            ts.factory.createIdentifier(propName),
+            ts.factory.createElementAccessExpression(
+              ts.factory.createIdentifier(propSchema.type),
+              ts.factory.createIdentifier(`body.${propName}`),
+            ),
+          );
+        } else {
+          assignNode = ts.factory.createPropertyAssignment(
             propName,
             ts.factory.createIdentifier(`body.${propName}`),
-          ),
-        ),
-      );
+          );
+        }
+
+        nodes.push(assignNode);
+      });
     }
 
     const allReqParams = {
@@ -810,7 +982,8 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     u: TscaUsecase,
     method: TscaMethod,
   ): ts.Block {
-    const reqVarName = 'ucReq';
+    const reqVarName = '_req';
+    const retVarName = '_res';
     const reqVarType = this.getTscaMethodRequestTypeName(method);
 
     ctx.addImportsToTsFile(this.output, {
@@ -820,6 +993,28 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
 
     const requestAssignmentNodes =
       this.genTscaMethodRequestObjectLiteralElementLikes(ctx, u, method);
+
+    let retStmt: ts.ReturnStatement = null;
+
+    if (method.res && ctx.schemaContainsEnumChild(method.res)) {
+      retStmt = ts.factory.createReturnStatement(
+        ts.factory.createCallExpression(
+          ts.factory.createPropertyAccessExpression(
+            ts.factory.createIdentifier(
+              this.getDtoTypeNameFromName(method.res.name),
+            ),
+            ts.factory.createIdentifier('fromRaw'),
+          ),
+          undefined,
+          [ts.factory.createIdentifier(retVarName)],
+        ),
+      );
+    } else {
+      retStmt = ts.factory.createReturnStatement(
+        ts.factory.createIdentifier(retVarName),
+      );
+    }
+
     const blockNode = ts.factory.createBlock(
       [
         ts.factory.createVariableStatement(
@@ -842,19 +1037,35 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
             ts.NodeFlags.Const,
           ),
         ),
-        ts.factory.createReturnStatement(
-          ts.factory.createCallExpression(
-            ts.factory.createPropertyAccessExpression(
-              ts.factory.createPropertyAccessExpression(
-                ts.factory.createThis(),
-                ts.factory.createIdentifier(this.getUsecaseInstanceVarName(u)),
+        ts.factory.createVariableStatement(
+          undefined,
+          ts.factory.createVariableDeclarationList(
+            [
+              ts.factory.createVariableDeclaration(
+                ts.factory.createIdentifier(retVarName),
+                undefined,
+                undefined,
+                ts.factory.createAwaitExpression(
+                  ts.factory.createCallExpression(
+                    ts.factory.createPropertyAccessExpression(
+                      ts.factory.createPropertyAccessExpression(
+                        ts.factory.createThis(),
+                        ts.factory.createIdentifier(
+                          this.getUsecaseInstanceVarName(u),
+                        ),
+                      ),
+                      ts.factory.createIdentifier(method.name),
+                    ),
+                    undefined,
+                    [ts.factory.createIdentifier(reqVarName)],
+                  ),
+                ),
               ),
-              ts.factory.createIdentifier(method.name),
-            ),
-            undefined,
-            [ts.factory.createIdentifier(reqVarName)],
+            ],
+            ts.NodeFlags.Const,
           ),
         ),
+        retStmt,
       ],
       true,
     );

@@ -1,3 +1,5 @@
+import * as _ from 'lodash';
+
 export interface RawTscaUsecase {
   methods?: Record<string, RawTscaMethod>;
   gen?: TscaUsecaseGen;
@@ -95,7 +97,7 @@ interface TscaUsecaseGen {
 
 interface TscaSchemaEnumItem {
   name: string;
-  value?: string | number;
+  value: number;
 }
 export interface RawTscaSchema {
   type?: string;
@@ -309,6 +311,14 @@ export class TscaSchema extends BaseTscaDefComponent<RawTscaSchema> {
   }
 }
 
+function getTscaMethodRequestTypeName(method: TscaMethod): string {
+  return _.upperFirst(method.name) + 'Request';
+}
+
+function getTscaMethodResponseTypeName(method: TscaMethod): string {
+  return _.upperFirst(method.name) + 'Response';
+}
+
 export class TscaMethod extends BaseTscaDefComponent<RawTscaMethod> {
   gen?: TscaMethodGen;
   req?: TscaSchema;
@@ -324,7 +334,7 @@ export class TscaMethod extends BaseTscaDefComponent<RawTscaMethod> {
     if (raw.req) {
       method.req = TscaSchema.fromRaw(raw.req, {
         src: prop.src,
-        name: '',
+        name: getTscaMethodRequestTypeName(method),
         parent: null,
       });
     }
@@ -332,7 +342,7 @@ export class TscaMethod extends BaseTscaDefComponent<RawTscaMethod> {
     if (raw.res) {
       method.res = TscaSchema.fromRaw(raw.res, {
         src: prop.src,
-        name: '',
+        name: getTscaMethodResponseTypeName(method),
         parent: null,
       });
     }
