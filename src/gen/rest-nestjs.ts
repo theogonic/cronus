@@ -198,7 +198,6 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
 
   genFromRawMethodBodyForDto(
     ctx: GContext,
-    dtoType: string,
     schema: TscaSchema,
     rawVarName = 'raw',
   ): ts.Block {
@@ -273,6 +272,24 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     }
     return ts.factory.createBlock(
       [
+        ts.factory.createIfStatement(
+          ts.factory.createPrefixUnaryExpression(
+            ts.SyntaxKind.ExclamationToken,
+            ts.factory.createIdentifier(rawVarName),
+          ),
+          ts.factory.createBlock(
+            [
+              ts.factory.createReturnStatement(
+                ts.factory.createAsExpression(
+                  ts.factory.createIdentifier(rawVarName),
+                  ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
+                ),
+              ),
+            ],
+            true,
+          ),
+          undefined,
+        ),
         ts.factory.createReturnStatement(
           ts.factory.createObjectLiteralExpression(literals, true),
         ),
@@ -310,7 +327,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
         ts.factory.createIdentifier(dtoType),
         undefined,
       ),
-      this.genFromRawMethodBodyForDto(ctx, dtoType, schema, 'raw'),
+      this.genFromRawMethodBodyForDto(ctx, schema, 'raw'),
     );
   }
 

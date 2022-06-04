@@ -1,9 +1,9 @@
-import { RawTscaDef, RawTscaSchema, RawTscaUsecase, TscaDef } from './types';
-import * as pp from 'proto-parser';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-
+import * as pp from 'proto-parser';
 import { GConfig } from './config';
+import { RawTscaDef, RawTscaSchema, RawTscaUsecase } from './types';
+
 
 export class Proto2Tsca {
   gconfig: GConfig = {
@@ -259,21 +259,46 @@ function protoMsg2RawTscaSchema(
 
   for (const key in msgDef.fields) {
     if (Object.prototype.hasOwnProperty.call(msgDef.fields, key)) {
-      const element = msgDef.fields[key];
-      if (element.repeated) {
+      const protoField = msgDef.fields[key];
+      if (protoField.repeated) {
         tscaSchema.properties[key] = {
           type: 'array',
           items: {
-            type: element.type.value,
+            type: protoField.type.value,
           },
         };
       } else {
         tscaSchema.properties[key] = {
-          type: element.type.value,
+          type: protoField.type.value,
         };
       }
 
-      tscaSchema.required = element.required;
+      const fieldSchema = tscaSchema.properties[key];
+
+      tscaSchema.required = protoField.required;
+
+      if (protoField.options) {
+        for (const key in protoField.options) {
+          if (Object.prototype.hasOwnProperty.call(protoField.options, key)) {
+            const element = protoField.options[key];
+            const [option, path] = parseProtoOptionKey(key);
+
+            if (option === 'zeus.gql') {
+              if (!('gen' in fieldSchema)) {
+                fieldSchema.gen = {};
+              }
+              if (!('gql' in fieldSchema.gen)) {
+                fieldSchema.gen.gql = {};
+              }
+              assignByObjPath(
+                fieldSchema.gen.gql,
+                path,
+                element,
+              );
+            }
+          }
+        }
+      }
     }
   }
 

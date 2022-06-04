@@ -76,7 +76,7 @@ export interface RawTscaSchemaGql {
 
 interface TscaSchemaGen {
   gql?: RawTscaSchemaGql;
-  'general-entity': unknown;
+  'general-entity'?: unknown;
 }
 
 interface RawTscaUsecaseGql {
