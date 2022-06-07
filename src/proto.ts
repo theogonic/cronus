@@ -23,7 +23,7 @@ export class Proto2Tsca {
     const protoResult = pp.parse(content, { resolve: false });
     if (protoResult.syntaxType == pp.SyntaxType.ProtoError) {
       throw new Error(
-        `Parsing proto error on ${protoFile}: ${protoResult.message}`,
+        `Parsing proto error on ${protoFile} line ${protoResult.line}: ${protoResult.message}`,
       );
     }
     const absPath = path.resolve(protoFile);
