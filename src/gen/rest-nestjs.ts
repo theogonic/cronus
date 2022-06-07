@@ -43,6 +43,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
           'ApiProperty',
           'ApiOkResponse',
           'ApiBearerAuth',
+          'ApiQuery',
         ],
       },
       {
@@ -605,6 +606,56 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       }
     }
 
+    // optional query if any
+    const queryVars = this.getQueryVars(method);
+    if (queryVars) {
+      queryVars.forEach((queryVar) => {
+        // @ApiQuery({ name: 'role', enum: UserRole })
+
+        // optional
+        // enum
+        const queryVarProp = method.req.getPropByName(queryVar[0]);
+        const queryVarType = queryVarProp.type;
+
+        const literalProps = [
+          ts.factory.createPropertyAssignment(
+            ts.factory.createIdentifier('name'),
+            ts.factory.createStringLiteral(queryVar[0]),
+          ),
+          ts.factory.createPropertyAssignment(
+            ts.factory.createIdentifier('required'),
+            queryVarProp.required
+              ? ts.factory.createTrue()
+              : ts.factory.createFalse(),
+          ),
+        ];
+
+        if (ctx.isTypeEnum(queryVarType)) {
+          ctx.addImportsToTsFile(this.output, {
+            items: [queryVarType],
+            from: this.config.tsTypeImport,
+          });
+
+          literalProps.push(
+            ts.factory.createPropertyAssignment(
+              ts.factory.createIdentifier('enum'),
+              ts.factory.createIdentifier(queryVarType),
+            ),
+          );
+        }
+
+        decorators.push(
+          ts.factory.createDecorator(
+            ts.factory.createCallExpression(
+              ts.factory.createIdentifier('ApiQuery'),
+              undefined,
+              [ts.factory.createObjectLiteralExpression(literalProps, false)],
+            ),
+          ),
+        );
+      });
+    }
+
     return decorators;
   }
 
@@ -903,6 +954,26 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       throw new Error(
         '[internal error] incorrect assignment type, expect decorator',
       );
+    }
+  }
+
+  private getQueryVars(m: TscaMethod): string[][] {
+    if (!m.gen?.rest) {
+      return null;
+    }
+    if (m.gen.rest.method != 'get') {
+      return null;
+    }
+    const queryVars = m.gen.rest.query;
+    if (queryVars) {
+      return m.gen.rest.query.map((q) => [q]);
+    } else {
+      const pathVars = parseRestPathVars(m.gen.rest.path);
+      const req = m.req.properties;
+      return req
+        .filter((r) => !pathVars.includes(r.name))
+        .map((schema) => schema.name)
+        .map((q) => [q]);
     }
   }
 
