@@ -4,7 +4,6 @@ import * as pp from 'proto-parser';
 import { GConfig } from './config';
 import { RawTscaDef, RawTscaSchema, RawTscaUsecase } from './types';
 
-
 export class Proto2Tsca {
   gconfig: GConfig = {
     generators: {},
@@ -290,11 +289,7 @@ function protoMsg2RawTscaSchema(
               if (!('gql' in fieldSchema.gen)) {
                 fieldSchema.gen.gql = {};
               }
-              assignByObjPath(
-                fieldSchema.gen.gql,
-                path,
-                element,
-              );
+              assignByObjPath(fieldSchema.gen.gql, path, element);
             }
           }
         }
@@ -308,8 +303,8 @@ function protoMsg2RawTscaSchema(
         const element = msgDef.options[key];
         const [option, path] = parseProtoOptionKey(key);
 
-        if (option === 'zeus.ge') {
-          tscaSchema.gen['general_entity'] = {};
+        if (option === 'zeus.gaea') {
+          tscaSchema.gen['gaea'] = {};
         } else if (option === 'zeus.gql') {
           if (!('gql' in tscaSchema.gen)) {
             tscaSchema.gen.gql = {};

@@ -76,7 +76,7 @@ export interface RawTscaSchemaGql {
 
 interface TscaSchemaGen {
   gql?: RawTscaSchemaGql;
-  'general-entity'?: unknown;
+  gaea?: unknown;
 }
 
 interface RawTscaUsecaseGql {
@@ -305,7 +305,7 @@ export class TscaSchema extends BaseTscaDefComponent<RawTscaSchema> {
       }
     }
 
-    autoCompleteMetaIfGe(schema);
+    autoCompleteMetaIfGaea(schema);
 
     return schema;
   }
@@ -369,11 +369,11 @@ export function newSchemaWithExtraProp(
 /**
  * Add meta: GeneralObjectMeta to schema properties if schema is marked with gen general-entity
  */
-function autoCompleteMetaIfGe(schema: TscaSchema) {
+function autoCompleteMetaIfGaea(schema: TscaSchema) {
   if (!schema.gen) {
     return;
   }
-  if ('general_entity' in schema.gen) {
+  if ('gaea' in schema.gen) {
     const metaSchema = schema.getPropByName('meta', true);
     if (metaSchema) {
       if (metaSchema.type !== 'GeneralObjectMeta') {

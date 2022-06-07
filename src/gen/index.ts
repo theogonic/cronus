@@ -1,4 +1,4 @@
-export * from './general-entity';
+export * from './gaea';
 export * from './graphql-nestjs';
 export * from './graphql-schema';
 export * from './ts';

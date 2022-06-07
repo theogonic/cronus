@@ -24,7 +24,7 @@ option (zeus.gen.rest_client) = {
     tsTypeImport: "./types"
 };
 
-option (zeus.gen.general_entity) = {
+option (zeus.gen.gaea) = {
     output: "examples/proto-generated/entities.ts",
     tsTypeImport: './types'
 };

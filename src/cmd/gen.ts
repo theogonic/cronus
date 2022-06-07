@@ -11,7 +11,7 @@ import { getInstantiatedGenerators, GConfig } from '../config';
 import {
   TypescriptGenerator,
   GraphQLNestJsGenerator,
-  GeneralEntityGenerator,
+  GaeaGenerator,
   GraphQLSchemaGenerator,
   RestNestJsGenerator,
   RestClientGenerator,
@@ -22,7 +22,7 @@ import { Proto2Tsca } from '../proto';
 // to trigger decorator
 TypescriptGenerator;
 GraphQLNestJsGenerator;
-GeneralEntityGenerator;
+GaeaGenerator;
 GraphQLSchemaGenerator;
 RestNestJsGenerator;
 RestClientGenerator;
