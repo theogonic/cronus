@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { GContext } from './context';
 
 export interface RawTscaUsecase {
   methods?: Record<string, RawTscaMethod>;
@@ -233,7 +234,7 @@ export class TscaSchema extends BaseTscaDefComponent<RawTscaSchema> {
     const prop = this.properties?.find((prop) => prop.name === name);
     if (!prop && !allowNotExist) {
       throw new Error(
-        `cannot find '${name}' in properties of type '${this.name}'`,
+        `cannot find '${name}' in properties of type '${this.type}'`,
       );
     }
     return prop;

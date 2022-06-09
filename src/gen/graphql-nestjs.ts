@@ -73,7 +73,7 @@ export class GraphQLNestJsGenerator extends Generator<GraphQLResolverGeneratorCo
     });
     const helperClass = ts.factory.createClassDeclaration(
       undefined,
-      undefined,
+      [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
       this.getGqlTypeNameFromName(schema.name),
       undefined,
       undefined,

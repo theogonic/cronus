@@ -1,3 +1,15 @@
+export enum GeneralObjectStatus {
+    Active = 1,
+    Deleted = 2
+}
+export interface GeneralObjectMeta {
+    id?: string;
+    userId?: string;
+    typeId?: string;
+    status?: GeneralObjectStatus;
+    updatedAt?: number;
+    createdAt?: number;
+}
 export interface CreateUserRequest extends BaseServiceRequest {
     userId?: string;
 }
@@ -20,11 +32,10 @@ export interface UpdateUserResponse {
 export interface ListUsersRequest extends BaseServiceRequest {
     id?: string;
     name?: string;
-    limit?: int32;
-    nextToken?: string;
+    pagination?: Pagination;
 }
 export interface ListUsersResponse {
-    totalCount?: i32;
+    totalCount?: number;
     nextToken?: string;
     items?: User[];
 }
@@ -64,8 +75,8 @@ export enum AddressType {
     School = 2
 }
 export interface LatLng {
-    lat?: float;
-    lon?: float;
+    lat?: number;
+    lon?: number;
 }
 export interface Address {
     street1?: string;
@@ -91,19 +102,26 @@ export interface TypedPhone {
     type?: PhoneType;
     number?: string;
 }
+export interface JustTest {
+    type?: PhoneType;
+}
+export interface Pagination {
+    totalCount?: number;
+    nextToken?: string;
+    test?: JustTest;
+}
 export interface User {
     avatarUrl?: string;
     name?: string;
     phones?: TypedPhone[];
     desc?: string;
     addrs?: TypedAddress[];
-    onboarded?: bool;
+    onboarded?: boolean;
     fvrActIds?: string[];
     fvrCatIds?: string[];
     ethnicity?: string;
     occupation?: string;
     careerLevel?: string;
-    meta?: GeneralObjectMeta;
 }
 export interface UserChange {
     avatarUrl?: string;
@@ -111,22 +129,10 @@ export interface UserChange {
     phones?: TypedPhone[];
     desc?: string;
     addrs?: TypedAddress[];
-    onboarded?: bool;
+    onboarded?: boolean;
     fvrActIds?: string[];
     fvrCatIds?: string[];
     ethnicity?: string;
     occupation?: string;
     careerLevel?: string;
-}
-export enum GeneralObjectStatus {
-    Active = 1,
-    Deleted = 2
-}
-export interface GeneralObjectMeta {
-    id?: string;
-    userId?: string;
-    typeId?: string;
-    status?: GeneralObjectStatus;
-    updatedAt?: number;
-    createdAt?: number;
 }

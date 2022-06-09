@@ -15,6 +15,9 @@ import {
 } from '../types';
 import { Generator } from './base';
 import {
+  getNameOfFlatternProp,
+  getPropByFlatternProp,
+  getTscaMethodQueryVars,
   getTscaMethodRestBodyPropNames,
   isPrimitiveType,
   parseRestPathVars,
@@ -607,20 +610,24 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     }
 
     // optional query if any
-    const queryVars = this.getQueryVars(method);
-    if (queryVars) {
-      queryVars.forEach((queryVar) => {
+    const flatternQueryVars = getTscaMethodQueryVars(ctx, method, true);
+    if (flatternQueryVars) {
+      flatternQueryVars.forEach((flatternQueryVar) => {
         // @ApiQuery({ name: 'role', enum: UserRole })
 
         // optional
         // enum
-        const queryVarProp = method.req.getPropByName(queryVar[0]);
+        const queryVarProp = getPropByFlatternProp(
+          ctx,
+          method.req,
+          flatternQueryVar,
+        );
         const queryVarType = queryVarProp.type;
-
+        const queryVarName = getNameOfFlatternProp(flatternQueryVar);
         const literalProps = [
           ts.factory.createPropertyAssignment(
             ts.factory.createIdentifier('name'),
-            ts.factory.createStringLiteral(queryVar[0]),
+            ts.factory.createStringLiteral(queryVarName),
           ),
           ts.factory.createPropertyAssignment(
             ts.factory.createIdentifier('required'),
@@ -757,15 +764,18 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     ctx: GContext,
     method: TscaMethod,
   ): ts.ParameterDeclaration[] | null {
-    const queryVars = method.gen?.rest.query;
-    if (!queryVars) {
+    const flatternQueryVars = getTscaMethodQueryVars(ctx, method, true);
+    if (!flatternQueryVars) {
       return null;
     }
 
     // @Query('id') id: string
-    return queryVars.map((v) => {
-      const args: ts.Expression[] = [ts.factory.createStringLiteral(v)];
-      const vProp = method.req.getPropByName(v);
+    return flatternQueryVars.map((flatternQueryVar) => {
+      const queryVarName = getNameOfFlatternProp(flatternQueryVar);
+      const args: ts.Expression[] = [
+        ts.factory.createStringLiteral(queryVarName),
+      ];
+      const vProp = getPropByFlatternProp(ctx, method.req, flatternQueryVar);
       let vPropKind: ts.SyntaxKind;
 
       if (
@@ -796,7 +806,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
         ],
         undefined,
         undefined,
-        ts.factory.createIdentifier(v),
+        ts.factory.createIdentifier(queryVarName),
         undefined,
         ts.factory.createKeywordTypeNode(vPropKind),
         undefined,
@@ -809,7 +819,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     method: TscaMethod,
     dstFile: string,
   ): ts.ParameterDeclaration | null {
-    const bodyPropNames = getTscaMethodRestBodyPropNames(method);
+    const bodyPropNames = getTscaMethodRestBodyPropNames(ctx, method);
     const bodyVars = method.req.properties.filter((r) =>
       bodyPropNames.includes(r.name),
     );
@@ -957,59 +967,89 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     }
   }
 
-  private getQueryVars(m: TscaMethod): string[][] {
-    if (!m.gen?.rest) {
-      return null;
-    }
-    if (m.gen.rest.method != 'get') {
-      return null;
-    }
-    const queryVars = m.gen.rest.query;
-    if (queryVars) {
-      return m.gen.rest.query.map((q) => [q]);
-    } else {
-      const pathVars = parseRestPathVars(m.gen.rest.path);
-      const req = m.req.properties;
-      return req
-        .filter((r) => !pathVars.includes(r.name))
-        .map((schema) => schema.name)
-        .map((q) => [q]);
-    }
+  private genObjectLiteralForFlatternProp(
+    ctx: GContext,
+    schema: TscaSchema,
+    parentFlatterns: string[],
+    flatternQueryProps: string[][],
+  ): ts.ObjectLiteralExpression {
+    // cluster flattern query props by first prop
+    const clusteredFlatterns = {};
+    flatternQueryProps.forEach((q) => {
+      if (q.length == 1) {
+        clusteredFlatterns[q[0]] = [];
+      } else {
+        if (!(q[0] in clusteredFlatterns)) {
+          clusteredFlatterns[q[0]] = [];
+        }
+        clusteredFlatterns[q[0]].push(q.slice(1));
+      }
+    });
+    const nodes: ts.ObjectLiteralElementLike[] = [];
+    Object.keys(clusteredFlatterns).forEach((propName) => {
+      const propSchema = schema.getPropByName(propName);
+
+      let assignNode: ts.ObjectLiteralElementLike = null;
+      if (ctx.isTypeEnum(propSchema.type)) {
+        const propActualName = getNameOfFlatternProp([
+          ...parentFlatterns,
+          propName,
+        ]);
+        assignNode = ts.factory.createPropertyAssignment(
+          ts.factory.createIdentifier(propName),
+          ts.factory.createElementAccessExpression(
+            ts.factory.createIdentifier(propSchema.type),
+            ts.factory.createIdentifier(propActualName),
+          ),
+        );
+      } else if (
+        !isPrimitiveType(propSchema.type) &&
+        propSchema.type != 'array'
+      ) {
+        // this prop is not primitive type
+        // filter all flattern query props under this type
+        const childActualSchema = ctx.getTypeSchemaByName(propSchema.type);
+        assignNode = ts.factory.createPropertyAssignment(
+          ts.factory.createIdentifier(propName),
+          this.genObjectLiteralForFlatternProp(
+            ctx,
+            childActualSchema,
+            [...parentFlatterns, propName],
+            clusteredFlatterns[propName],
+          ),
+        );
+      } else {
+        const propActualName = getNameOfFlatternProp([
+          ...parentFlatterns,
+          propName,
+        ]);
+        assignNode = ts.factory.createPropertyAssignment(
+          propName,
+          ts.factory.createIdentifier(propActualName),
+        );
+      }
+      nodes.push(assignNode);
+    });
+
+    return ts.factory.createObjectLiteralExpression(nodes, true);
   }
 
+  // generate req object construction from method parameters
   private genTscaMethodRequestObjectLiteralElementLikes(
     ctx: GContext,
     u: TscaUsecase,
     method: TscaMethod,
   ): ts.ObjectLiteralElementLike[] {
     const nodes: ts.ObjectLiteralElementLike[] = [];
-    const queryVars = method.gen?.rest.query;
+    const queryVars = getTscaMethodQueryVars(ctx, method, true);
     if (queryVars) {
-      // query variables
-      queryVars.forEach((propName) => {
-        if (!method.req || !method.req.properties) {
-          throw new Error(
-            `expect property ${propName} in ${u.name}'s method ${method.name}'s request`,
-          );
-        }
-        const propSchema = method.req.getPropByName(propName);
-        let assignNode: ts.ObjectLiteralElementLike = null;
-        if (ctx.isTypeEnum(propSchema.type)) {
-          assignNode = ts.factory.createPropertyAssignment(
-            ts.factory.createIdentifier(propName),
-            ts.factory.createElementAccessExpression(
-              ts.factory.createIdentifier(propSchema.type),
-              ts.factory.createIdentifier(propName),
-            ),
-          );
-        } else {
-          assignNode = ts.factory.createShorthandPropertyAssignment(
-            propName,
-            undefined,
-          );
-        }
-        nodes.push(assignNode);
-      });
+      const obj = this.genObjectLiteralForFlatternProp(
+        ctx,
+        method.req,
+        [],
+        queryVars,
+      );
+      nodes.push(...obj.properties);
     }
 
     const pathVars = parseRestPathVars(method.gen?.rest.path);
@@ -1022,7 +1062,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       });
     }
 
-    const bodyVars = getTscaMethodRestBodyPropNames(method);
+    const bodyVars = getTscaMethodRestBodyPropNames(ctx, method);
     if (bodyVars) {
       bodyVars.forEach((propName) => {
         const propSchema = method.req.getPropByName(propName);
@@ -1103,6 +1143,8 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       );
     }
 
+    const queryVars = getTscaMethodQueryVars(ctx, method, true);
+
     const blockNode = ts.factory.createBlock(
       [
         ts.factory.createVariableStatement(
@@ -1112,13 +1154,10 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
               ts.factory.createVariableDeclaration(
                 ts.factory.createIdentifier(reqVarName),
                 undefined,
-                undefined,
-                ts.factory.createAsExpression(
-                  ts.factory.createObjectLiteralExpression(
-                    requestAssignmentNodes,
-                    true,
-                  ),
-                  ts.factory.createTypeReferenceNode(reqVarType, undefined),
+                ts.factory.createTypeReferenceNode(reqVarType, undefined),
+                ts.factory.createObjectLiteralExpression(
+                  requestAssignmentNodes,
+                  true,
                 ),
               ),
             ],

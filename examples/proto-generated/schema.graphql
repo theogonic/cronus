@@ -1,11 +1,54 @@
-type JwtUser null {
+input UserChangeInput  {
+  avatarUrl: String
+  name: String
+  phones: [TypedPhoneInput]
+  desc: String
+  addrs: [TypedAddressInput]
+  onboarded: Boolean
+  fvrActIds: [String]
+  fvrCatIds: [String]
+  ethnicity: String
+  occupation: String
+  careerLevel: String
+}
+input TypedAddressInput  {
+  type: AddressType
+  addr: AddressInput
+}
+input AddressInput  {
+  street1: String
+  street2: String
+  city: String
+  state: String
+  country: String
+  zipcode: String
+}
+input TypedPhoneInput  {
+  type: PhoneType
+  number: String
+}
+
+enum GeneralObjectStatus {
+  Active
+  Deleted 
+}
+type GeneralObjectMeta  {
+  id: String
+  userId: String
+  typeId: String
+  status: GeneralObjectStatus
+  updatedAt: Utc
+  createdAt: Utc
+}
+
+type JwtUser  {
   id: String
   email: String
   org: String
   roles: [String]
 }
 
-type BaseServiceRequest null {
+type BaseServiceRequest  {
   invoker: JwtUser
 }
 
@@ -15,12 +58,12 @@ enum AddressType {
   Home
   School 
 }
-type LatLng null {
+type LatLng  {
   lat: Float
   lon: Float
 }
 
-type Address null {
+type Address  {
   street1: String
   street2: String
   city: String
@@ -29,13 +72,13 @@ type Address null {
   zipcode: String
 }
 
-type Location null {
+type Location  {
   latlng: LatLng
   url: String
   addr: Address
 }
 
-type TypedAddress null {
+type TypedAddress  {
   type: AddressType
   addr: Address
 }
@@ -44,18 +87,28 @@ type TypedAddress null {
 enum PhoneType {
   Personal 
 }
-type TypedPhone null {
+type TypedPhone  {
   type: PhoneType
   number: String
 }
 
-type UserChange null {
+type JustTest  {
+  type: PhoneType
+}
+
+type Pagination  {
+  totalCount: Int
+  nextToken: String
+  test: JustTest
+}
+
+type UserChange  {
   avatarUrl: String
   name: String
   phones: [TypedPhone]
   desc: String
   addrs: [TypedAddress]
-  onboarded: bool
+  onboarded: Boolean
   fvrActIds: [String]
   fvrCatIds: [String]
   ethnicity: String
@@ -63,26 +116,3 @@ type UserChange null {
   careerLevel: String
 }
 
-
-enum GeneralObjectStatus {
-  Active
-  Deleted 
-}
-type GeneralObjectMeta null {
-  id: String
-  userId: String
-  typeId: String
-  status: GeneralObjectStatus
-  updatedAt: Utc
-  createdAt: Utc
-}
-
-
-            type Query {
-              _dummy: Boolean
-            }
-          
-            type Mutation {
-              _dummy: Boolean
-            }
-          

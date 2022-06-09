@@ -11,6 +11,15 @@ message TypedPhone {
     string number = 1;
 }
 
+message JustTest {
+    PhoneType type = 0;
+}
+message Pagination {
+    int32 totalCount = 0;
+    string nextToken = 1;
+    JustTest test = 2;
+}
+
 message User {
     option (zeus.ge) = true;
     option (zeus.gql) = {
@@ -66,7 +75,7 @@ message CreateUserResponse {
 }
 
 message GetUserRequest {
-    string userId = 0 [(zeus.rest.query) = true];
+    string userId = 0;
 }
 
 message GetUserResponse {
@@ -83,10 +92,9 @@ message UpdateUserResponse {
 }
 
 message ListUsersRequest {
-    string id = 0 [(zeus.rest.query) = true];
-    string name = 1 [(zeus.rest.query) = true];
-    int32 limit = 2 [(zeus.rest.query) = true];
-    string nextToken = 3 [(zeus.rest.query) = true];
+    string id = 0;
+    string name = 1;
+    Pagination pagination = 2;
 }
 
 message ListUsersResponse {

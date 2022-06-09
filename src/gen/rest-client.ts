@@ -141,7 +141,7 @@ export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
         ),
       );
 
-      stmts.push(this.genDataVarStmt(m, 'request'));
+      stmts.push(this.genDataVarStmt(ctx, m, 'request'));
     } else {
       if (m.gen.rest.query && m.gen.rest.query.length > 0) {
         axiosCfgObjLiteralProps.push(
@@ -227,9 +227,13 @@ export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
     );
   }
 
-  private genDataVarStmt(m: TscaMethod, reqObjName: string): ts.Statement {
+  private genDataVarStmt(
+    ctx: GContext,
+    m: TscaMethod,
+    reqObjName: string,
+  ): ts.Statement {
     // filter out properties mentioned in path, query
-    const bodyProps = getTscaMethodRestBodyPropNames(m);
+    const bodyProps = getTscaMethodRestBodyPropNames(ctx, m);
     const propAssigns = bodyProps.map((prop) =>
       ts.factory.createPropertyAssignment(
         ts.factory.createIdentifier(prop),
