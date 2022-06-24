@@ -1,5 +1,6 @@
 import { GContext } from '../context';
 import { TscaMethod, TscaSchema } from '../types';
+import * as ts from 'typescript';
 
 const PrimitiveTypes = [
   'string',
@@ -18,6 +19,43 @@ export function isPrimitiveType(type: string): boolean {
   return PrimitiveTypes.includes(type);
 }
 
+export function isTypeNumber(type: string): boolean {
+  return (
+    type == 'number' ||
+    type == 'integer' ||
+    type == 'i32' ||
+    type == 'int32' ||
+    type == 'float'
+  );
+}
+
+export function isTypeBoolean(type: string): boolean {
+  return type == 'boolean' || type == 'bool';
+}
+
+export function getKeywordType(type: string): ts.KeywordTypeSyntaxKind {
+  if (isTypeNumber(type)) {
+    return ts.SyntaxKind.NumberKeyword;
+  } else if (isTypeBoolean(type)) {
+    return ts.SyntaxKind.BooleanKeyword;
+  } else if (type == 'string') {
+    return ts.SyntaxKind.StringKeyword;
+  }
+
+  throw new Error(`unsupported type ${type}`);
+}
+
+export function getTsTypeConstructor(type: string): string {
+  if (isTypeNumber(type)) {
+    return 'Number';
+  } else if (isTypeBoolean(type)) {
+    return 'Boolean';
+  } else if (type == 'string') {
+    return 'String';
+  }
+
+  throw new Error(`unsupported type ${type}`);
+}
 /**
  * parseRestPathVars find all variables in the given URL path
  * @param restPath Restful URL path template

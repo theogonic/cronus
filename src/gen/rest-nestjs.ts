@@ -15,11 +15,15 @@ import {
 } from '../types';
 import { Generator } from './base';
 import {
+  getKeywordType,
   getNameOfFlatternProp,
   getPropByFlatternProp,
   getTscaMethodQueryVars,
   getTscaMethodRestBodyPropNames,
+  getTsTypeConstructor,
   isPrimitiveType,
+  isTypeBoolean,
+  isTypeNumber,
   parseRestPathVars,
 } from './utils';
 
@@ -63,6 +67,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
           'Body',
           'ParseIntPipe',
           'ParseBoolPipe',
+          'ParseArrayPipe',
         ],
       },
     );
@@ -776,7 +781,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
         ts.factory.createStringLiteral(queryVarName),
       ];
       const vProp = getPropByFlatternProp(ctx, method.req, flatternQueryVar);
-      let vPropKind: ts.SyntaxKind;
+      let vPropTy: ts.TypeNode;
 
       if (
         vProp.type == 'number' ||
@@ -786,12 +791,52 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
         vProp.type == 'float'
       ) {
         args.push(ts.factory.createIdentifier('ParseIntPipe'));
-        vPropKind = ts.SyntaxKind.NumberKeyword;
+        vPropTy = ts.factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
       } else if (vProp.type == 'boolean' || vProp.type == 'bool') {
         args.push(ts.factory.createIdentifier('ParseBoolPipe'));
-        vPropKind = ts.SyntaxKind.BooleanKeyword;
+        vPropTy = ts.factory.createKeywordTypeNode(
+          ts.SyntaxKind.BooleanKeyword,
+        );
+      } else if (vProp.type == 'array') {
+        // TODO: complete conditions here
+        if (
+          !vProp.items ||
+          (!isTypeBoolean(vProp.items.type) &&
+            !isTypeNumber(vProp.items.type) &&
+            !(vProp.items.type == 'string'))
+        ) {
+          throw new Error(
+            `query param array does not support items type ${vProp.items.type}`,
+          );
+        }
+        args.push(
+          ts.factory.createNewExpression(
+            ts.factory.createIdentifier('ParseArrayPipe'),
+            undefined,
+            [
+              ts.factory.createObjectLiteralExpression(
+                [
+                  ts.factory.createPropertyAssignment(
+                    ts.factory.createIdentifier('items'),
+                    ts.factory.createIdentifier(
+                      getTsTypeConstructor(vProp.items.type),
+                    ),
+                  ),
+                  ts.factory.createPropertyAssignment(
+                    ts.factory.createIdentifier('optional'),
+                    ts.factory.createIdentifier('true'),
+                  ),
+                ],
+                true,
+              ),
+            ],
+          ),
+        );
+        vPropTy = ts.factory.createArrayTypeNode(
+          ts.factory.createKeywordTypeNode(getKeywordType(vProp.items.type)),
+        );
       } else {
-        vPropKind = ts.SyntaxKind.StringKeyword;
+        vPropTy = ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
       }
 
       return ts.factory.createParameterDeclaration(
@@ -808,7 +853,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
         undefined,
         ts.factory.createIdentifier(queryVarName),
         undefined,
-        ts.factory.createKeywordTypeNode(vPropKind),
+        vPropTy,
         undefined,
       );
     });
