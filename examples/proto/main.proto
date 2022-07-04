@@ -1,0 +1,30 @@
+syntax = 'proto3';
+import "user.proto";
+
+option (zeus.gen.ts) = {
+    output: "examples/proto-generated/types.ts"
+};
+
+option (zeus.gen.gql) = {
+    output: "examples/proto-generated/schema.graphql"
+};
+
+option (zeus.gen.gql_nestjs) = {
+    output: "examples/proto-generated/resolvers.ts",
+    tsTypeImport: "./types"
+};
+
+option (zeus.gen.rest_nestjs) = {
+    output: "examples/proto-generated/controllers.ts",
+    tsTypeImport: "./types"
+};
+
+option (zeus.gen.rest_client) = {
+    output: "examples/proto-generated/clients.ts",
+    tsTypeImport: "./types"
+};
+
+option (zeus.gen.gaea) = {
+    output: "examples/proto-generated/entities.ts",
+    tsTypeImport: './types'
+};

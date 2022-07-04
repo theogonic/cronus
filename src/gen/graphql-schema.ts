@@ -56,29 +56,11 @@ export class GraphQLSchemaGenerator extends Generator {
         if (queries.length != 0) {
           const queryStr = this.genGqlTypeRaw('Query', queries);
           ctx.addStrToTextFile(key, queryStr);
-        } else {
-          ctx.addStrToTextFile(
-            key,
-            `
-            type Query {
-              _dummy: Boolean
-            }
-          `,
-          );
         }
 
         if (mutations.length != 0) {
           const mutationStr = this.genGqlTypeRaw('Mutation', mutations);
           ctx.addStrToTextFile(key, mutationStr);
-        } else {
-          ctx.addStrToTextFile(
-            key,
-            `
-            type Mutation {
-              _dummy: Boolean
-            }
-          `,
-          );
         }
       }
     }
@@ -142,9 +124,13 @@ type ${typeName} {
     overrideName: string,
     type = 'type',
   ): string {
-    let schemaStr = `${type} ${overrideName || schema.name} ${
-      schema.gen?.gql?.directives || ''
-    } {\n`;
+    let federationKeyAnnotationStr = '';
+    if (schema.gen?.gql?.fedFields) {
+      federationKeyAnnotationStr = `@key(fields: "${schema.gen.gql.fedFields}")`;
+    }
+    let schemaStr = `${type} ${
+      overrideName || schema.name
+    } ${federationKeyAnnotationStr} {\n`;
     schema.properties?.forEach((prop) => {
       let inputSuffix = false;
       // to see if we need to generate input version of this type
@@ -221,7 +207,17 @@ enum ${schema.name} {
     if (schema.type == 'array') {
       return this.isPrimitiveGqlType(schema.items);
     }
-    const types = ['string', 'number', 'integer', 'boolean', 'ID', 'float'];
+    const types = [
+      'string',
+      'number',
+      'integer',
+      'boolean',
+      'ID',
+      'float',
+      'bool',
+      'int32',
+      'i32',
+    ];
     return types.includes(schema.type);
   }
 
@@ -236,9 +232,12 @@ enum ${schema.name} {
         return 'ID';
       case 'float':
         return 'Float';
+      case 'int32':
+      case 'i32':
       case 'number':
       case 'integer':
         return 'Int';
+      case 'bool':
       case 'boolean':
         return 'Boolean';
       case 'object':

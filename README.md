@@ -12,6 +12,7 @@
     - [Zeus Generator Configuration](#zeus-generator-configuration)
     - [Zeus Definition](#zeus-definition)
     - [Generated Result](#generated-result)
+    - [Commands to generate examples](#commands-to-generate-examples)
   - [Generators](#generators)
     - [ts](#ts)
       - [Example](#example)
@@ -48,6 +49,11 @@ Taking benefits of Nestjs and its dependency injection, **Zeus** can even genera
 
 [examples/generated](examples/generated)
 
+### Commands to generate examples
+
+```bash
+$ ./zeus --proto user.proto
+```
 
 ## Generators
 

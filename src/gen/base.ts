@@ -7,7 +7,8 @@ import { TscaDef, TscaMethod, TscaSchema, TscaUsecase } from '../types';
 
 export abstract class Generator<
   C extends BaseGeneratorConfig = BaseGeneratorConfig,
-  > {
+> {
+  public readonly generatorId: string;
   protected readonly logger = new Logger(
     Object.getPrototypeOf(this).constructor.name,
   );
@@ -20,7 +21,7 @@ export abstract class Generator<
   // after will be called after `generate`
   public abstract after(ctx: GContext);
 
-  constructor(protected readonly config: C) { }
+  constructor(protected readonly config: C) {}
 
   public generate(ctx: GContext, ...defs: TscaDef[]): void {
     defs.forEach((def) => this.genTscaDef(ctx, def));
@@ -132,6 +133,9 @@ export abstract class Generator<
       case 'string':
         return ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword);
       case 'number':
+      case 'float':
+      case 'i32':
+      case 'int32':
       case 'integer':
         if (schema.enum && schema.parent) {
           throw new Error(
@@ -139,6 +143,7 @@ export abstract class Generator<
           );
         }
         return ts.factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
+      case 'bool':
       case 'boolean':
         return ts.factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword);
       case 'object':
@@ -148,10 +153,10 @@ export abstract class Generator<
         break;
       case 'array':
         if (!schema.items) {
-          throw new Error(`missing items for type '${schema.name}'`)
+          throw new Error(`missing items for type '${schema.name}'`);
         }
         if (!schema.items.type) {
-          throw new Error(`missing items's type for '${schema.name}'`)
+          throw new Error(`missing items's type for '${schema.name}'`);
         }
         const itemType = this.getTsTypeNodeFromSchemaWithType(
           ctx,
@@ -162,7 +167,6 @@ export abstract class Generator<
         return ts.factory.createArrayTypeNode(itemType);
 
       default:
-
         return this.handleUserDefinedSchemaType(
           ctx,
           file,

@@ -46,6 +46,8 @@ export class TypescriptGenerator extends Generator {
     dstFile: string,
     schema: TscaSchema,
     overrideName: string,
+    isSvcRequest?: boolean,
+    u?: TscaUsecase,
   ): ts.TypeNode {
     if (!dstFile) {
       dstFile = this.output;
@@ -77,17 +79,30 @@ export class TypescriptGenerator extends Generator {
       );
     }
     const heritages: ts.HeritageClause[] = [];
-    if (schema.extends) {
-      schema.extends.forEach((ext) => {
+
+    const allExtends = {
+      ...schema.extends,
+      ...(isSvcRequest ? u.gen?.ts?.reqExtends || {} : {}),
+    };
+
+    for (const key in allExtends) {
+      if (Object.prototype.hasOwnProperty.call(allExtends, key)) {
+        const importFrom = allExtends[key];
         heritages.push(
           ts.factory.createHeritageClause(ts.SyntaxKind.ExtendsKeyword, [
             ts.factory.createExpressionWithTypeArguments(
-              ts.factory.createIdentifier(ext),
+              ts.factory.createIdentifier(key),
               undefined,
             ),
           ]),
         );
-      });
+        if (importFrom) {
+          ctx.addImportsToTsFile(this.output, {
+            from: importFrom,
+            items: [key],
+          });
+        }
+      }
     }
 
     const node = ts.factory.createInterfaceDeclaration(
@@ -142,7 +157,15 @@ export class TypescriptGenerator extends Generator {
     let reqTypeName: string;
     if (method.req && method.req.properties) {
       reqTypeName = this.getTscaMethodRequestTypeName(method);
-      this.genTscaSchema(ctx, def, this.output, method.req, reqTypeName);
+      this.genTscaSchema(
+        ctx,
+        def,
+        this.output,
+        method.req,
+        reqTypeName,
+        true,
+        u,
+      );
     }
     if (method.res && method.res.properties) {
       resTypeName = this.getTscaMethodResponseTypeName(method);
