@@ -3,21 +3,22 @@ import { TscaDef, TscaSchema } from 'src/types';
 import { Generator } from './base';
 import { Register } from '../decorators';
 import * as ts from 'typescript';
-import { GeneralEntityGeneratorConfig } from 'src/config';
+import { GaeaGeneratorConfig } from 'src/config';
 
 const EntityToExtendTy = 'BaseGeneralObject';
 const BaseDaoTy = 'BaseGeneralObjectDao';
 const EntityMetaVar = 'meta';
 const EntityObjVar = 'obj';
+const gaeaImport = '@theogonic/gaea';
 
-@Register('general-entity')
-export class GeneralEntityGenerator extends Generator<GeneralEntityGeneratorConfig> {
+@Register('gaea')
+export class GaeaGenerator extends Generator<GaeaGeneratorConfig> {
   public before(ctx: GContext) {}
   public after(ctx: GContext) {}
   protected genTscaDef(ctx: GContext, def: TscaDef) {
     this.initImport(ctx);
     def.types
-      .filter((ty) => ty.gen?.['general-entity'] !== undefined)
+      .filter((ty) => ty.gen?.['gaea'] !== undefined)
       .forEach((ty) => {
         this.genGeneralEntity(ctx, ty);
         this.genGeneralEntityDao(ctx, ty);
@@ -27,7 +28,7 @@ export class GeneralEntityGenerator extends Generator<GeneralEntityGeneratorConf
   initImport(ctx: GContext) {
     ctx.addImportsToTsFile(this.output, {
       items: [EntityToExtendTy, BaseDaoTy],
-      from: this.config.geImport,
+      from: gaeaImport,
     });
   }
 

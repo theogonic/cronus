@@ -1,5 +1,6 @@
 import * as ts from 'typescript';
 import { GConfig } from './config';
+import { isPrimitiveType } from './gen/utils';
 import { TscaDef, TscaSchema } from './types';
 
 export interface TsFileContext {
@@ -47,14 +48,80 @@ export class GContext {
         `);
       }
       this.types[tySchema.name] = tySchema;
+      if (tySchema.enum) {
+        this.validateEnum(tySchema);
+      }
     });
   }
 
+  validateEnum(schema: TscaSchema) {
+    for (const e of schema.enum) {
+      if (typeof e.name != 'string') {
+        throw new Error(
+          `expect enum ${schema.name}'s every enum name to be string`,
+        );
+      }
+
+      if (typeof e.value != 'number') {
+        throw new Error(
+          `expect enum ${schema.name}'s every enum value to be number`,
+        );
+      }
+
+      if (e.value % 1 !== 0) {
+        throw new Error(
+          `expect enum ${schema.name}'s every enum value to be integer`,
+        );
+      }
+    }
+  }
+
+  schemaContainsEnumChild(schema: TscaSchema): boolean {
+    if (!schema.properties) {
+      return false;
+    }
+
+    if (schema.type) {
+      return this.isTypeEnum(schema.type);
+    }
+
+    if (!!schema.enum) {
+      return true;
+    }
+    for (const prop of schema.properties) {
+      if (prop.type == 'array') {
+        if (this.isTypeHasEnumChild(prop.items.type)) {
+          return true;
+        }
+      }
+      if (prop.type && this.isTypeHasEnumChild(prop.type)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
   getTypeSchemaByName(name: string): TscaSchema {
     if (!(name in this.types)) {
-      throw new Error(`cannot find type '${name}'`);
+      throw new Error(`cannot find type '${JSON.stringify(name)}'`);
     }
     return this.types[name];
+  }
+
+  isTypeEnum(name: string): boolean {
+    if (isPrimitiveType(name)) {
+      return false;
+    }
+    const schema = this.getTypeSchemaByName(name);
+    return !!schema.enum;
+  }
+
+  isTypeHasEnumChild(name: string): boolean {
+    if (isPrimitiveType(name)) {
+      return false;
+    }
+    const schema = this.getTypeSchemaByName(name);
+    return this.schemaContainsEnumChild(schema);
   }
 
   getOutputByGeneratorId(gId: string) {

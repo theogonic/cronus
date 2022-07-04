@@ -1,10 +1,11 @@
-import { RawTscaDef, TscaDef } from './types';
-import * as yaml from 'js-yaml';
-import * as fs from 'fs';
-import * as path from 'path';
 import refParser from '@apidevtools/json-schema-ref-parser';
+import * as fs from 'fs';
 import * as globby from 'globby';
-import { GConfig, GeneralEntityGeneratorConfig } from './config';
+import * as yaml from 'js-yaml';
+import * as path from 'path';
+import { GConfig, GaeaGeneratorConfig } from './config';
+import { Proto2Tsca } from './proto';
+import { RawTscaDef, TscaDef } from './types';
 
 function loadYamlFromFile<T = Record<string, unknown>>(yamlFile: string): T {
   const content = fs.readFileSync(yamlFile, 'utf8');
@@ -23,26 +24,50 @@ export async function loadDefFromYaml(defFile?: string): Promise<TscaDef> {
   return TscaDef.fromRaw(derefRaw, { src: defFile });
 }
 
+export async function loadDefFromPath(path: string): Promise<TscaDef> {
+  if (path.endsWith('.proto')) {
+    const trans = new Proto2Tsca();
+    await trans.loadProtoFile(path);
+    return TscaDef.fromRaw(trans.rawTscaDef, {
+      name: '',
+      src: path,
+    });
+  } else {
+    return loadDefFromYaml(path);
+  }
+}
+
 async function loadDefsFromGlobs(globs: string[]): Promise<TscaDef[]> {
   const paths = await globby(globs, { absolute: true });
-  return Promise.all(paths.map(loadDefFromYaml));
+  return Promise.all(paths.map(loadDefFromPath));
 }
 
 export async function loadDefsFromGConfig(
   gConfig: GConfig,
 ): Promise<TscaDef[]> {
-  const globs = [];
-  const geGeneratorConfig = gConfig.generators[
-    'general-entity'
-  ] as GeneralEntityGeneratorConfig;
-  if (geGeneratorConfig) {
-    if (geGeneratorConfig.geZeusDir) {
-      globs.push(`${geGeneratorConfig.geZeusDir}/**/*.yaml`);
+  return loadDefsFromGlobs(gConfig.defs);
+}
+
+export function autoCompleteTheogonicGaea(gConfig: GConfig) {
+  const gaeaeGeneratorConfig = gConfig.generators[
+    'gaea'
+  ] as GaeaGeneratorConfig;
+  if (gaeaeGeneratorConfig) {
+    const parentDir = path.dirname(
+      require.resolve(path.normalize('@theogonic/gaea/package.json')),
+    );
+    let gaeaZeus = path.join(parentDir, 'assets/zeus/main.proto');
+    if (fs.existsSync(gaeaZeus)) {
+      gConfig.defs.push(gaeaZeus);
+    } else {
+      gaeaZeus = path.join(parentDir, 'assets/zeus/types.yaml');
+      if (!fs.existsSync(gaeaZeus)) {
+        throw new Error(`cannot find zeus types dir from '@theogonic/gaea'`);
+      }
     }
+
+    gConfig.defs.push(gaeaZeus);
   }
-  // make sure geZeusDir is first one if exist
-  globs.push(...gConfig.defs);
-  return loadDefsFromGlobs(globs);
 }
 
 /**
@@ -53,25 +78,5 @@ export function loadGConfig(configFile?: string): GConfig {
     configFile = 'tsca.yaml';
   }
   const gConfig = loadYamlFromFile<GConfig>(configFile);
-  const geGeneratorConfig = gConfig.generators[
-    'general-entity'
-  ] as GeneralEntityGeneratorConfig;
-  if (geGeneratorConfig) {
-    if (!geGeneratorConfig.geZeusDir) {
-      geGeneratorConfig.geZeusDir = path.dirname(
-        require.resolve(
-          path.normalize('@theogonic/gaea/assets/zeus/types.yaml'),
-        ),
-      );
-
-      if (!fs.existsSync(geGeneratorConfig.geZeusDir)) {
-        throw new Error(`cannot find zeus types dir from '@theogonic/gaea'`);
-      }
-    }
-    if (!geGeneratorConfig.geImport) {
-      geGeneratorConfig.geImport = '@theogonic/gaea';
-    }
-  }
-
   return gConfig;
 }

@@ -10,9 +10,7 @@ export interface BaseGeneratorConfig {
   output: string;
 }
 
-export interface GeneralEntityGeneratorConfig extends BaseGeneratorConfig {
-  geImport: string;
-  geZeusDir: string;
+export interface GaeaGeneratorConfig extends BaseGeneratorConfig {
   tsTypeImport: string;
 }
 
