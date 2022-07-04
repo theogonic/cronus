@@ -26,6 +26,7 @@ import {
   isTypeNumber,
   parseRestPathVars,
 } from './utils';
+import * as path from 'path';
 
 interface RestNestjsGeneratorConfig extends BaseGeneratorConfig {
   tsTypeImport: string;
@@ -41,7 +42,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       this.helperFile,
     );
 
-    ctx.addStrToTextFile(zeusRestNestjsHelperFile, ``);
+    ctx.addStrToTextFile(zeusRestNestjsHelperFile, helperUtils);
   }
   public after(ctx: GContext) {
     ctx;
@@ -75,7 +76,18 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
           'ParseIntPipe',
           'ParseBoolPipe',
           'ParseArrayPipe',
+          'ArgumentMetadata',
+          'HttpStatus',
+          'Injectable',
+          'Optional',
+          'ParseIntPipeOptions',
+          'PipeTransform',
+          'ParseBoolPipeOptions',
         ],
+      },
+      {
+        from: '@nestjs/common/utils/http-error-by-code.util',
+        items: ['HttpErrorByCode'],
       },
       {
         from: this.helperFile,
@@ -801,10 +813,42 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
         vProp.type == 'int32' ||
         vProp.type == 'float'
       ) {
-        args.push(ts.factory.createIdentifier('ParseIntPipe'));
+        args.push(
+          ts.factory.createNewExpression(
+            ts.factory.createIdentifier('ZeusParseIntPipe'),
+            undefined,
+            [
+              ts.factory.createObjectLiteralExpression(
+                [
+                  ts.factory.createPropertyAssignment(
+                    ts.factory.createIdentifier('optional'),
+                    ts.factory.createIdentifier('true'),
+                  ),
+                ],
+                true,
+              ),
+            ],
+          ),
+        );
         vPropTy = ts.factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword);
       } else if (vProp.type == 'boolean' || vProp.type == 'bool') {
-        args.push(ts.factory.createIdentifier('ParseBoolPipe'));
+        args.push(
+          ts.factory.createNewExpression(
+            ts.factory.createIdentifier('ZeusParseBoolPipe'),
+            undefined,
+            [
+              ts.factory.createObjectLiteralExpression(
+                [
+                  ts.factory.createPropertyAssignment(
+                    ts.factory.createIdentifier('optional'),
+                    ts.factory.createIdentifier('true'),
+                  ),
+                ],
+                true,
+              ),
+            ],
+          ),
+        );
         vPropTy = ts.factory.createKeywordTypeNode(
           ts.SyntaxKind.BooleanKeyword,
         );
@@ -929,10 +973,42 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
         let vPropKind: ts.SyntaxKind;
 
         if (vProp.type == 'number' || vProp.type == 'integer') {
-          args.push(ts.factory.createIdentifier('ParseIntPipe'));
+          args.push(
+            ts.factory.createNewExpression(
+              ts.factory.createIdentifier('ZeusParseIntPipe'),
+              undefined,
+              [
+                ts.factory.createObjectLiteralExpression(
+                  [
+                    ts.factory.createPropertyAssignment(
+                      ts.factory.createIdentifier('optional'),
+                      ts.factory.createIdentifier('true'),
+                    ),
+                  ],
+                  true,
+                ),
+              ],
+            ),
+          );
           vPropKind = ts.SyntaxKind.NumberKeyword;
         } else if (vProp.type == 'boolean') {
-          args.push(ts.factory.createIdentifier('ParseBoolPipe'));
+          args.push(
+            ts.factory.createNewExpression(
+              ts.factory.createIdentifier('ZeusParseBoolPipe'),
+              undefined,
+              [
+                ts.factory.createObjectLiteralExpression(
+                  [
+                    ts.factory.createPropertyAssignment(
+                      ts.factory.createIdentifier('optional'),
+                      ts.factory.createIdentifier('true'),
+                    ),
+                  ],
+                  true,
+                ),
+              ],
+            ),
+          );
           vPropKind = ts.SyntaxKind.BooleanKeyword;
         } else {
           vPropKind = ts.SyntaxKind.StringKeyword;
@@ -1256,3 +1332,89 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
     return blockNode;
   }
 }
+
+// gen-deps/rest-nestjs.ts
+// this copy just for simple injection
+const helperUtils = `
+@Injectable()
+export class ZeusParseIntPipe implements PipeTransform<string> {
+  protected exceptionFactory: (error: string) => any;
+
+  constructor(
+    @Optional() private options?: ParseIntPipeOptions & { optional?: boolean },
+  ) {
+    options = options || {};
+    const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
+      options;
+
+    this.exceptionFactory =
+      exceptionFactory ||
+      ((error) => new HttpErrorByCode[errorHttpStatusCode](error));
+  }
+
+  async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
+    if (this.options.optional && value == null) {
+      return null;
+    }
+    if (!this.isNumeric(value)) {
+      throw this.exceptionFactory(
+        'Validation failed (numeric string is expected)',
+      );
+    }
+    return parseInt(value, 10);
+  }
+
+  protected isNumeric(value: string): boolean {
+    return (
+      ['string', 'number'].includes(typeof value) &&
+      /^-?\d+$/.test(value) &&
+      isFinite(value as any)
+    );
+  }
+}
+
+@Injectable()
+export class ZeusParseBoolPipe
+  implements PipeTransform<string | boolean, Promise<boolean>>
+{
+  protected exceptionFactory: (error: string) => any;
+
+  constructor(
+    @Optional() private options?: ParseBoolPipeOptions & { optional?: boolean },
+  ) {
+    options = options || {};
+    const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
+      options;
+    this.exceptionFactory =
+      exceptionFactory ||
+      ((error) => new HttpErrorByCode[errorHttpStatusCode](error));
+  }
+
+  async transform(
+    value: string | boolean,
+    metadata: ArgumentMetadata,
+  ): Promise<boolean> {
+    if (this.options.optional && value == null) {
+      return null;
+    }
+    if (this.isTrue(value)) {
+      return true;
+    }
+    if (this.isFalse(value)) {
+      return false;
+    }
+    throw this.exceptionFactory(
+      'Validation failed (boolean string is expected)',
+    );
+  }
+
+  protected isTrue(value: string | boolean): boolean {
+    return value === true || value === 'true';
+  }
+
+  protected isFalse(value: string | boolean): boolean {
+    return value === false || value === 'false';
+  }
+}
+
+`;

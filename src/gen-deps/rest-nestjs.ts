@@ -3,13 +3,11 @@ import {
   HttpStatus,
   Injectable,
   Optional,
+  ParseBoolPipeOptions,
   ParseIntPipeOptions,
   PipeTransform,
 } from '@nestjs/common';
-import {
-  ErrorHttpStatusCode,
-  HttpErrorByCode,
-} from '@nestjs/common/utils/http-error-by-code.util';
+import { HttpErrorByCode } from '@nestjs/common/utils/http-error-by-code.util';
 
 @Injectable()
 export class ZeusParseIntPipe implements PipeTransform<string> {
@@ -48,19 +46,15 @@ export class ZeusParseIntPipe implements PipeTransform<string> {
   }
 }
 
-export interface ParseBoolPipeOptions {
-  errorHttpStatusCode?: ErrorHttpStatusCode;
-  exceptionFactory?: (error: string) => any;
-  optional?: boolean;
-}
-
 @Injectable()
 export class ZeusParseBoolPipe
   implements PipeTransform<string | boolean, Promise<boolean>>
 {
   protected exceptionFactory: (error: string) => any;
 
-  constructor(@Optional() private options?: ParseBoolPipeOptions) {
+  constructor(
+    @Optional() private options?: ParseBoolPipeOptions & { optional?: boolean },
+  ) {
     options = options || {};
     const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
       options;
