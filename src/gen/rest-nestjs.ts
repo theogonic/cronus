@@ -15,6 +15,7 @@ import { GContext } from '../context';
 import { Register } from '../decorators';
 import { BaseGeneratorConfig } from 'src/config';
 import { isPrimitiveType } from './utils';
+import * as path from 'path';
 
 interface RestNestjsGeneratorConfig extends BaseGeneratorConfig {
   tsTypeImport: string;
@@ -22,8 +23,15 @@ interface RestNestjsGeneratorConfig extends BaseGeneratorConfig {
 
 @Register('rest-nestjs')
 export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
+  private readonly helperFile = 'zeusHelpers.ts';
+
   public before(ctx: GContext) {
-    ctx;
+    const zeusRestNestjsHelperFile = path.join(
+      path.dirname(this.output),
+      this.helperFile,
+    );
+
+    ctx.addStrToTextFile(zeusRestNestjsHelperFile, ``);
   }
   public after(ctx: GContext) {
     ctx;
@@ -52,9 +60,11 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
           'Param',
           'Query',
           'Body',
-          'ParseIntPipe',
-          'ParseBoolPipe',
         ],
+      },
+      {
+        from: this.helperFile,
+        items: ['ZeusParseIntPipe', 'ZeusParseBoolPipe'],
       },
     );
     def.types.forEach((i) => this.genTscaSchemaToDto(ctx, null, i, null));
