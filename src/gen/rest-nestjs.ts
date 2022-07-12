@@ -34,7 +34,7 @@ interface RestNestjsGeneratorConfig extends BaseGeneratorConfig {
 
 @Register('rest_nestjs')
 export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
-  private readonly helperFile = 'zeusHelpers.ts';
+  private readonly helperFile = './zeusHelpers.ts';
 
   public before(ctx: GContext) {
     const zeusRestNestjsHelperFile = path.join(
@@ -90,7 +90,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
         items: ['HttpErrorByCode'],
       },
       {
-        from: this.helperFile,
+        from: './zeusHelpers',
         items: ['ZeusParseIntPipe', 'ZeusParseBoolPipe'],
       },
     );
@@ -1336,6 +1336,17 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
 // gen-deps/rest-nestjs.ts
 // this copy just for simple injection
 const helperUtils = `
+import {
+  ArgumentMetadata,
+  HttpStatus,
+  Injectable,
+  Optional,
+  ParseBoolPipeOptions,
+  ParseIntPipeOptions,
+  PipeTransform,
+} from '@nestjs/common';
+import { HttpErrorByCode } from '@nestjs/common/utils/http-error-by-code.util';
+
 @Injectable()
 export class ZeusParseIntPipe implements PipeTransform<string> {
   protected exceptionFactory: (error: string) => any;
@@ -1367,7 +1378,7 @@ export class ZeusParseIntPipe implements PipeTransform<string> {
   protected isNumeric(value: string): boolean {
     return (
       ['string', 'number'].includes(typeof value) &&
-      /^-?\d+$/.test(value) &&
+      /^-?\\d+$/.test(value) &&
       isFinite(value as any)
     );
   }
