@@ -55,6 +55,29 @@ export class TypescriptGenerator extends Generator {
     if (schema.enum) {
       return this.genEnumTscaSchema(ctx, schema);
     }
+
+    // if this schema has const literal type attached
+    if (schema.gen?.ts?.const_type) {
+      const literalType = schema.gen.ts.const_type;
+      switch (typeof literalType) {
+        case 'string':
+          return ts.factory.createLiteralTypeNode(
+            ts.factory.createStringLiteral(literalType),
+          );
+        case 'number':
+          return ts.factory.createLiteralTypeNode(
+            ts.factory.createNumericLiteral(literalType),
+          );
+        case 'boolean':
+          return ts.factory.createLiteralTypeNode(
+            literalType ? ts.factory.createTrue() : ts.factory.createFalse(),
+          );
+        default:
+          throw new Error(
+            `${schema.name}: expect type of gen.ts.const_type to be either string, number, or boolean.`,
+          );
+      }
+    }
     if (schema.type) {
       return this.getTsTypeNodeFromSchemaWithType(
         ctx,

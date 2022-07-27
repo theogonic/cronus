@@ -281,7 +281,6 @@ function protoMsg2RawTscaSchema(
           if (Object.prototype.hasOwnProperty.call(protoField.options, key)) {
             const element = protoField.options[key];
             const [option, path] = parseProtoOptionKey(key);
-
             if (option === 'zeus.gql') {
               if (!('gen' in fieldSchema)) {
                 fieldSchema.gen = {};
@@ -290,6 +289,14 @@ function protoMsg2RawTscaSchema(
                 fieldSchema.gen.gql = {};
               }
               assignByObjPath(fieldSchema.gen.gql, path, element);
+            } else if (option === 'zeus.ts') {
+              if (!('gen' in fieldSchema)) {
+                fieldSchema.gen = {};
+              }
+              if (!('ts' in fieldSchema.gen)) {
+                fieldSchema.gen.ts = {};
+              }
+              assignByObjPath(fieldSchema.gen.ts, path, element);
             }
           }
         }
