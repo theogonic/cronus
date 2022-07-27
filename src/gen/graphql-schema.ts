@@ -1,3 +1,4 @@
+import { BaseGeneratorConfig } from 'src/config';
 import { GContext } from '../context';
 import { Register } from '../decorators';
 import {
@@ -25,8 +26,12 @@ interface GraphQLSchemaGeneratorExtension {
   generatedInputs: Record<string, boolean>;
 }
 
+interface GraphQLSchemaGeneratorConfig extends BaseGeneratorConfig {
+  scalars: Record<string, string>; // scalar -> output file
+}
+
 @Register('gql')
-export class GraphQLSchemaGenerator extends Generator {
+export class GraphQLSchemaGenerator extends Generator<GraphQLSchemaGeneratorConfig> {
   public before(ctx: GContext) {
     ctx.genExt['gql'] = {
       files: {},
@@ -35,6 +40,16 @@ export class GraphQLSchemaGenerator extends Generator {
     } as GraphQLSchemaGeneratorExtension;
   }
   public after(ctx: GContext) {
+    // handle custom scalars
+    if (this.config.scalars) {
+      for (const sc in this.config.scalars) {
+        if (Object.prototype.hasOwnProperty.call(this.config.scalars, sc)) {
+          const output = this.config.scalars[sc];
+          ctx.addStrToTextFile(output, `scalar ${sc}\n`);
+        }
+      }
+    }
+
     const ext = ctx.genExt['gql'] as GraphQLSchemaGeneratorExtension;
 
     while (ext.typeToInput.length > 0) {

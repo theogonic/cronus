@@ -6,7 +6,10 @@ option (zeus.gen.ts) = {
 };
 
 option (zeus.gen.gql) = {
-    output: "examples/proto-generated/schema.graphql"
+    output: "examples/proto-generated/schema.graphql",
+    scalars: {
+        Utc: "examples/proto-generated/schema.graphql"
+    }
 };
 
 option (zeus.gen.gql_nestjs) = {

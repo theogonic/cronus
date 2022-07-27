@@ -1,3 +1,4 @@
+scalar Utc
 input UserChangeInput  {
   avatarUrl: String
   name: String
