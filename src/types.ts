@@ -75,9 +75,14 @@ export interface RawTscaSchemaGql {
   properties?: Record<string, RawTscaSchema>;
 }
 
+export interface RawTscaSchemaTs {
+  const_type?: string | number | boolean;
+}
+
 interface TscaSchemaGen {
   gql?: RawTscaSchemaGql;
   gaea?: unknown;
+  ts?: RawTscaSchemaTs;
 }
 
 interface RawTscaUsecaseGql {

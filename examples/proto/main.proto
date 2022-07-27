@@ -1,6 +1,6 @@
 syntax = 'proto3';
 import "user.proto";
-
+import "event.proto";
 option (zeus.gen.ts) = {
     output: "examples/proto-generated/types.ts"
 };

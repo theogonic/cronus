@@ -116,3 +116,12 @@ type UserChange  {
   careerLevel: String
 }
 
+type UserCreateEventBody  {
+  name: String
+}
+
+type UserCreateEvent  {
+  name: String
+  body: UserCreateEventBody
+}
+

@@ -1,0 +1,10 @@
+syntax = 'proto3';
+
+message UserCreateEventBody {
+    string name = 0;
+}
+
+message UserCreateEvent {
+    string name = 0 [(zeus.ts)={const_type: "wnl.user.create"}];
+    UserCreateEventBody body = 1;
+}
