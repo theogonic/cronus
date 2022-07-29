@@ -96,6 +96,9 @@ type ${typeName} {
     if (!schema) {
       return;
     }
+    if (schema.gen?.gql?.skip) {
+      return;
+    }
     if (schema.gen?.gql?.properties) {
       schema = newSchemaWithExtraProp(schema, schema.gen.gql.properties);
     }
@@ -175,6 +178,7 @@ enum ${schema.name} {
     if (!method.gen?.gql) {
       return;
     }
+
     const dst = method.parent.gen?.gql?.output || this.output;
 
     const ext = ctx.genExt['gql'] as GraphQLSchemaGeneratorExtension;

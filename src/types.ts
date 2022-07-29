@@ -67,6 +67,8 @@ export interface RawTscaMethod {
 }
 
 export interface RawTscaSchemaGql {
+  // weither skip generating
+  skip?: boolean;
   // special graphql type, like ID, Float, or other custom scalar
   type?: string;
   fedFields?: string;
