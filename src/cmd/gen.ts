@@ -1,23 +1,17 @@
 import { Logger } from '@nestjs/common';
 import { Command, RootCommand } from 'nestjs-eclih';
-import { dumpContext } from '../util/context';
+import { GConfig, getInstantiatedGenerators } from '../config';
 import { GContext } from '../context';
 import {
-  loadGConfig,
-  loadDefsFromGConfig,
-  autoCompleteTheogonicGaea,
-} from '../loader';
-import { getInstantiatedGenerators, GConfig } from '../config';
-import {
-  TypescriptGenerator,
-  GraphQLNestJsGenerator,
-  GaeaGenerator,
-  GraphQLSchemaGenerator,
-  RestNestJsGenerator,
-  RestClientGenerator,
+  GaeaGenerator, GraphQLNestJsGenerator, GraphQLSchemaGenerator, RestClientGenerator, RestNestJsGenerator, TypescriptGenerator
 } from '../gen';
-import { TscaDef } from '../types';
+import { AngularFormGenerator } from '../gen/angular-form';
+import {
+  autoCompleteTheogonicGaea, loadDefsFromGConfig, loadGConfig
+} from '../loader';
 import { Proto2Tsca } from '../proto';
+import { TscaDef } from '../types';
+import { dumpContext } from '../util/context';
 
 // to trigger decorator
 TypescriptGenerator;
@@ -26,6 +20,7 @@ GaeaGenerator;
 GraphQLSchemaGenerator;
 RestNestJsGenerator;
 RestClientGenerator;
+AngularFormGenerator;
 
 @Command()
 export class GenCmdProvider {

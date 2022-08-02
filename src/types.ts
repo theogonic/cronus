@@ -85,6 +85,7 @@ interface TscaSchemaGen {
   gql?: RawTscaSchemaGql;
   gaea?: unknown;
   ts?: RawTscaSchemaTs;
+  angular_form?: boolean;
 }
 
 interface RawTscaUsecaseGql {

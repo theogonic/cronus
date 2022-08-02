@@ -317,6 +317,8 @@ function protoMsg2RawTscaSchema(
             tscaSchema.gen.gql = {};
           }
           assignByObjPath(tscaSchema.gen.gql, path, element);
+        } else if (option === 'zeus.angular_form') {
+          tscaSchema.gen['angular_form'] = true;
         }
       }
     }
