@@ -1,0 +1,25 @@
+site_name: Zeus
+theme:
+  name: material
+  features:
+    - navigation.tabs
+
+nav:
+  - Home: 'index.md'
+  - Getting started: 'getting-started.md'
+  - Generators: 
+    - GraphQL(NestJS): generators/graphql-nestjs.md
+    - GraphQL(Schema): generators/graphql-schema.md
+    - REST(Angular): generators/rest-angular.md
+    - REST(Typescript Client): generators/rest-client.md
+    - REST(NestJS): generators/rest-nestjs.md
+    - Gaea: generators/gaea.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences

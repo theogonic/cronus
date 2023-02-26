@@ -148,7 +148,7 @@ export function getFlatternPropertiesOfTscaSchema(
     if (
       isPrimitiveType(prop.type) ||
       prop.type == 'array' ||
-      ctx.isTypeEnum(schema.type)
+      ctx.isTypeEnum(prop.type)
     ) {
       properties.push([...parentPathes, prop.name]);
     } else {

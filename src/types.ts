@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import { GContext } from './context';
 
 export interface RawTscaUsecase {
   methods?: Record<string, RawTscaMethod>;
