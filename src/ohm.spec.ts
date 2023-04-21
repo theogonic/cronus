@@ -1,67 +1,85 @@
 import * as ohm from 'ohm-js';
 import { toAST } from "ohm-js/extras"
-import { ohmAST2RawZeusDef, ZeusOhmDef } from './ohm';
+import { ohmAST2Imports, ohmAST2RawZeusDef, ZeusOhmDef } from './ohm';
+import { RawTscaDef, TscaDef, TscaSchema } from './types';
 
 describe('ohm', () => {
     const grammar = ohm.grammar(ZeusOhmDef);
 
-    it('basic def', () => {
+    it('parse import', () => {
         const input = `
-        import ./abc/def
+        import "abc.zeus";
+        import "./def-sdf.zeus";
+        @a;
+        @b({
+            "a": "def"
+        });
+        
+        @adfadf({"a":"df","adsf":"adf"})
+        @asc
+        service a {
+            
+            @abc({})
+            @rest
+            method1(fdfa): asdf;
+            method2;
+        };
 
-        optoin a
-        option b {}
+        @adf
         struct MyRequest {
-            option a
-            int b
-            int c
-        }
-        service Hello {
-            method1
-            method2 {
-                option abc
-            }
-            method3 {
-                in {
-                    string name
-                }
-            }
-            method4 {
-                in {
-                    int a
-                    option a
-                    
-                }
-                out {
-                    string name
-                }
-            }
-        }
+
+            @fadf
+            string a;
+            string b;
+
+        };
         `
+
         const m = grammar.match(input);
-        expect(m.succeeded).toBeTruthy();
-    });
-
-    it('basic def', () => {
-        const input = `
-        service Todo {
-            createTodo {
-                in {
-                    string name
-                }
-
-                out Todo
-            }
+        if(m.failed()){
+            console.error(m.message)
         }
+        expect(m.succeeded()).toBeTruthy();
+    })
+    
+    it('parse basic def to raw zeus def', () => {
+        const input = `
+        import "abc.zeus";
+        struct CreateTodoRequest {
+            string todo;
+        };
+        struct DeleteTodoRequest {
+            string todo;
+        };
+        struct DeleteTodoResponse {
+
+        };
+        service Todo {
+            createTodo(CreateTodoRequest);
+            deleteTodo(DeleteTodoRequest):DeleteTodoResponse;
+        };
 
         struct Todo {
-            string id
-            string todo
-        }
+            string id;
+            string todo;
+        };
         `
         const m = grammar.match(input);
+        if(m.failed()){
+            console.error(m.message)
+        }
+        expect(m.succeeded()).toBeTruthy();
         const ast = toAST(m);
-        const rawDef = ohmAST2RawZeusDef(ast);
+        console.log(JSON.stringify(ast, null, 2))
+
+        const rawDef: RawTscaDef = {
+            types: {},
+            usecases: {},
+            schemas: {}
+        };
+        
+        ohmAST2RawZeusDef(ast as any, rawDef);
+        console.log(JSON.stringify(rawDef, null, 2))
         expect( Object.keys(rawDef.usecases).length ).toBe(1);
         const todoDef = rawDef.usecases["Todo"];
         expect(todoDef).not.toBeNull();
@@ -71,7 +89,6 @@ describe('ohm', () => {
 
 
         expect( Object.keys(rawDef.types).length ).toBe(1);
-        console.log(JSON.stringify(ast, null, 2))
         
     });
 })

@@ -26,7 +26,7 @@ AngularFormGenerator;
 export class GenCmdProvider {
   private readonly logger = new Logger(GenCmdProvider.name);
 
-  @RootCommand({
+  @Command({
     options: [
       {
         nameAndArgs: '--config <file>',
