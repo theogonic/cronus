@@ -4,15 +4,21 @@ Zeus {
       | ServiceDef
       | StructDef
       | OptionDef
+      | EnumDef
       ) ";")*
     
     ImportDef
       = "import" String 
     
     OptionDef
-      = "@" ident ("(" Value ")")? 
+      = "@" optionident ("(" Value ")")? 
    
+    EnumDef
+      = OptionDef* "enum" ident "{" (EnumField ";")* "}"
 
+    EnumField
+      = OptionDef* ident "=" digit+
+  
     MethodDef
       = OptionDef* ident ( "(" ident ")" )? (":" ident)?
 
@@ -33,6 +39,9 @@ Zeus {
  
     ident  (an identifier)
       = letter alnum*
+
+    optionident  (an identifier)
+      = letter (alnum | "." | "_" | "-")*
     
     type = letter (alnum | "[]")*
 

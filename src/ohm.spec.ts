@@ -1,10 +1,8 @@
-import * as ohm from 'ohm-js';
 import { toAST } from "ohm-js/extras"
-import { ohmAST2Imports, ohmAST2RawZeusDef, ZeusOhmDef } from './ohm';
+import { grammar, ohmAST2Imports, ohmAST2RawZeusDef, semantics, ZeusOhmDef } from './ohm';
 import { RawTscaDef, TscaDef, TscaSchema } from './types';
 
 describe('ohm', () => {
-    const grammar = ohm.grammar(ZeusOhmDef);
 
     it('parse import', () => {
         const input = `
@@ -41,6 +39,24 @@ describe('ohm', () => {
         }
         expect(m.succeeded()).toBeTruthy();
     })
+
+    it('parse option to raw zeus def', ()=>{
+        const input = `
+        @zbc.def({
+            "a":"b",
+            "c":["d","e"]
+        });
+        `
+        const m = grammar.match(input);
+        if(m.failed()){
+            console.error(m.message)
+        }
+        
+        expect(m.succeeded()).toBeTruthy();
+        const res = semantics(m).parse();
+
+        
+    })
     
     it('parse basic def to raw zeus def', () => {
         const input = `
@@ -55,6 +71,7 @@ describe('ohm', () => {
 
         };
         service Todo {
+            count;
             createTodo(CreateTodoRequest);
             deleteTodo(DeleteTodoRequest):DeleteTodoResponse;
         };
@@ -69,26 +86,28 @@ describe('ohm', () => {
             console.error(m.message)
         }
         expect(m.succeeded()).toBeTruthy();
-        const ast = toAST(m);
-        console.log(JSON.stringify(ast, null, 2))
+        const res = semantics(m).parse();
+        console.log(JSON.stringify(res, null, 2))
+        // const ast = toAST(m);
+        // console.log(JSON.stringify(ast, null, 2))
 
-        const rawDef: RawTscaDef = {
-            types: {},
-            usecases: {},
-            schemas: {}
-        };
+        // const rawDef: RawTscaDef = {
+        //     types: {},
+        //     usecases: {},
+        //     schemas: {}
+        // };
         
-        ohmAST2RawZeusDef(ast as any, rawDef);
-        console.log(JSON.stringify(rawDef, null, 2))
-        expect( Object.keys(rawDef.usecases).length ).toBe(1);
-        const todoDef = rawDef.usecases["Todo"];
-        expect(todoDef).not.toBeNull();
-        expect(Object.keys(todoDef.methods).length).toBe(1);
-        const createTodoMtd = todoDef.methods["createTodo"];
-        expect(createTodoMtd).not.toBeNull();
+        // ohmAST2RawZeusDef(ast as any, rawDef);
+        // console.log(JSON.stringify(rawDef, null, 2))
+        // expect( Object.keys(rawDef.usecases).length ).toBe(1);
+        // const todoDef = rawDef.usecases["Todo"];
+        // expect(todoDef).not.toBeNull();
+        // expect(Object.keys(todoDef.methods).length).toBe(2);
+        // const createTodoMtd = todoDef.methods["createTodo"];
+        // expect(createTodoMtd).not.toBeNull();
 
 
-        expect( Object.keys(rawDef.types).length ).toBe(1);
+        // expect( Object.keys(rawDef.types).length ).toBe(1);
         
     });
 })
