@@ -12,7 +12,7 @@ const PrimitiveTypes = [
   'array',
   'float',
   'int32',
-  'i32',
+  'i32'
 ];
 
 export function isPrimitiveType(type: string): boolean {

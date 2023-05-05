@@ -1,9 +1,9 @@
 import { Logger } from '@nestjs/common';
-import { Command, RootCommand } from 'nestjs-eclih';
+import { Command } from 'nestjs-eclih';
 import { GConfig, getInstantiatedGenerators } from '../config';
 import { GContext } from '../context';
 import {
-  GaeaGenerator, GraphQLNestJsGenerator, GraphQLSchemaGenerator, RestClientGenerator, RestNestJsGenerator, TypescriptGenerator
+  GaeaGenerator, GraphQLNestJsGenerator, GraphQLGenerator, RestClientGenerator, RestNestJsGenerator, SQLGenerator, TypescriptGenerator
 } from '../gen';
 import { AngularFormGenerator } from '../gen/angular-form';
 import {
@@ -18,10 +18,11 @@ import { Ohm2Tsca } from '../ohm';
 TypescriptGenerator;
 GraphQLNestJsGenerator;
 GaeaGenerator;
-GraphQLSchemaGenerator;
+GraphQLGenerator;
 RestNestJsGenerator;
 RestClientGenerator;
 AngularFormGenerator;
+SQLGenerator;
 
 @Command()
 export class GenCmdProvider {

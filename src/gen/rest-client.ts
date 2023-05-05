@@ -26,6 +26,10 @@ export class RestClientGenerator extends Generator<RestClientGeneratorConfig> {
     const baseClientNode = this.getBaseRestClient();
 
     ctx.addNodesToTsFile(this.output, baseClientNode);
+
+    if(!this.config.tsTypeImport){
+      throw new Error("[rest_client] field tsTypeImport is required")
+    }
   }
   public after(ctx: GContext) {}
 

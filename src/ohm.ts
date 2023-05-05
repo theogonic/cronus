@@ -31,7 +31,8 @@ semantics.addOperation('parse', {
     return {
       "type": "EnumDef",
       "name": name.sourceString,
-      "enums": fields.children.map(f => f.parse())
+      "enums": fields.children.map(f => f.parse()),
+      "options": ops.children.map(op => op.parse()),
     }
   },
   EnumField: (ops, name, _3, val) => {
@@ -188,9 +189,7 @@ export class Ohm2Tsca {
       throw new Error(m.message)
     }
     const defs:Record<string, any>[] = semantics(m).parse();
-    console.log(JSON.stringify(defs,null, 3))
     const imports = ohmAST2Imports(defs);
-    console.log(imports)
     const handleImports = imports.map(imp => this.loadZeusFile(imp, finalFile));
     await Promise.all(handleImports);
     ohmAST2RawZeusDef(defs, this.rawTscaDef, this.gconfig);
@@ -234,7 +233,8 @@ export function ohmAST2RawZeusDef(items: Array<Record<string, any>>, rawdef: Raw
 
 function ohmServiceDef2RawZeusUsecase(ast: Record<string, any>, tyCtx: Record<string, RawTscaSchema>): RawTscaUsecase {
     const rawu: RawTscaUsecase = {
-      methods: {}
+      methods: {},
+      gen:  ohmOptionDefs2Obj(ast["options"])
     };
     if(ast.type != "ServiceDef"){
         throw new Error(`got ${ast.type}, expect ServiceDef`)
@@ -250,9 +250,12 @@ function ohmServiceDef2RawZeusUsecase(ast: Record<string, any>, tyCtx: Record<st
 }
 
 function ohmServiceDef2RawZeusMethod(ast: Record<string, any>, tyCtx: Record<string, RawTscaSchema>): RawTscaMethod {
-  const raw: RawTscaMethod = {};
+  const raw: RawTscaMethod = {
+    gen: ohmOptionDefs2Obj(ast["options"])
+  };
   const reqTy = ast["req"]
   const resTy = ast["res"]
+
 
   // has to be string
   // tyCtx has to have the key
@@ -288,6 +291,7 @@ function ohmStructBody2RawZeusTscaSchema(body: Record<string, any>, schema:RawTs
       } else {
         propSchema.type = type
       }
+      propSchema.gen = ohmOptionDefs2Obj(field["options"])
       schema.properties[name] = propSchema
     }
 }
@@ -296,7 +300,8 @@ function ohmStructDef2RawZeusTscaSchema(ast: Record<string, any>): RawTscaSchema
       throw new Error(`got ${ast.type}, expect StructDef`)
     }
     const schema:RawTscaSchema = {
-      properties: {}
+      properties: {},
+      gen:  ohmOptionDefs2Obj(ast["options"])
     }
 
     ohmStructBody2RawZeusTscaSchema(ast, schema)
@@ -308,7 +313,16 @@ function ohmEnumDef2RawSchema(ast: Record<string, any>): RawTscaSchema {
     throw new Error(`got ${ast.type}, expect StructDef`)
   }
   const schema:RawTscaSchema = {
-    enum: ast["enums"]
+    enum: ast["enums"],
+    gen:  ohmOptionDefs2Obj(ast["options"])
   }
   return schema;
+}
+
+function ohmOptionDefs2Obj(ops: Array<Record<string, any>>): Record<string, any> {
+  const obj = {};
+  for (const op of ops) {
+    obj[op["name"]] = op["value"]
+  }
+  return obj;
 }

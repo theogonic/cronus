@@ -70,6 +70,10 @@ export interface RawTscaSchemaGql {
   skip?: boolean;
   // special graphql type, like ID, Float, or other custom scalar
   type?: string;
+
+  // replace original field name with
+  field?: string;
+
   fedFields?: string;
   // custom output graphql file
   output?: string;
@@ -80,11 +84,39 @@ export interface RawTscaSchemaTs {
   const_type?: string | number | boolean;
 }
 
+export interface RawTscaSchemaSql {
+  tableName?: string;
+  type?: string;
+  primary?: boolean;
+  ref?: {
+    type?: string;
+    field?: string;
+    new?: number;
+    depricated?: number;
+  },
+  search?: { 
+    type: "fulltext";
+    new?: number;
+    depricated?: number;
+  }
+}
+
 interface TscaSchemaGen {
   gql?: RawTscaSchemaGql;
   gaea?: unknown;
   ts?: RawTscaSchemaTs;
   angular_form?: boolean;
+  sql?: RawTscaSchemaSql;
+  new?: RawTscaSchemaGenNew;
+  deprecated?: RawTscaSchemaDeprecated;
+}
+
+interface RawTscaSchemaGenNew {
+  version?: number
+}
+
+interface RawTscaSchemaDeprecated {
+  version?: number
 }
 
 interface RawTscaUsecaseGql {

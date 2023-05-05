@@ -400,7 +400,6 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
         ),
       );
     } else if (!isPrimitiveType(schema.type)) {
-      console.log("!!!", schema)
       const refTySchema = ctx.getTypeSchemaByName(schema.type);
       if (refTySchema.enum) {
         args.push(
