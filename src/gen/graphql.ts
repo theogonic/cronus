@@ -9,7 +9,7 @@ import {
 } from '../types';
 import { Generator } from './base';
 
-interface GraphQLSchemaGeneratorExtension {
+interface GraphQLGeneratorExtension {
   // graphql files => types, queries and mutations
   files: Record<
     string,
@@ -26,20 +26,24 @@ interface GraphQLSchemaGeneratorExtension {
   generatedInputs: Record<string, boolean>;
 }
 
-interface GraphQLSchemaGeneratorConfig extends BaseGeneratorConfig {
-  scalars: Record<string, string>; // scalar -> output file
+interface GraphQLGeneratorConfig extends BaseGeneratorConfig {
+  scalars: Record<string, string>; // scalar -> output file,
+  strInTs: boolean
 }
 
 @Register('gql')
-export class GraphQLSchemaGenerator extends Generator<GraphQLSchemaGeneratorConfig> {
+export class GraphQLGenerator extends Generator<GraphQLGeneratorConfig> {
   public before(ctx: GContext) {
     ctx.genExt['gql'] = {
       files: {},
       typeToInput: [],
       generatedInputs: {},
-    } as GraphQLSchemaGeneratorExtension;
+    } as GraphQLGeneratorExtension;
   }
   public after(ctx: GContext) {
+    if (this.config.strInTs) {
+      ctx.addStrToTextFile(this.output, `export default \`\n`);
+    }
     // handle custom scalars
     if (this.config.scalars) {
       for (const sc in this.config.scalars) {
@@ -50,7 +54,7 @@ export class GraphQLSchemaGenerator extends Generator<GraphQLSchemaGeneratorConf
       }
     }
 
-    const ext = ctx.genExt['gql'] as GraphQLSchemaGeneratorExtension;
+    const ext = ctx.genExt['gql'] as GraphQLGeneratorExtension;
 
     while (ext.typeToInput.length > 0) {
       const ty = ext.typeToInput.pop();
@@ -78,6 +82,10 @@ export class GraphQLSchemaGenerator extends Generator<GraphQLSchemaGeneratorConf
           ctx.addStrToTextFile(key, mutationStr);
         }
       }
+    }
+
+    if (this.config.strInTs) {
+      ctx.addStrToTextFile(this.output, `\`\n`);
     }
   }
 
@@ -124,7 +132,7 @@ type ${typeName} {
       str = this.genGqlType(ctx, schema, overrideName, type);
     }
     str += '\n';
-    const ext = ctx.genExt['gql'] as GraphQLSchemaGeneratorExtension;
+    const ext = ctx.genExt['gql'] as GraphQLGeneratorExtension;
     const dst = overrideOutput || schema.gen?.gql?.output || this.output;
     if (!(dst in ext.files)) {
       ext.files[dst] = {
@@ -149,11 +157,14 @@ type ${typeName} {
     let schemaStr = `${type} ${
       overrideName || schema.name
     } ${federationKeyAnnotationStr} {\n`;
+
+    // generate properties for a GraphQL type
+    
     schema.properties?.forEach((prop) => {
       let inputSuffix = false;
       // to see if we need to generate input version of this type
       if (type == 'input' && !this.isPrimitiveGqlType(prop)) {
-        const ext = ctx.genExt['gql'] as GraphQLSchemaGeneratorExtension;
+        const ext = ctx.genExt['gql'] as GraphQLGeneratorExtension;
         let ty: string;
         if (prop.type == 'array') {
           ty = prop.items.type;
@@ -172,10 +183,16 @@ type ${typeName} {
           }
         }
       }
-      const gqlTy = this.getGqlType(prop, inputSuffix);
-      const child = `  ${prop.name}: ${gqlTy}\n`;
+      const gqlTy = prop.gen?.gql?.type || this.getGqlType(prop, inputSuffix);
+      const fieldName = prop.gen?.gql?.field || prop.name;
+      const child = `  ${fieldName}: ${gqlTy}\n`;
       schemaStr += child;
     });
+
+    schema.gen?.gql?.extraFields?.forEach(item => {
+      const child = `  ${item.field}: ${item.type}\n`
+      schemaStr += child;
+    })
     schemaStr += '}\n';
     return schemaStr;
   }
@@ -196,7 +213,7 @@ enum ${schema.name} {
 
     const dst = method.parent.gen?.gql?.output || this.output;
 
-    const ext = ctx.genExt['gql'] as GraphQLSchemaGeneratorExtension;
+    const ext = ctx.genExt['gql'] as GraphQLGeneratorExtension;
     let str: string;
 
     const resName = this.getTscaMethodResponseTypeName(method);

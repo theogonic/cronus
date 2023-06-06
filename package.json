@@ -20,7 +20,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:e2e:pre": "./zeus --config test/example-service/zeus.yaml"
+    "test:e2e:pre": "./zeus --config test/example-service/zeus.yaml",
+    "doc:serve":"mkdocs serve",
+    "doc:build":"mkdocs build"
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "9.0.9",
@@ -37,6 +39,7 @@
     "js-yaml": "4.1.0",
     "lodash": "4.17.21",
     "nestjs-eclih": "1.0.0",
+    "ohm-js": "^16.6.0",
     "proto-parser": "^0.0.8",
     "protobufjs": "^6.11.3",
     "reflect-metadata": "0.1.13",

@@ -12,7 +12,7 @@ const PrimitiveTypes = [
   'array',
   'float',
   'int32',
-  'i32',
+  'i32'
 ];
 
 export function isPrimitiveType(type: string): boolean {
@@ -148,7 +148,7 @@ export function getFlatternPropertiesOfTscaSchema(
     if (
       isPrimitiveType(prop.type) ||
       prop.type == 'array' ||
-      ctx.isTypeEnum(schema.type)
+      ctx.isTypeEnum(prop.type)
     ) {
       properties.push([...parentPathes, prop.name]);
     } else {

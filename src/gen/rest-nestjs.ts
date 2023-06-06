@@ -165,6 +165,7 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       dstFile = this.output;
     }
 
+
     if (schema.enum) {
       // no need to generate dto wrapper with enum since it simply a string or number
       return ts.factory.createTypeReferenceNode(schema.name);

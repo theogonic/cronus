@@ -1,0 +1,12 @@
+import "common.zeus"
+
+service User {
+    createUser {
+        in {
+
+        }
+        out {
+            
+        }
+    }
+}

@@ -347,7 +347,7 @@ function assignByObjPath(obj: Record<string, any>, path: string, value: any) {
   let curr = obj;
   for (const p of paths) {
     if (p[0] == '_') {
-      if (parseInt(p.substring(1)) != NaN) {
+      if (!Number.isNaN(parseInt(p.substring(1)))) {
         if (!Array.isArray(prev[prevPath])) {
           prev[prevPath] = [];
         }

@@ -1,9 +1,9 @@
 import { Logger } from '@nestjs/common';
-import { Command, RootCommand } from 'nestjs-eclih';
+import { Command } from 'nestjs-eclih';
 import { GConfig, getInstantiatedGenerators } from '../config';
 import { GContext } from '../context';
 import {
-  GaeaGenerator, GraphQLNestJsGenerator, GraphQLSchemaGenerator, RestClientGenerator, RestNestJsGenerator, TypescriptGenerator
+  GaeaGenerator, GraphQLNestJsGenerator, GraphQLGenerator, RestClientGenerator, RestNestJsGenerator, SQLGenerator, TypescriptGenerator
 } from '../gen';
 import { AngularFormGenerator } from '../gen/angular-form';
 import {
@@ -12,21 +12,23 @@ import {
 import { Proto2Tsca } from '../proto';
 import { TscaDef } from '../types';
 import { dumpContext } from '../util/context';
+import { Ohm2Tsca } from '../ohm';
 
 // to trigger decorator
 TypescriptGenerator;
 GraphQLNestJsGenerator;
 GaeaGenerator;
-GraphQLSchemaGenerator;
+GraphQLGenerator;
 RestNestJsGenerator;
 RestClientGenerator;
 AngularFormGenerator;
+SQLGenerator;
 
 @Command()
 export class GenCmdProvider {
   private readonly logger = new Logger(GenCmdProvider.name);
 
-  @RootCommand({
+  @Command({
     options: [
       {
         nameAndArgs: '--config <file>',
@@ -37,11 +39,15 @@ export class GenCmdProvider {
       {
         nameAndArgs: '--dry-run',
       },
+      {
+        nameAndArgs: '--zeus <file>'
+      }
     ],
   })
-  async gen({ config, proto, dryRun }) {
+  async gen({ config, proto, dryRun, zeus }) {
     let gConfig: GConfig = null;
     let protoTscaDef: TscaDef = null;
+    let zeusTscaDef: TscaDef = null;
     const defs: TscaDef[] = [];
     if (config) {
       gConfig = loadGConfig(config);
@@ -53,11 +59,19 @@ export class GenCmdProvider {
         name: '',
         src: proto,
       });
-    }
+    } else if (zeus) {
+      const trans = new Ohm2Tsca();
+      await trans.loadZeusFile(zeus);
+      gConfig = trans.gconfig
+      zeusTscaDef = TscaDef.fromRaw(trans.rawTscaDef, {name:'', src:zeus})
+    } 
     autoCompleteTheogonicGaea(gConfig);
     defs.push(...(await loadDefsFromGConfig(gConfig)));
     if (protoTscaDef) {
       defs.push(protoTscaDef);
+    }
+    if (zeusTscaDef){
+      defs.push(zeusTscaDef);
     }
 
     if (dryRun) {

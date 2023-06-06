@@ -9,20 +9,30 @@ export function dumpContext(ctx: GContext, outputDir: string): void {
 
   // handle Typescript files
   for (const filePath in tsFiles) {
-    if (Object.prototype.hasOwnProperty.call(tsFiles, filePath)) {
-      const fileCtx = tsFiles[filePath];
+    try {
+      if (Object.prototype.hasOwnProperty.call(tsFiles, filePath)) {
+        const fileCtx = tsFiles[filePath];
+  
+        const dstFilePath = path.join(outputDir, filePath);
+        const dir = path.dirname(dstFilePath);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+  
+        const tsFileContent = dumpTsByTsFileContext(ctx, fileCtx);
+  
+        fs.writeFileSync(dstFilePath, tsFileContent);
 
-      const dstFilePath = path.join(outputDir, filePath);
+        console.log(`[+] ${dstFilePath}`);
 
-      const dir = path.dirname(dstFilePath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
       }
 
-      const tsFileContent = this.dumpTsByTsFileContext(ctx, fileCtx);
-
-      fs.writeFileSync(dstFilePath, tsFileContent);
     }
+    catch(err) {
+      const dstFilePath = path.join(outputDir, filePath);
+      console.error(`${dstFilePath}: ${err}\n${err.stack}`);
+    }
+    
   }
 
   // handle text files
@@ -38,6 +48,7 @@ export function dumpContext(ctx: GContext, outputDir: string): void {
       }
 
       fs.writeFileSync(dstFilePath, content);
+      console.log(`[+] ${dstFilePath}`);
     }
   }
 }
@@ -60,26 +71,35 @@ export function dumpTsByTsFileContext(
   );
   const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
   let buf = '';
-
   // Handle import first
   for (const importPath in fileCtx.imports) {
-    if (Object.prototype.hasOwnProperty.call(fileCtx.imports, importPath)) {
-      const imp = fileCtx.imports[importPath];
-      const importNode = getImportDecl(imp);
-      const res = printer.printNode(
-        ts.EmitHint.Unspecified,
-        importNode,
-        sourceFile,
-      );
-      buf += res;
-      buf += '\n';
+    try {
+      if (Object.prototype.hasOwnProperty.call(fileCtx.imports, importPath)) {
+     
+        const imp = fileCtx.imports[importPath];
+        const importNode = getImportDecl(imp);
+        const res = printer.printNode(
+          ts.EmitHint.Unspecified,
+          importNode,
+          sourceFile,
+        );
+        buf += res;
+        buf += '\n';
+      }
+    }catch(err){
+      console.error(importPath, "???",err )
     }
   }
 
   for (const node of fileCtx.nodes) {
-    const res = printer.printNode(ts.EmitHint.Unspecified, node, sourceFile);
-    buf += res;
-    buf += '\n';
+    try {
+      const res = printer.printNode(ts.EmitHint.Unspecified, node, sourceFile);
+      buf += res;
+      buf += '\n';
+    } catch (err) {
+      console.error("!!!",err)
+    }
+   
   }
 
   return buf;
