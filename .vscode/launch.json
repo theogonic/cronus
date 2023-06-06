@@ -14,7 +14,7 @@
             ],
             "sourceMaps": true,
             "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-            "args": ["${workspaceFolder}/bin/zeus.ts", "--proto", "examples/proto/main.proto"]
+            "args": ["${workspaceFolder}/bin/zeus.ts", "gen","--zeus", "/Users/sxia/code/secret/zeus/main.zeus"]
         },
         {
             "name": "Debug Jest(current)",

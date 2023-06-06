@@ -74,6 +74,9 @@ export interface RawTscaSchemaGql {
   // replace original field name with
   field?: string;
 
+  // extra fields for a schema (only work for top-level struct)
+  extraFields?: { type: string, field: string }[]
+
   fedFields?: string;
   // custom output graphql file
   output?: string;
@@ -101,7 +104,17 @@ export interface RawTscaSchemaSql {
   }
 }
 
+interface RawTscaSchemaGqlNestjs {
+  fieldResolvers: {
+    field: string;
+    service?: string;
+    method: string;
+    resMap: string;
+  }[]
+}
+
 interface TscaSchemaGen {
+  gql_nestjs?: RawTscaSchemaGqlNestjs
   gql?: RawTscaSchemaGql;
   gaea?: unknown;
   ts?: RawTscaSchemaTs;

@@ -27,7 +27,8 @@ interface GraphQLGeneratorExtension {
 }
 
 interface GraphQLGeneratorConfig extends BaseGeneratorConfig {
-  scalars: Record<string, string>; // scalar -> output file
+  scalars: Record<string, string>; // scalar -> output file,
+  strInTs: boolean
 }
 
 @Register('gql')
@@ -40,6 +41,9 @@ export class GraphQLGenerator extends Generator<GraphQLGeneratorConfig> {
     } as GraphQLGeneratorExtension;
   }
   public after(ctx: GContext) {
+    if (this.config.strInTs) {
+      ctx.addStrToTextFile(this.output, `export default \`\n`);
+    }
     // handle custom scalars
     if (this.config.scalars) {
       for (const sc in this.config.scalars) {
@@ -78,6 +82,10 @@ export class GraphQLGenerator extends Generator<GraphQLGeneratorConfig> {
           ctx.addStrToTextFile(key, mutationStr);
         }
       }
+    }
+
+    if (this.config.strInTs) {
+      ctx.addStrToTextFile(this.output, `\`\n`);
     }
   }
 
@@ -149,6 +157,9 @@ type ${typeName} {
     let schemaStr = `${type} ${
       overrideName || schema.name
     } ${federationKeyAnnotationStr} {\n`;
+
+    // generate properties for a GraphQL type
+    
     schema.properties?.forEach((prop) => {
       let inputSuffix = false;
       // to see if we need to generate input version of this type
@@ -177,6 +188,11 @@ type ${typeName} {
       const child = `  ${fieldName}: ${gqlTy}\n`;
       schemaStr += child;
     });
+
+    schema.gen?.gql?.extraFields?.forEach(item => {
+      const child = `  ${item.field}: ${item.type}\n`
+      schemaStr += child;
+    })
     schemaStr += '}\n';
     return schemaStr;
   }
