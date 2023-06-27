@@ -11,7 +11,7 @@ export const grammar = ohm.grammar(ZeusOhmDef);
 export const semantics = grammar.createSemantics();
 
 semantics.addOperation('parse', {
-  File: (list1, _) => {
+  File: (list1) => {
     return list1.children.map(c => c.parse());
   },
   ImportDef: (_1, s) => {
@@ -25,6 +25,12 @@ semantics.addOperation('parse', {
       "type": "OptionDef",
       "name": name.sourceString,
       "value": value.numChildren > 0 ? JSON.parse(value.children[0].sourceString) : true
+    }
+  },
+  GlobalOptionDef: (op, _2) => {
+    return {
+      "type": "GlobalOptionDef",
+      "def": op.parse()
     }
   },
   EnumDef: (ops, _2, name, _4, fields, _6, _7) => {
@@ -41,11 +47,11 @@ semantics.addOperation('parse', {
       "value": parseInt(val.sourceString,10)
     }
   },
-  MethodDef: (ops, name, _3, req, _4, _5, res)=>{
+  MethodDef: (ops, name, _3, _4, _5, reqBody, _7, _8, _9, resBody, _11, _12)=>{
     return {
       "name":  name.sourceString,
-      "req": req.sourceString.length > 0 ? req.sourceString.substring(1, req.sourceString.length-1) : null,
-      "res": res.sourceString.length > 0 ? res.sourceString.substring(1).trim() : null,
+      "req": reqBody.sourceString.length > 0 ? reqBody.children[0].parse() : [],
+      "res": resBody.sourceString.length > 0 ? resBody.children[0].parse() : [],
       "options": ops.children.map(op => op.parse())
     }
   },
@@ -75,7 +81,7 @@ semantics.addOperation('parse', {
       "methods": body.parse()
     }
   },
-  ServiceBody: (ms, _2) => {
+  ServiceBody: (ms) => {
     return ms.children.map(c=>c.parse())
   },
 
@@ -257,19 +263,36 @@ function ohmServiceDef2RawZeusMethod(ast: Record<string, any>, tyCtx: Record<str
   const resTy = ast["res"]
 
 
-  // has to be string
-  // tyCtx has to have the key
-  if(reqTy){
+  if(typeof reqTy == "string"){
     raw.req = tyCtx[reqTy];
 
     // the method req only need to used once
     delete tyCtx[reqTy];
+  } 
+  else if(Array.isArray(reqTy)){
+    raw.req = {
+      properties: {}
+    }
+
+    ohmStructBody2RawZeusTscaSchema({
+      "fields": reqTy
+    }, raw.req)
   }
 
-  if(resTy){
+  
+
+  if(typeof resTy == "string"){
     raw.res = tyCtx[resTy]
     // the method req only need to used once
     delete tyCtx[resTy];
+  } else if(typeof resTy == "object") {
+    raw.res = {
+      properties: {}
+    };
+    ohmStructBody2RawZeusTscaSchema({
+      "fields": resTy
+    }, raw.res)
+
   }
   
   

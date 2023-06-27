@@ -1,17 +1,18 @@
 Zeus {
-    File = ((
-      ImportDef
+    File = (ImportDef
       | ServiceDef
       | StructDef
-      | OptionDef
-      | EnumDef
-      ) ";")*
+      | GlobalOptionDef
+      | EnumDef )*
+      
     
     ImportDef
       = "import" String 
     
     OptionDef
       = "@" optionident ("(" Value ")")? 
+      
+    GlobalOptionDef = OptionDef ";"
    
     EnumDef
       = OptionDef* "enum" ident "{" (EnumField ";")* "}"
@@ -19,8 +20,10 @@ Zeus {
     EnumField
       = OptionDef* ident "=" digit+
   
-    MethodDef
-      = OptionDef* ident ( "(" ident ")" )? (":" ident)?
+    MethodDef 
+      = OptionDef* ident "{" ("request" "{"  StructBody "}")?  ( "return" "{" StructBody "}")?  "}" 
+
+  
 
 
     StructDef
@@ -32,10 +35,17 @@ Zeus {
       = OptionDef* type ident
 
     ServiceDef
-      = OptionDef* "service" ident "{" ServiceBody "}"
-    ServiceBody
-      = (MethodDef ";")*
+      = OptionDef* "service" ident "{"  ServiceBody "}"
+   
+   ServiceBody
+      = MethodDef* 
  
+comment = "/*" (~"*/" any)* "*/" --multiline
+| "//" (~"\n" any)*  --single
+
+space += comment
+
+
  
     ident  (an identifier)
       = letter alnum*
