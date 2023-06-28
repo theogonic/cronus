@@ -211,7 +211,7 @@ export function ohmAST2Imports(items: Array<Record<string, any>>): string[] {
 export function ohmAST2RawZeusDef(items: Array<Record<string, any>>, rawdef: RawTscaDef, gconfig: GConfig) {
     const structDefs = items.filter(item=> item.type == "StructDef");
     const svcDefs = items.filter(item=> item.type == "ServiceDef");
-    const optDefs = items.filter(item=> item.type == "OptionDef");
+    const optDefs = items.filter(item=> item.type == "GlobalOptionDef");
     const enumDefs = items.filter(item=> item.type == "EnumDef");
 
     enumDefs.forEach(item => {
@@ -232,7 +232,7 @@ export function ohmAST2RawZeusDef(items: Array<Record<string, any>>, rawdef: Raw
     });
 
     optDefs.forEach(globalOp => {
-      gconfig.generators[globalOp["name"]] = globalOp["value"]
+      gconfig.generators[globalOp.def["name"]] = globalOp.def["value"]
     })
     
 }

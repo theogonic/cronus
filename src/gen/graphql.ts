@@ -44,11 +44,15 @@ export class GraphQLGenerator extends Generator<GraphQLGeneratorConfig> {
     if (this.config.strInTs) {
       ctx.addStrToTextFile(this.output, `export default \`\n`);
     }
+
+    // default scalars
+    ctx.addStrToTextFile(this.output, `scalar Void\n`);
+
     // handle custom scalars
     if (this.config.scalars) {
       for (const sc in this.config.scalars) {
         if (Object.prototype.hasOwnProperty.call(this.config.scalars, sc)) {
-          const output = this.config.scalars[sc];
+          const output = this.config.scalars[sc] || this.config.output;
           ctx.addStrToTextFile(output, `scalar ${sc}\n`);
         }
       }
@@ -215,9 +219,14 @@ enum ${schema.name} {
 
     const ext = ctx.genExt['gql'] as GraphQLGeneratorExtension;
     let str: string;
-
-    const resName = this.getTscaMethodResponseTypeName(method);
-    this.genTscaSchema(ctx, method.res, resName, 'type', dst);
+    let isReturnVoid = !method.res || !method.res.properties || method.res.properties.length == 0;
+    let resName = null;
+    if(isReturnVoid){
+      resName = "Void";
+    } else {
+      resName = this.getTscaMethodResponseTypeName(method);
+      this.genTscaSchema(ctx, method.res, resName, 'type', dst);
+    }
     if (!method.req || method.req.properties?.length == 0) {
       str = `${method.name}: ${resName}`;
     } else {

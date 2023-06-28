@@ -18,9 +18,9 @@ describe('ohm', () => {
         expect(m.succeeded()).toBeTruthy();
     })
 
-    it('parse option to raw zeus def', ()=>{
+    it('parse global option to raw zeus def', ()=>{
         const input = `
-        @zbc.def({
+        @ts({
             "a":"b",
             "c":["d","e"]
         });
@@ -31,10 +31,23 @@ describe('ohm', () => {
         }
         
         expect(m.succeeded()).toBeTruthy();
-        const res = semantics(m).parse();
+
+        const rawDef: RawTscaDef = {
+            types: {},
+            usecases: {},
+            schemas: {}
+        };
+        const gconfig: GConfig = {
+            defs: [],
+            generators: {}
+        }
+        const defs:Record<string, any>[] = semantics(m).parse();
+        ohmAST2RawZeusDef(defs, rawDef, gconfig)
+        expect(gconfig.generators.ts).not.toBeUndefined();
 
         
     })
+
     
     it('parse basic def to raw zeus def', () => {
         const input = `
@@ -85,16 +98,10 @@ describe('ohm', () => {
         const defs:Record<string, any>[] = semantics(m).parse();
         ohmAST2RawZeusDef(defs, rawDef, gconfig)
         expect(rawDef.usecases.Todo.methods.createTodo).not.toBeNull();
-        // console.log(JSON.stringify(rawDef, null, 2))
-        // expect( Object.keys(rawDef.usecases).length ).toBe(1);
-        // const todoDef = rawDef.usecases["Todo"];
-        // expect(todoDef).not.toBeNull();
-        // expect(Object.keys(todoDef.methods).length).toBe(2);
-        // const createTodoMtd = todoDef.methods["createTodo"];
-        // expect(createTodoMtd).not.toBeNull();
+        expect(rawDef.usecases.Todo.methods.createTodo.req.properties.id).not.toBeNull();
+        expect(rawDef.usecases.Todo.methods.createTodo.req.properties.name).not.toBeNull();
+        expect(rawDef.usecases.Todo.methods.createTodo.res.properties.id).not.toBeNull();
 
-
-        // expect( Object.keys(rawDef.types).length ).toBe(1);
         
     });
 })
