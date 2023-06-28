@@ -1,6 +1,6 @@
 {
   "name": "@theogonic/zeus",
-  "version": "0.0.51",
+  "version": "0.0.52",
   "description": "Clean Architecture & Low Code",
   "author": "Shihao Xia <charlesxsh@hotmail.com>",
   "license": "MIT",
@@ -21,8 +21,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:e2e:pre": "./zeus --config test/example-service/zeus.yaml",
-    "doc:serve":"mkdocs serve",
-    "doc:build":"mkdocs build"
+    "doc:serve": "mkdocs serve",
+    "doc:build": "mkdocs build"
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "9.0.9",
