@@ -136,6 +136,7 @@ export abstract class Generator<
       case 'float':
       case 'i32':
       case 'int32':
+      case 'int':
       case 'integer':
         if (schema.enum && schema.parent) {
           throw new Error(
