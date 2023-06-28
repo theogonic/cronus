@@ -190,7 +190,7 @@ export class TypescriptGenerator extends Generator {
         u,
       );
     }
-    if (method.res && method.res.properties) {
+    if (method.res && method.res.properties && method.res.properties.length > 0) {
       resTypeName = this.getTscaMethodResponseTypeName(method);
       this.genTscaSchema(ctx, def, this.output, method.res, resTypeName);
     }
