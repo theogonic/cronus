@@ -5,7 +5,17 @@ import {existsSync, readFileSync} from "fs"
 import * as ohm from 'ohm-js';
 import * as path from 'path';
 
-var grammarPath = path.resolve(__dirname, '../zeus.ohm');
+
+
+let grammarPath = path.resolve(__dirname, '../zeus.ohm');;
+
+if(!existsSync(grammarPath)){
+  const requireZeusOhmPath = path.join(path.dirname(
+    require.resolve(path.normalize('@theogonic/zeus/package.json')),
+  ), "zeus.ohm");
+  grammarPath = requireZeusOhmPath;
+}
+
 export const ZeusOhmDef = readFileSync(grammarPath, {encoding: 'utf-8'});
 export const grammar = ohm.grammar(ZeusOhmDef);
 export const semantics = grammar.createSemantics();
