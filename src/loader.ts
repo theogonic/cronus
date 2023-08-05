@@ -4,7 +4,6 @@ import * as globby from 'globby';
 import * as yaml from 'js-yaml';
 import * as path from 'path';
 import { GConfig, GaeaGeneratorConfig } from './config';
-import { Proto2Tsca } from './proto';
 import { RawTscaDef, TscaDef } from './types';
 
 function loadYamlFromFile<T = Record<string, unknown>>(yamlFile: string): T {
@@ -25,16 +24,7 @@ export async function loadDefFromYaml(defFile?: string): Promise<TscaDef> {
 }
 
 export async function loadDefFromPath(path: string): Promise<TscaDef> {
-  if (path.endsWith('.proto')) {
-    const trans = new Proto2Tsca();
-    await trans.loadProtoFile(path);
-    return TscaDef.fromRaw(trans.rawTscaDef, {
-      name: '',
-      src: path,
-    });
-  } else {
-    return loadDefFromYaml(path);
-  }
+  return loadDefFromYaml(path);
 }
 
 async function loadDefsFromGlobs(globs: string[]): Promise<TscaDef[]> {
