@@ -4,7 +4,7 @@
   "description": "Typescript Generator for Clean Architecture",
   "author": "Shihao Xia <charlesxsh@hotmail.com>",
   "license": "MIT",
-  "bin": "dist/main.js",
+  "bin": "dist/main-wrapper.js",
   "private": false,
   "scripts": {
     "prebuild": "rimraf dist",
