@@ -1,6 +1,6 @@
 {
   "name": "@theogonic/zeus",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Typescript Generator for Clean Architecture",
   "author": "Shihao Xia <charlesxsh@hotmail.com>",
   "license": "MIT",
