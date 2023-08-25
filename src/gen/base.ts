@@ -1,4 +1,3 @@
-import { Logger } from '@nestjs/common';
 import * as _ from 'lodash';
 import * as ts from 'typescript';
 import { BaseGeneratorConfig } from '../config';
@@ -9,9 +8,7 @@ export abstract class Generator<
   C extends BaseGeneratorConfig = BaseGeneratorConfig,
 > {
   public readonly generatorId: string;
-  protected readonly logger = new Logger(
-    Object.getPrototypeOf(this).constructor.name,
-  );
+
 
   protected abstract genTscaDef(ctx: GContext, def: TscaDef);
 
