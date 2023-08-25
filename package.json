@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "9.0.9",
+    "@nestjs/common": "^10.2.1",
     "ajv": "8.6.2",
     "commander": "11.0.0",
     "glob": "7.1.7",
