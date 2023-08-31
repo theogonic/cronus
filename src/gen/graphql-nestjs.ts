@@ -43,7 +43,7 @@ export class GraphQLNestJsGenerator extends Generator<GraphQLResolverGeneratorCo
 
     // Build a `method_name`Resolver for each usecase that contains Resolver generator
     def.usecases
-      .filter((u) => u.gen?.gql_resolver !== undefined)
+      .filter((u) => u.gen?.gql_nestjs !== undefined)
       .forEach((u) => this.genTscaUsecase(ctx, u));
 
     // filter type has enum child
@@ -313,6 +313,7 @@ export class GraphQLNestJsGenerator extends Generator<GraphQLResolverGeneratorCo
   }
 
   private genTscaUsecase(ctx: GContext, u: TscaUsecase): void {
+
     const importItems = [
       this.getUsecaseTypeName(u),
       this.getUsecaseTypeTokenName(u),
@@ -327,7 +328,7 @@ export class GraphQLNestJsGenerator extends Generator<GraphQLResolverGeneratorCo
     // Generate resolver methods
     // TODO: Add method that reads types.gen.gql.properties and generates @ResolveField() methods
     const methodNodes = u.methods
-      .filter((m) => m.gen?.gql)
+      .filter((m) => m.gen?.gql && m.gen?.gql_nestjs?.disable != true)
       .map((m) => this.genTscaMethod(ctx, u, m));
 
     // Create resolver class
@@ -465,8 +466,8 @@ export class GraphQLNestJsGenerator extends Generator<GraphQLResolverGeneratorCo
       ),
     ];
 
-    if (u.gen.gql_resolver?.ctx2req) {
-      const { ctx2req } = u.gen.gql_resolver;
+    if (u.gen.gql_nestjs?.ctx2req) {
+      const { ctx2req } = u.gen.gql_nestjs;
 
       for (const ctxKey in ctx2req) {
         if (Object.prototype.hasOwnProperty.call(ctx2req, ctxKey)) {
@@ -586,8 +587,8 @@ export class GraphQLNestJsGenerator extends Generator<GraphQLResolverGeneratorCo
       ),
     ];
 
-    if (u.gen.gql_resolver?.ctx2req) {
-      const { ctx2req } = u.gen.gql_resolver;
+    if (u.gen.gql_nestjs?.ctx2req) {
+      const { ctx2req } = u.gen.gql_nestjs;
 
       for (const ctxKey in ctx2req) {
         if (Object.prototype.hasOwnProperty.call(ctx2req, ctxKey)) {

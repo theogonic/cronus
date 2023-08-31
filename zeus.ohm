@@ -23,9 +23,6 @@ Zeus {
     MethodDef 
       = OptionDef* ident "{" ("request" "{"  StructBody "}")?  ( "return" "{" StructBody "}")?  "}" 
 
-  
-
-
     StructDef
       = OptionDef* "struct" ident "{" StructBody "}"
 

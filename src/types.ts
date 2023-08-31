@@ -54,9 +54,14 @@ export interface RawTscaUsecaseGqlNestjs {
   ctx2req?: Record<string, string>;
 }
 
+export interface RawTscaMethodGqlNestjs {
+  disable: boolean
+}
+
 export interface TscaMethodGen {
   rest?: RawTscaMethodRest;
   gql?: RawTscaMethodGql;
+  gql_nestjs?: RawTscaMethodGqlNestjs
 }
 
 export interface RawTscaMethod {
@@ -145,7 +150,7 @@ interface TscaUsecaseGen {
   ts?: RawTscaUsecaseTs;
   rest?: RawTscaUsecaseRest;
   gql?: RawTscaUsecaseGql;
-  gql_resolver?: RawTscaUsecaseGqlNestjs;
+  gql_nestjs?: RawTscaUsecaseGqlNestjs;
 }
 
 interface TscaSchemaEnumItem {
