@@ -108,24 +108,34 @@ export class TypescriptGenerator extends Generator {
       ...(isSvcRequest ? u.gen?.ts?.reqExtends || {} : {}),
     };
 
+    const extKeys = [];
     for (const key in allExtends) {
       if (Object.prototype.hasOwnProperty.call(allExtends, key)) {
         const importFrom = allExtends[key];
-        heritages.push(
-          ts.factory.createHeritageClause(ts.SyntaxKind.ExtendsKeyword, [
-            ts.factory.createExpressionWithTypeArguments(
-              ts.factory.createIdentifier(key),
-              undefined,
-            ),
-          ]),
-        );
+
         if (importFrom) {
           ctx.addImportsToTsFile(this.output, {
             from: importFrom,
             items: [key],
           });
         }
+
+        extKeys.push(key);
       }
+    }
+
+    if (extKeys.length > 0) {
+      heritages.push(
+        ts.factory.createHeritageClause(
+          ts.SyntaxKind.ExtendsKeyword,
+          extKeys.map((key) =>
+            ts.factory.createExpressionWithTypeArguments(
+              ts.factory.createIdentifier(key),
+              undefined,
+            ),
+          ),
+        ),
+      );
     }
 
     const node = ts.factory.createInterfaceDeclaration(
@@ -190,7 +200,11 @@ export class TypescriptGenerator extends Generator {
         u,
       );
     }
-    if (method.res && method.res.properties && method.res.properties.length > 0) {
+    if (
+      method.res &&
+      method.res.properties &&
+      method.res.properties.length > 0
+    ) {
       resTypeName = this.getTscaMethodResponseTypeName(method);
       this.genTscaSchema(ctx, def, this.output, method.res, resTypeName);
     }
