@@ -12,7 +12,10 @@ const PrimitiveTypes = [
   'array',
   'float',
   'int32',
-  'i32'
+  'i32',
+  'int',
+  'object',
+  'any',
 ];
 
 export function isPrimitiveType(type: string): boolean {
@@ -25,7 +28,8 @@ export function isTypeNumber(type: string): boolean {
     type == 'integer' ||
     type == 'i32' ||
     type == 'int32' ||
-    type == 'float'
+    type == 'float' ||
+    type == 'int'
   );
 }
 
@@ -40,6 +44,10 @@ export function getKeywordType(type: string): ts.KeywordTypeSyntaxKind {
     return ts.SyntaxKind.BooleanKeyword;
   } else if (type == 'string') {
     return ts.SyntaxKind.StringKeyword;
+  } else if (type == 'object') {
+    return ts.SyntaxKind.ObjectKeyword;
+  } else if (type == 'any') {
+    return ts.SyntaxKind.AnyKeyword;
   }
 
   throw new Error(`unsupported type ${type}`);

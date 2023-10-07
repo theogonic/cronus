@@ -9,7 +9,6 @@ export abstract class Generator<
 > {
   public readonly generatorId: string;
 
-
   protected abstract genTscaDef(ctx: GContext, def: TscaDef);
 
   // before will be called before `generate`
@@ -145,10 +144,13 @@ export abstract class Generator<
       case 'boolean':
         return ts.factory.createKeywordTypeNode(ts.SyntaxKind.BooleanKeyword);
       case 'object':
-        if (schema.parent) {
-          throw new Error('anonymous object decleration is not allowed');
-        }
-        break;
+        return ts.factory.createTypeReferenceNode(
+          ts.factory.createIdentifier('Record'),
+          [
+            ts.factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
+            ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
+          ],
+        );
       case 'array':
         if (!schema.items) {
           throw new Error(`missing items for type '${schema.name}'`);

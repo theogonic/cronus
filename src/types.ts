@@ -55,13 +55,13 @@ export interface RawTscaUsecaseGqlNestjs {
 }
 
 export interface RawTscaMethodGqlNestjs {
-  disable: boolean
+  disable: boolean;
 }
 
 export interface TscaMethodGen {
   rest?: RawTscaMethodRest;
   gql?: RawTscaMethodGql;
-  gql_nestjs?: RawTscaMethodGqlNestjs
+  gql_nestjs?: RawTscaMethodGqlNestjs;
 }
 
 export interface RawTscaMethod {
@@ -80,7 +80,7 @@ export interface RawTscaSchemaGql {
   field?: string;
 
   // extra fields for a schema (only work for top-level struct)
-  extraFields?: { type: string, field: string }[]
+  extraFields?: { type: string; field: string }[];
 
   fedFields?: string;
   // custom output graphql file
@@ -101,12 +101,12 @@ export interface RawTscaSchemaSql {
     field?: string;
     new?: number;
     depricated?: number;
-  },
-  search?: { 
-    type: "fulltext";
+  };
+  search?: {
+    type: 'fulltext';
     new?: number;
     depricated?: number;
-  }
+  };
 }
 
 interface RawTscaSchemaGqlNestjs {
@@ -115,11 +115,11 @@ interface RawTscaSchemaGqlNestjs {
     service?: string;
     method: string;
     resMap: string;
-  }[]
+  }[];
 }
 
 interface TscaSchemaGen {
-  gql_nestjs?: RawTscaSchemaGqlNestjs
+  gql_nestjs?: RawTscaSchemaGqlNestjs;
   gql?: RawTscaSchemaGql;
   gaea?: unknown;
   ts?: RawTscaSchemaTs;
@@ -130,11 +130,11 @@ interface TscaSchemaGen {
 }
 
 interface RawTscaSchemaGenNew {
-  version?: number
+  version?: number;
 }
 
 interface RawTscaSchemaDeprecated {
-  version?: number
+  version?: number;
 }
 
 interface RawTscaUsecaseGql {

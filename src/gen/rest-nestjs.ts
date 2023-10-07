@@ -165,7 +165,6 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
       dstFile = this.output;
     }
 
-
     if (schema.enum) {
       // no need to generate dto wrapper with enum since it simply a string or number
       return ts.factory.createTypeReferenceNode(schema.name);
@@ -493,6 +492,10 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
    * @returns Typescript AST Node
    */
   private genTscaUsecase(ctx: GContext, u: TscaUsecase): void {
+    if (!u.methods.map((m) => m.gen?.rest != null).find((hasRest) => hasRest)) {
+      return;
+    }
+
     ctx.addImportsToTsFile(this.output, {
       from: this.config.tsTypeImport,
       items: [this.getUsecaseTypeName(u), this.getUsecaseTypeTokenName(u)],
