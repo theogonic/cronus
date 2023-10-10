@@ -427,13 +427,16 @@ export class RestNestJsGenerator extends Generator<RestNestjsGeneratorConfig> {
 
   private genCtrlClsDecorators(ctx: GContext, u: TscaUsecase): ts.Decorator[] {
     const decorators: ts.Decorator[] = [];
-
+    const args = [];
+    if (u.gen?.rest?.apiPrefix) {
+      args.push(ts.factory.createStringLiteral(u.gen?.rest?.apiPrefix));
+    }
     decorators.push(
       ts.factory.createDecorator(
         ts.factory.createCallExpression(
           ts.factory.createIdentifier('Controller'),
           undefined,
-          [ts.factory.createStringLiteral(u.gen?.rest?.apiPrefix || u.name)],
+          args,
         ),
       ),
     );
