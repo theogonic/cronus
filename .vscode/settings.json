@@ -1,5 +1,6 @@
 {
-    "editor.codeActionsOnSave": {
-        "source.fixAll": true
-    }
+    "rust-analyzer.linkedProjects": [
+        "./lib/generator/testdata/hello/rust/Cargo.toml",
+        "lib/generator/Cargo.toml"
+    ]
 }

@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "lib/parser",
+    "lib/generator",
+    "bin/zeus",
+    "lib/spec",
+    "lib/generator-wasm"
+]
+resolver = "2"

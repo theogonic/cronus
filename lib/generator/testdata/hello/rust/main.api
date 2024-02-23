@@ -1,0 +1,12 @@
+global [generator.rust.file = "src/generated.rs"]
+
+usecase Hello {     
+    createHello {
+        in {
+            hi: string
+        }
+        out {
+            answer: string
+        }
+    }
+}

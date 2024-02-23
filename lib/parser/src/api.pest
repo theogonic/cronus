@@ -1,0 +1,72 @@
+
+// Basic rules for whitespace and comments
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{ "//" ~ (!NEWLINE ~ ANY)* }
+
+// Identifiers and basic types
+identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+type_identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_" | "[" | "]")* }
+path = @{ (!"\n" ~ ANY)+ }
+
+
+// Import statements
+import = { "import" ~ path }
+
+// Options
+option_value = { integer | string | bool | array  }
+integer = { ASCII_DIGIT+ }
+string = { "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+bool = { "true" | "false" }
+array = { "(" ~ (option_value ~ ("," ~ option_value)*)? ~ ")" }
+option = { "[" ~ identifier ~ ("." ~ identifier)* ~ ("=" ~ option_value)? ~ "]" }
+
+
+// Property definitions
+property = {     option* ~ identifier ~ optional_property? ~ ":" ~ type_identifier }
+optional_property = { "?" }
+
+
+// Sections for 'in' and 'out' blocks
+in_block = { "in" ~ struct_body }
+out_block = { "out" ~ struct_body }
+
+// Usecase definitions
+usecase = { 
+    option* ~
+    "usecase" ~ identifier ~ "{" ~
+    method_def* ~
+    "}" 
+}
+
+method_def = {
+  option* ~
+  identifier ~ "{" ~
+   in_block? ~
+    out_block? ~
+  "}"
+}
+
+// Struct definitions
+struct_def = { 
+    option* ~
+    "struct" ~ identifier ~ struct_body
+}
+
+struct_body = {
+	"{" ~
+
+    property* ~
+    "}" 
+}
+
+global_option = {
+    "global" ~
+    option
+}
+
+// Root rule
+file = { 
+    SOI ~
+    (usecase | struct_def | import | global_option)* ~
+    EOI 
+}

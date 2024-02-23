@@ -1,0 +1,13 @@
+[package]
+name = "parser"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pest="2.7.5"
+pest_derive = "2.7.5"
+spec = { path = "../spec" }
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.8"
+tracing = "0.1"
+anyhow = "1.0"

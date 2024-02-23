@@ -1,0 +1,12 @@
+[package]
+name = "zeus"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.4.7", features = ["derive"] }
+generator = { path = "../../lib/generator" }
+parser = { path = "../../lib/parser" }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+anyhow = "1.0"

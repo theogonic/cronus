@@ -1,0 +1,37 @@
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - content.code.copy
+    - attr_list
+    - md_in_html
+    - navigation.top
+    - header.autohide
+  palette:
+    primary: black
+    accent: indigo
+  logo:
+repo_url: https://github.com/theogonic/zeus-rust
+site_name: Zeus
+nav:
+  - Home: index.md
+  - Generators:
+    - rust: generators/rust.md
+    - rust-axum: generators/rust_axum.md
+    - typescript: generators/ts.md
+    - ts_nestjs: generators/ts_nestjs.md
+    - openapi: generators/openapi.md
+  - References:
+    - YAML Format: references/api.md
+    - API Format: references/yaml.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
