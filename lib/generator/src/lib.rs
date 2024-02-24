@@ -7,6 +7,7 @@ mod utils;
 mod ts;
 mod ts_nestjs;
 mod tauri;
+mod rust_utils;
 
 use std::{rc::Rc, cell::{RefCell}, collections::{HashMap, HashSet}, path::{Path, PathBuf}, error::Error, fs::{self, OpenOptions, File}, io::Write};
 
@@ -216,6 +217,16 @@ mod test {
     #[test]
     fn e2e_hello_rust() -> Result<()> {
         let proj_dir = get_cargo_manifest_dir().unwrap().join("testdata").join("hello").join("rust");
+        let spec_file = proj_dir.join("main.api");
+        let spec = parser::from_file(&spec_file, true, None)?;
+        let ctx = Ctxt::new(spec);
+        generate(&ctx)?;
+        run_cargo_check(&proj_dir)
+    }
+
+    #[test]
+    fn e2e_hello_rust_axum() -> Result<()> {
+        let proj_dir = get_cargo_manifest_dir().unwrap().join("testdata").join("hello").join("rust_axum");
         let spec_file = proj_dir.join("main.api");
         let spec = parser::from_file(&spec_file, true, None)?;
         let ctx = Ctxt::new(spec);

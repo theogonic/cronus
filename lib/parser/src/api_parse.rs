@@ -216,6 +216,11 @@ fn parse_option(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> Resul
         }
     }
 
+    // means it is implicitly boolean
+    if value == serde_yaml::Value::Null {
+        value = serde_yaml::Value::Bool(true);
+    }
+
     Ok((keys, value))
 }
 
@@ -563,6 +568,20 @@ global [generator.rust.file = "abcde"]
         assert!(spec.option.as_ref().unwrap().generator.is_some());
         let rust_config = spec.option.as_ref().unwrap().generator.as_ref().unwrap().rust.as_ref().unwrap();
         assert_eq!(rust_config.file.as_ref().unwrap(), &"abcde".to_string());
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_parse_global_option_with_implicit_bool() -> Result<()>  {
+        let api_file: &'static str = r#"
+global [generator.rust.async]
+        "#;
+
+        let spec = api_parse::parse(PathBuf::from(""), api_file)?;
+        assert!(spec.option.as_ref().unwrap().generator.is_some());
+        let rust_config = spec.option.as_ref().unwrap().generator.as_ref().unwrap().rust.as_ref().unwrap();
+        assert_eq!(rust_config.async_flag, Some(true));
 
         Ok(())
     }

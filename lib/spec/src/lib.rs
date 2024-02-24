@@ -71,6 +71,14 @@ pub struct RustGeneratorOption {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub file: Option<String>,
 
+    /// Do not place default derive for struct
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub no_default_derive: Option<bool>,
+
+    /// Override the built-in default derive for struct
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_derive: Option<Vec<String>>,
+
     /// Custom extra uses
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uses: Option<Vec<String>>,

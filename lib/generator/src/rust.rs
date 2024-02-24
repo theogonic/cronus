@@ -213,14 +213,34 @@ impl RustGenerator {
             }
         }
         let mut attrs: Vec<String> = vec![];
-        let default_derives = vec!["Debug", "Clone", "Serialize", "Deserialize"];
-        let derive_attr = format!("#[derive({})]", default_derives.join(", "));
-        attrs.push(derive_attr);
+
+        if let Some(gen_opt) = self.get_gen_option(ctx) {
+            let default_derive = match &gen_opt.default_derive {
+                Some(default_derive) => default_derive.clone(),
+                None => vec!["Debug", "Clone", "Serialize", "Deserialize", "PartialEq", "Eq"].iter().map(|s|s.to_string()).collect(),
+            };
+
+            let no_default_derive = match gen_opt.no_default_derive {
+                Some(no_default) => {
+                    no_default
+                },
+                None => { false }, // default value is false
+            };
+
+            if !no_default_derive {
+                let derive_attr = format!("#[derive({})]", default_derive.join(", "));
+                attrs.push(derive_attr);
+        
+            }
+        } 
+
+       
 
         match &schema.option {
             Some(option) => {
                 match &option.rust {
                     Some(rust_opt) => {
+
                         match &rust_opt.attrs {
                             Some(custom_attrs) => {
                                 attrs.extend(custom_attrs.iter().map(|attr| format!("#[{}]", attr).to_string()) );

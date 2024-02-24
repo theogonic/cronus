@@ -1,6 +1,7 @@
 {
     "rust-analyzer.linkedProjects": [
         "./lib/generator/testdata/hello/rust/Cargo.toml",
-        "lib/generator/Cargo.toml"
+        "lib/generator/Cargo.toml",
+        "./lib/generator/testdata/hello/rust_axum/Cargo.toml"
     ]
 }

@@ -1,0 +1,30 @@
+global [generator.rust.file = "src/generated.rs"]
+global [generator.rust_axum.file = "src/generated.rs"]
+
+global [generator.rust.async]
+global [generator.rust.async_trait]
+
+[rest.path = "hello"]
+usecase Hello {     
+    [rest.method = "post"]
+    createHello {
+        in {
+            hi: string
+        }
+        out {
+            answer: string
+        }
+    }
+
+    [rest.method = "get"]
+    [rest.path = "item"]
+    getHello {
+        in {
+            [rest.query]
+            hi: string
+        }
+        out {
+            answer: string
+        }
+    }
+}
