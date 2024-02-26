@@ -1,9 +1,9 @@
 # Zeus
 
 ## Introduction
-A list of **Clean Architecture** code generators for *Typescript* and *Rust*. 
+Zeus contains a list of **Clean Architecture** code generators for *Rust*, *Typescript*, *OpenAPI*, and more.
 
-According to one or more configuration files( can be either in YAML (.yml or .yaml) or our DSL(.api) ),  **Zeus** can generate nice and clean business logic related code and glue code for a bunch of different controller layers(HTTP, GraphQL, etc.) powered by different libraries or frameworks. 
+According to one or more configuration files( can be either in YAML (.yml or .yaml) or our DSL(.api) ),  **Zeus** can generate nice and clean business logic related code and glue code for a bunch of different controller layers(HTTP, GraphQL, etc.) powered by different libraries or frameworks.
 
 
 === "DSL"

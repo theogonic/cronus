@@ -453,7 +453,7 @@ mod test {
             }
         }
         "#;
-        
+
         let spec = api_parse::parse(PathBuf::from(""), api_file)?;
         let ctx = Ctxt::new(spec);
         let g = RustGenerator::new();

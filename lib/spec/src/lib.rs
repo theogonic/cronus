@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RawSchemaEnumItem {
-    name: String,
-    value: u32,
+    pub name: String,
+    pub value: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -210,7 +210,11 @@ pub struct RawSchemaPropertyOption {
     pub rest: Option<RawSchemaPropertyRestOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rust: Option<RawSchemaPropertyRustOption>
+    pub rust: Option<RawSchemaPropertyRustOption>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>
+
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -235,6 +239,8 @@ pub struct RawUsecaseMethod {
     pub req: Option<RawSchema>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub res: Option<RawSchema>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub option: Option<RawUsecaseMethodOption>
 }
 
@@ -271,7 +277,10 @@ pub struct RawUsecaseRestOption {
 #[serde(deny_unknown_fields)]
 pub struct RawUsecaseMethodOption {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rest: Option<RawUsecaseMethodRestOption>
+    pub rest: Option<RawUsecaseMethodRestOption>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -313,7 +322,7 @@ impl RawSpec {
             let ty_map = self.ty.get_or_insert_with(HashMap::new);
             for (key, value) in to_merge_ty {
                 if ty_map.contains_key(&key) {
-                    return bail!("Conflict for key '{}' in 'ty' hashmap", key);
+                    bail!("Conflict for key '{}' in 'ty' hashmap", key);
                 }
                 ty_map.insert(key, value);
             }
