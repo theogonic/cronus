@@ -1,28 +1,25 @@
 # Zeus
 
-## Generators
-
-### OpenAPI
-
-### Rust
-
-### Rust Axum
-
-### Typescript Nestjs
-
-### Typescript
+Documentation is [here]().
 
 ## Dev
 
-### Commands
+### Common
 
 ```bash
-$ cargo run -- examples/todo/main.yaml
+# Run the generators by the given API spec
+$ cargo run -- examples/todo/main.api
 ```
 
 ## Docs
 
+### Dev
 ```bash
 $ pip install mkdocs-material
 $ mkdocs serve -f mkdocs.yaml
+```
+
+### Publish
+```bash
+$ mkdocs gh-deploy
 ```

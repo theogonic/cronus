@@ -19,11 +19,11 @@ nav:
     - rust: generators/rust.md
     - rust-axum: generators/rust_axum.md
     - typescript: generators/ts.md
-    - ts_nestjs: generators/ts_nestjs.md
+    - ts-nestjs: generators/ts_nestjs.md
     - openapi: generators/openapi.md
   - References:
-    - YAML Format: references/api.md
-    - API Format: references/yaml.md
+    - YAML Format: references/yaml.md
+    - API Format: references/api.md
 
 markdown_extensions:
   - pymdownx.highlight:

@@ -1,64 +1,116 @@
 # Zeus
+Zeus aims to help you focusing on **business logic code only** instead of the other **glue code**.
 
 ## Introduction
-Zeus contains a list of **Clean Architecture** code generators for *Rust*, *Typescript*, *OpenAPI*, and more.
+Zeus contains a list of code generators, which insipred by the **Clean Architecture**, for **Rust**, **Typescript**, **OpenAPI**, and more.
 
 According to one or more configuration files( can be either in YAML (.yml or .yaml) or our DSL(.api) ),  **Zeus** can generate nice and clean business logic related code and glue code for a bunch of different controller layers(HTTP, GraphQL, etc.) powered by different libraries or frameworks.
 
 
-=== "DSL"
-    ```
-    struct Todo {
-        id: string
-        content: string
-    }
-    usecase Todo {
-        createTodo {
-            in {
-                content: string
-            }
+Zeus
+```
+# More fine-grained configuration can be found at documentation
 
-            out {
-                todo: Todo
-            }
-        }
-    }
-    ```
+# For 'rust' generator
+global [generator.rust.file = "src/generated.rs"]
+global [generator.rust.async]
+global [generator.rust.async_trait]
 
-=== "YAML"
-    ```yaml
-
-    ```
+# For 'rust_axum' generator
+global [generator.rust_axum.file = "src/generated.rs"]
 
 
-**Zeus** can generate the following **Business Logic** interface code:
+struct Todo {
+  id: string
+  content: string
+}
+
+usecase Todo {
+  createTodo {
+      in {
+          content: string
+      }
+
+      out {
+          todo: Todo
+      }
+  }
+}
+```
+
+**Zeus** can be used to generate the following **Business Logic** interface code:
 
 
-=== "Generated Typescript"
-    ```typescript
-    export interface TodoUsecase {
+Generated Rust
+```rust
+use serde::{Deserialize, Serialize};
+use async_trait::async_trait;
 
-    }
-    ```
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Todo {
+  pub id: String,
+  pub content: String,
+}
 
-=== "Generated Rust"
-    ```rust 
-    
-    ```
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CreateTodoRequest {
+  pub content: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CreateTodoResponse {
+  pub todo: Todo,
+}
+
+#[async_trait]
+pub trait TodoUsecase {
+  async  fn create_todo(&self, request: CreateTodoRequest) -> Result<CreateTodoResponse, Box<dyn std::error::Error>>;
+}
+```
 
 **Zeus** can even step further to generate the following **Controller** glue code:
 
-=== "Generated Typescript (Nestjs)"
-    ```typescript
-    export interface TodoUsecase {
+Generated Rust (Axum)
+```rust
+use axum::{
+    extract::State,
+    http::{header, Response, StatusCode},
+    response::IntoResponse,
+    Extension, Json,
+    Router
+};
 
-    }
-    ```
+pub async fn create_todo(State(state): State<std::sync::Arc<Usecases>>, Json(request): Json<CreateTodoRequest>) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
 
-=== "Generated Rust (Axum)"
-    ```rust 
-    
-    ```
+  match state.todo.create_todo(request).await {
+      Ok(res) => {
+          Ok(Json(res))
+      },
+      Err(err) => {
+          let mut err_obj = serde_json::Map::new();
+          err_obj.insert("message".to_owned(), serde_json::Value::from(err.to_string()));
+          Err((StatusCode::BAD_REQUEST, Json(serde_json::Value::Object(err_obj))))
+      },
+  }
+}
+
+#[derive(Clone)]
+pub struct Usecases {
+  pub todo: std::sync::Arc<dyn TodoUsecase + Send + Sync>,
+}
+
+pub fn router_init(usecases: std::sync::Arc<Usecases>) -> Router {
+  Router::new()
+    .route("", axum::routing::post(create_todo))
+    .with_state(usecases)
+}
+```
+
+## CLI Usage
+```bash
+$ zeus <your api file>
+# Ex. zeus main.api
+```
 
 
 ## What is the **Clean Architecture** and Why we need it? 
@@ -76,7 +128,7 @@ According to one or more configuration files( can be either in YAML (.yml or .ya
 - **Independence of Database:** 
   Business rules are not tied to a specific database, facilitating easy changes in database technologies.
 
-- **Independence from External Agencies:** 
+- **Independence from External Agencies:**
   Business rules remain unaffected by external changes, maintaining their integrity and effectiveness.
 
 - **Manageable Complexity:** 

@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 use async_trait::async_trait;
-
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CreateHelloRequest {
   pub hi: String,
 }
-
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CreateHelloResponse {
   pub answer: String,
 }

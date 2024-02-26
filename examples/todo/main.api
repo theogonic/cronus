@@ -1,34 +1,24 @@
-
-[generator];
-
-
-[]
-service User {
-     
-    
-    createUser  {
-        in CreateUserRequest
-        out CreateUserResponse
-    }
+global [generator.rust.file = "src/generated.rs"]
+global [generator.rust_axum.file = "src/generated.rs"]
+global [generator.rust.async]
+global [generator.rust.async_trait]
 
 
-    updateUser {
-        
-        [rest]
-        [graphql]
-        [openapi]
+struct Todo {
+    id: string
+    content: string
+}
+
+usecase Todo {
+
+    [rest.method = "post"]
+    createTodo {
         in {
-            
+            content: string
         }
-    }
-    deleteUser {
-        in {
 
-        }
         out {
-
+            todo: Todo
         }
     }
 }
-
-
