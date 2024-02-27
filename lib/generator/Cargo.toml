@@ -1,6 +1,6 @@
 [package]
 name = "cronus_generator"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 description = "The generators for cronus API spec."
 license = "MIT"
@@ -8,8 +8,8 @@ repository = "https://github.com/theogonic/cronus"
 documentation = "https://theogonic.github.io/cronus/"
 
 [dependencies]
-cronus_spec = { path = "../spec", version = "0.1.0" }
-cronus_parser = { path = "../parser", version = "0.1.0" }
+cronus_spec =  { workspace = true }
+cronus_parser =  { workspace = true }
 convert_case = "0.6.0"
 tracing = "0.1"
 anyhow = "1.0"

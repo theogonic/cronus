@@ -1,16 +1,17 @@
 [package]
 name = "cronus_cli"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 description = "The CLI for cronus API spec."
 license = "MIT"
 repository = "https://github.com/theogonic/cronus"
 documentation = "https://theogonic.github.io/cronus/"
+readme = "../../README.md"
 
 [dependencies]
 clap = { version = "4.4.7", features = ["derive"] }
-cronus_generator = { path = "../../lib/generator", version = "0.1.0" }
-cronus_parser = { path = "../../lib/parser", version = "0.1.0" }
+cronus_generator =  { workspace = true }
+cronus_parser =  { workspace = true }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 anyhow = "1.0"

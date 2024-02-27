@@ -1,6 +1,6 @@
 [package]
 name = "cronus_spec"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 description = "The definitions for cronus API spec."
 license = "MIT"
