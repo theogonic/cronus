@@ -8,7 +8,7 @@ use crate::{
 };
 use tracing::{self, debug, span, Level};
 
-#[doc = include_str!("../../../docs/generators/rust.md")]
+
 pub struct RustGenerator {
     generated_tys: RefCell<HashSet<String>>
 }
