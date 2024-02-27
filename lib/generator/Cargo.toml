@@ -2,10 +2,12 @@
 name = "cronus_generator"
 version = "0.1.0"
 edition = "2021"
+description = "The generators for cronus API spec."
+license = "MIT"
 
 [dependencies]
-cronus_spec = { path = "../spec" }
-cronus_parser = { path = "../parser" }
+cronus_spec = { path = "../spec", version = "0.1.0" }
+cronus_parser = { path = "../parser", version = "0.1.0" }
 convert_case = "0.6.0"
 tracing = "0.1"
 anyhow = "1.0"
