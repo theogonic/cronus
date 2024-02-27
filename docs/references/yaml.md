@@ -1,4 +1,4 @@
-**For the users, it is recommended to use [API style](/references/api) instead of YAML style to write API spec due to the consideration of readability and convenience.**
+**For the users, it is recommended to use [API style](api.md) instead of YAML style to write API spec due to the consideration of readability and convenience.**
 
 To create a valid YAML file that represents an API specification (`RawSpec`), you need to follow the structure defined by the Rust structs. Here's a documentation guide on how to define keys and values in the YAML file:
 
