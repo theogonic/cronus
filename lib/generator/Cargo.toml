@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 description = "The generators for cronus API spec."
 license = "MIT"
+repository = "https://github.com/theogonic/cronus"
+documentation = "https://theogonic.github.io/cronus/"
 
 [dependencies]
 cronus_spec = { path = "../spec", version = "0.1.0" }
