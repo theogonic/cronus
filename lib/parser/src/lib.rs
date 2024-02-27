@@ -1,7 +1,7 @@
 
 use std::{path::{Path, PathBuf}, error::Error, collections::{VecDeque, HashSet}, fs, fmt::format};
 use anyhow::{bail, Result};
-use spec::RawSpec;
+use cronus_spec::RawSpec;
 
 pub mod api_parse;
 pub mod api_parser;

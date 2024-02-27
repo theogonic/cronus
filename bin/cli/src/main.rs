@@ -1,7 +1,7 @@
 #![feature(absolute_path)]
 
 use clap::Parser;
-use generator::{Ctxt, generate};
+use cronus_generator::{Ctxt, generate};
 use tracing::{Level, span, debug};
 use anyhow::Result;
 use tracing_subscriber::{util::SubscriberInitExt, fmt::format::FmtSpan};
@@ -54,7 +54,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 #[tracing::instrument]
 pub fn run(entry_file: &Path, search_paths: Option<&Vec<PathBuf>>) -> Result<()> {
     let abs_file = std::path::absolute(entry_file)?;
-    let spec = parser::from_file(&abs_file, true, search_paths)?;
+    let spec = cronus_parser::from_file(&abs_file, true, search_paths)?;
     let ctx = Ctxt::new(spec);
     generate(&ctx)
 }

@@ -1,26 +1,3 @@
-use serde::{Deserialize, Serialize};
-use async_trait::async_trait;
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct CreateHelloRequest {
-  pub hi: String,
-}
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct CreateHelloResponse {
-  pub answer: String,
-}
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct GetHelloRequest {
-  pub hi: String,
-}
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct GetHelloResponse {
-  pub answer: String,
-}
-#[async_trait]
-pub trait HelloUsecase {
-  async  fn create_hello(&self, request: CreateHelloRequest) -> Result<CreateHelloResponse, Box<dyn std::error::Error>>;
-  async  fn get_hello(&self, request: GetHelloRequest) -> Result<GetHelloResponse, Box<dyn std::error::Error>>;
-}
 
 use axum::{
     extract::State,
@@ -64,4 +41,27 @@ pub fn router_init(usecases: std::sync::Arc<Usecases>) -> Router {
     .route("", axum::routing::post(create_hello))
     .route("item", axum::routing::get(get_hello))
     .with_state(usecases)
+}
+use serde::{Deserialize, Serialize};
+use async_trait::async_trait;
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CreateHelloRequest {
+  pub hi: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CreateHelloResponse {
+  pub answer: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GetHelloRequest {
+  pub hi: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GetHelloResponse {
+  pub answer: String,
+}
+#[async_trait]
+pub trait HelloUsecase {
+  async  fn create_hello(&self, request: CreateHelloRequest) -> Result<CreateHelloResponse, Box<dyn std::error::Error>>;
+  async  fn get_hello(&self, request: GetHelloRequest) -> Result<GetHelloResponse, Box<dyn std::error::Error>>;
 }

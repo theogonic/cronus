@@ -148,6 +148,64 @@ dependencies = [
 ]
 
 [[package]]
+name = "cronus_cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "cronus_generator",
+ "cronus_parser",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "cronus_generator"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "convert_case",
+ "cronus_parser",
+ "cronus_spec",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tracing",
+]
+
+[[package]]
+name = "cronus_generator_wasm"
+version = "0.1.0"
+dependencies = [
+ "cronus_generator",
+ "cronus_parser",
+ "cronus_spec",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "cronus_parser"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cronus_spec",
+ "pest",
+ "pest_derive",
+ "serde",
+ "serde_yaml",
+ "tracing",
+]
+
+[[package]]
+name = "cronus_spec"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_yaml",
+]
+
+[[package]]
 name = "crypto-common"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -165,30 +223,6 @@ checksum = "8168378f4e5023e7218c89c891c0fd8ecdb5e5e4f18cb78f38cf245dd021e76f"
 dependencies = [
  "block-buffer",
  "crypto-common",
-]
-
-[[package]]
-name = "generator"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "convert_case",
- "parser",
- "serde",
- "serde_json",
- "serde_yaml",
- "spec",
- "tracing",
-]
-
-[[package]]
-name = "generator-wasm"
-version = "0.1.0"
-dependencies = [
- "generator",
- "parser",
- "spec",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -280,19 +314,6 @@ name = "overload"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
-
-[[package]]
-name = "parser"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "pest",
- "pest_derive",
- "serde",
- "serde_yaml",
- "spec",
- "tracing",
-]
 
 [[package]]
 name = "pest"
@@ -437,15 +458,6 @@ name = "smallvec"
 version = "1.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "942b4a808e05215192e39f4ab80813e599068285906cc91aa64f923db842bd5a"
-
-[[package]]
-name = "spec"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "serde",
- "serde_yaml",
-]
 
 [[package]]
 name = "strsim"
@@ -753,16 +765,4 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56c1936c4cc7a1c9ab21a1ebb602eb942ba868cbd44a99cb7cdc5892335e1c85"
 dependencies = [
  "linked-hash-map",
-]
-
-[[package]]
-name = "zeus"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "generator",
- "parser",
- "tracing",
- "tracing-subscriber",
 ]

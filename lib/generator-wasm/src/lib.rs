@@ -1,15 +1,15 @@
 use std::{error::Error, path::PathBuf};
 
-use generator::Ctxt;
-use spec::RawSpec;
+use cronus_generator::Ctxt;
+use cronus_spec::RawSpec;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub fn generate_from_yaml(content: &str) -> Result<String, String> {
-    match parser::from_yaml_str(content) {
+    match cronus_parser::from_yaml_str(content) {
         Ok(spec) => {
             let ctx = Ctxt::new(spec);
-            match generator::generate(&ctx) {
+            match cronus_generator::generate(&ctx) {
                 Ok(_) => todo!(),
                 Err(_) => todo!(),
             }
@@ -24,10 +24,10 @@ pub fn generate_from_yaml(content: &str) -> Result<String, String> {
 
 #[wasm_bindgen]
 pub fn generate_from_api(content: &str) -> Result<String, String> {
-    match parser::api_parse::parse(PathBuf::new(), content) {
+    match cronus_parser::api_parse::parse(PathBuf::new(), content) {
         Ok(spec) => {
             let ctx = Ctxt::new(spec);
-            match generator::generate(&ctx) {
+            match cronus_generator::generate(&ctx) {
                 Ok(_) => todo!(),
                 Err(_) => todo!(),
             }

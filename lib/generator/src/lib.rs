@@ -15,7 +15,7 @@ use openapi::OpenAPIGenerator;
 use rust::RustGenerator;
 use rust_axum::RustAxumGenerator;
 use serde_yaml::Value;
-use spec::RawSpec;
+use cronus_spec::RawSpec;
 use tauri::TauriGenerator;
 use tracing::info;
 use ts::TypescriptGenerator;
@@ -190,7 +190,7 @@ pub fn generate(ctx: &Ctxt) -> Result<()> {
 mod test {
     use std::{path::{Path, PathBuf}, process::Command};
 
-    use spec::RawSpec;
+    use cronus_spec::RawSpec;
     use anyhow::{bail, Result};
     use crate::{generate, Context, Ctxt};
 
@@ -218,7 +218,7 @@ mod test {
     fn e2e_hello_rust() -> Result<()> {
         let proj_dir = get_cargo_manifest_dir().unwrap().join("testdata").join("hello").join("rust");
         let spec_file = proj_dir.join("main.api");
-        let spec = parser::from_file(&spec_file, true, None)?;
+        let spec = cronus_parser::from_file(&spec_file, true, None)?;
         let ctx = Ctxt::new(spec);
         generate(&ctx)?;
         run_cargo_check(&proj_dir)
@@ -228,7 +228,7 @@ mod test {
     fn e2e_hello_rust_axum() -> Result<()> {
         let proj_dir = get_cargo_manifest_dir().unwrap().join("testdata").join("hello").join("rust_axum");
         let spec_file = proj_dir.join("main.api");
-        let spec = parser::from_file(&spec_file, true, None)?;
+        let spec = cronus_parser::from_file(&spec_file, true, None)?;
         let ctx = Ctxt::new(spec);
         generate(&ctx)?;
         run_cargo_check(&proj_dir)

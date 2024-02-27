@@ -1,7 +1,7 @@
 
 
 use convert_case::{Casing, Case};
-use spec::{RawUsecase, RawSchema};
+use cronus_spec::{RawUsecase, RawSchema};
 use tracing::{span, Level};
 
 use crate::{Generator, Ctxt, utils::{get_request_name, get_usecase_name, get_response_name}};

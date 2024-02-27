@@ -1,5 +1,5 @@
 use convert_case::{Casing, Case};
-use spec::RawSchema;
+use cronus_spec::RawSchema;
 
 use crate::Ctxt;
 

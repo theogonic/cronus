@@ -11,8 +11,8 @@ theme:
     primary: black
     accent: indigo
   logo:
-repo_url: https://github.com/theogonic/zeus-rust
-site_name: Zeus
+repo_url: https://github.com/theogonic/cronus
+site_name: Cronus
 nav:
   - Home: index.md
   - Generators:

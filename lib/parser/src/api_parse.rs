@@ -8,16 +8,16 @@ use std::sync::Arc;
 use anyhow::bail;
 use anyhow::Result;
 use serde::de::DeserializeOwned;
-use spec::DefLoc;
-use spec::GlobalOption;
+use cronus_spec::DefLoc;
+use cronus_spec::GlobalOption;
 use crate::api_parser::Rule;
 use pest::iterators::Pair;
 use pest::Parser;
-use spec::RawSchema;
-use spec::RawSchemaPropertyOption;
-use spec::RawSpec;
-use spec::RawUsecase;
-use spec::RawUsecaseMethod;
+use cronus_spec::RawSchema;
+use cronus_spec::RawSchemaPropertyOption;
+use cronus_spec::RawSpec;
+use cronus_spec::RawUsecase;
+use cronus_spec::RawUsecaseMethod;
 
 
 fn parse_file(def_loc:Arc<DefLoc>, pairs: Pair<Rule>) -> Result<RawSpec> {

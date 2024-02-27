@@ -2,7 +2,7 @@
 members = [
     "lib/parser",
     "lib/generator",
-    "bin/zeus",
+    "bin/cli",
     "lib/spec",
     "lib/generator-wasm"
 ]

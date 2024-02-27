@@ -1,13 +1,13 @@
-# Zeus
-Zeus aims to help you focusing on **business logic code only** instead of the other **glue code**.
+# Cronus
+Cronus aims to help you focusing on **business logic code only** instead of the other **glue code**.
 
 ## Introduction
-Zeus contains a list of code generators, which insipred by the **Clean Architecture**, for **Rust**, **Typescript**, **OpenAPI**, and more.
+Cronus contains a list of code generators, which insipred by the **Clean Architecture**, for **Rust**, **Typescript**, **OpenAPI**, and more.
 
-According to one or more configuration files( can be either in YAML (.yml or .yaml) or our DSL(.api) ),  **Zeus** can generate nice and clean business logic related code and glue code for a bunch of different controller layers(HTTP, GraphQL, etc.) powered by different libraries or frameworks.
+According to one or more configuration files( can be either in YAML (.yml or .yaml) or our DSL(.api) ),  **Cronus** can generate nice and clean business logic related code and glue code for a bunch of different controller layers(HTTP, GraphQL, etc.) powered by different libraries or frameworks.
 
 
-Zeus
+Cronus
 ```
 # More fine-grained configuration can be found at documentation
 
@@ -38,7 +38,7 @@ usecase Todo {
 }
 ```
 
-**Zeus** can be used to generate the following **Business Logic** interface code:
+**Cronus** can be used to generate the following **Business Logic** interface code:
 
 
 Generated Rust
@@ -68,7 +68,7 @@ pub trait TodoUsecase {
 }
 ```
 
-**Zeus** can even step further to generate the following **Controller** glue code:
+**Cronus** can even step further to generate the following **Controller** glue code:
 
 Generated Rust (Axum)
 ```rust
@@ -108,8 +108,8 @@ pub fn router_init(usecases: std::sync::Arc<Usecases>) -> Router {
 
 ## CLI Usage
 ```bash
-$ zeus <your api file>
-# Ex. zeus main.api
+$ Cronus <your api file>
+# Ex. Cronus main.api
 ```
 
 

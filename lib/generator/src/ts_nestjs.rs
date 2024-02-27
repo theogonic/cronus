@@ -1,7 +1,7 @@
 
 
 use convert_case::{Casing, Case};
-use spec::{RawUsecase, RawUsecaseMethod, RawUsecaseMethodRestOption, RawSchema};
+use cronus_spec::{RawUsecase, RawUsecaseMethod, RawUsecaseMethodRestOption, RawSchema};
 
 use crate::{Generator, Ctxt};
 

@@ -1,7 +1,7 @@
 use std::{cell::RefCell, path::PathBuf};
 
 use convert_case::{Case, Casing};
-use spec::{RawUsecaseMethodRestOption};
+use cronus_spec::{RawUsecaseMethodRestOption};
 use tracing::{span, Level};
 
 use crate::{Generator, Ctxt, utils::{get_usecase_suffix, get_request_name, get_usecase_name}};
@@ -46,7 +46,7 @@ impl Generator for RustAxumGenerator {
 
 impl RustAxumGenerator {
 
-    fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &spec::RawUsecase) {
+    fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &cronus_spec::RawUsecase) {
         ctx.append_file(self.name(), &self.dst(ctx), self.axum_dependencies());
 
         for (method_name, method) in &usecase.methods {
@@ -72,7 +72,7 @@ impl RustAxumGenerator {
     ///
     /// Except for the state and request, path parameter is also needed if there is a corresponding config in rest option
     /// Ex. PathExtractor(post_id): PathExtractor<Uuid>
-    fn generate_method(&self, ctx: &Ctxt, usecase_name:&str, method_name: &str, method: &spec::RawUsecaseMethod, rest: &spec::RawUsecaseMethodRestOption) {
+    fn generate_method(&self, ctx: &Ctxt, usecase_name:&str, method_name: &str, method: &cronus_spec::RawUsecaseMethod, rest: &cronus_spec::RawUsecaseMethodRestOption) {
 
         let mut result = "pub async fn ".to_owned();
         let fn_name = method_name.to_case(convert_case::Case::Snake);

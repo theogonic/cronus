@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use spec::{RawSchema, RawUsecaseMethod};
+use cronus_spec::{RawSchema, RawUsecaseMethod};
 
 use crate::{openapi_utils::{InfoObject, MediaTypeObject, OpenApiDocument, OperationObject, ParameterObject, PathItemObject, RequestBodyObject, ResponseObject, ResponsesObject, SchemaObject}, Ctxt, Generator};
 
@@ -43,7 +43,7 @@ impl Generator for OpenAPIGenerator {
 }
 
 impl OpenAPIGenerator {
-    fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &spec::RawUsecase, openapi: &mut OpenApiDocument) {
+    fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &cronus_spec::RawUsecase, openapi: &mut OpenApiDocument) {
         let usecase_prefix = usecase.option.as_ref()
             .and_then(|opt| opt.rest.as_ref())
             .and_then(|rest_opt| rest_opt.path.as_ref())
@@ -241,7 +241,7 @@ mod tests {
     use super::*;
     use std::{collections::HashMap, path::PathBuf};
     use anyhow::{Ok, Result};
-    use parser::api_parse;
+    use cronus_parser::api_parse;
 
     #[test]
     fn test_openapi_get() -> Result<()> {

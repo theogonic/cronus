@@ -1,7 +1,7 @@
 use std::{any::type_name, cell::RefCell, collections::HashSet, fmt::format, path::PathBuf};
 
 use convert_case::{Case, Casing};
-use spec::{RawSchema, RustGeneratorOption};
+use cronus_spec::{RawSchema, RustGeneratorOption};
 
 use crate::{
     utils::{self, get_request_name, get_response_name, get_schema_by_name, get_usecase_name, spec_ty_to_rust_builtin_ty}, Ctxt, Generator
@@ -77,7 +77,7 @@ impl RustGenerator {
     ///   fn <method name>(&self, request) -> response;
     /// }
     ///
-    fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &spec::RawUsecase) {
+    fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &cronus_spec::RawUsecase) {
         let span = span!(Level::TRACE, "generate_usecase", "usecase" = name);
         // Enter the span, returning a guard object.
         let _enter = span.enter();
@@ -360,7 +360,7 @@ impl RustGenerator {
 mod test {
     use std::path::PathBuf;
 
-    use parser::api_parse;
+    use cronus_parser::api_parse;
 
     use crate::{Ctxt, Generator};
     use anyhow::{Ok, Result};
