@@ -42,6 +42,7 @@ impl OpenApiDocument {
 pub struct InfoObject {
     pub title: String,
     pub version:  String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>
     // Other fields like description, termsOfService, contact, license, etc. can be added here
 }

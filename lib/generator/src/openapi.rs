@@ -125,6 +125,24 @@ impl OpenAPIGenerator {
             }
         }
 
+        let required: Option<Vec<String>> = schema.properties.as_ref().map(|props| {
+            props
+                .iter()
+                .filter_map(|(key, value)| {
+                    if let Some(ignore_props) = ignore_props {
+                        if ignore_props.contains(key) {
+                            return None;
+                        }
+                    }
+                    if value.required.unwrap_or(false) {
+                        Some(key.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        });
+
         // Ok, now we need to create a components-schemas for this custom schema
         let so = SchemaObject {
             type_: schema.ty.clone(),
@@ -147,23 +165,7 @@ impl OpenAPIGenerator {
                     })
                     .collect()
             }),
-            required: schema.properties.as_ref().map(|props| {
-                props
-                    .iter()
-                    .filter_map(|(key, value)| {
-                        if let Some(ignore_props) = ignore_props {
-                            if ignore_props.contains(key) {
-                                return None;
-                            }
-                        }
-                        if value.required.unwrap_or(false) {
-                            Some(key.clone())
-                        } else {
-                            None
-                        }
-                    })
-                    .collect()
-            }),
+            required: required.and_then(|arr| if arr.is_empty() { None } else {Some(arr)}),
             enum_: schema.enum_items.as_ref().map(|enum_items| {
                 enum_items.iter().map(|item| item.name.clone()).collect()
             }),
