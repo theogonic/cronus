@@ -30,6 +30,7 @@ impl Generator for RustAxumGenerator {
     fn generate(&self, ctx: &Ctxt) {
         let span = span!(Level::TRACE, "RustAxumGenerator");
         let _enter = span.enter();
+        ctx.append_file(self.name(), &self.dst(ctx), self.axum_dependencies());
 
         ctx.spec
             .usecases
@@ -47,7 +48,6 @@ impl Generator for RustAxumGenerator {
 impl RustAxumGenerator {
 
     fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &cronus_spec::RawUsecase) {
-        ctx.append_file(self.name(), &self.dst(ctx), self.axum_dependencies());
 
         for (method_name, method) in &usecase.methods {
             match method.option {

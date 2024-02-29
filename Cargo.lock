@@ -149,7 +149,7 @@ dependencies = [
 
 [[package]]
 name = "cronus_cli"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -161,7 +161,7 @@ dependencies = [
 
 [[package]]
 name = "cronus_generator"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "convert_case",
@@ -175,7 +175,7 @@ dependencies = [
 
 [[package]]
 name = "cronus_generator_wasm"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "cronus_generator",
  "cronus_parser",
@@ -185,7 +185,7 @@ dependencies = [
 
 [[package]]
 name = "cronus_parser"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "cronus_spec",
@@ -198,7 +198,7 @@ dependencies = [
 
 [[package]]
 name = "cronus_spec"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "serde",
