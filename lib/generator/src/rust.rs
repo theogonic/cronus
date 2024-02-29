@@ -4,7 +4,7 @@ use convert_case::{Case, Casing};
 use cronus_spec::{RawSchema, RustGeneratorOption};
 
 use crate::{
-    utils::{self, get_request_name, get_response_name, get_schema_by_name, get_usecase_name, spec_ty_to_rust_builtin_ty}, Ctxt, Generator
+    utils::{self, get_path_from_optional_parent, get_request_name, get_response_name, get_schema_by_name, get_usecase_name, spec_ty_to_rust_builtin_ty}, Ctxt, Generator
 };
 use tracing::{self, debug, span, Level};
 
@@ -184,7 +184,7 @@ impl RustGenerator {
             type_name = ty.to_case(Case::UpperCamel);
         } 
         else if schema.items.is_some() {
-            type_name = self.generate_struct(ctx, schema.items.as_ref().unwrap(), override_ty);
+            type_name = self.generate_struct(ctx, schema.items.as_ref().unwrap(), None);
             return format!("Vec<{}>", type_name).to_owned()
         }
         else {
@@ -234,7 +234,7 @@ impl RustGenerator {
             }
         } 
 
-       
+
 
         match &schema.option {
             Some(option) => {
@@ -306,7 +306,7 @@ impl RustGenerator {
         ctx.append_file(self.name(), &self.dst(ctx), &result);
 
         self.generated_tys.borrow_mut().insert(type_name.clone());
-         
+
         type_name
     }
 
@@ -323,21 +323,7 @@ impl RustGenerator {
                     Some(gen) => {
                         match &gen.rust {
                             Some(rust_gen) => {
-                                let par =  rust_gen.def_loc.file.parent();
-                                if par.is_none() {
-                                    return default_file.into();
-                                }
-                                let rel_root = par.unwrap();
-                                if let Some(file) = &rust_gen.file {
-                                    if PathBuf::from(file).is_absolute() {
-                                        return file.clone();
-                                    } 
-                                    
-                                    return rel_root.join(file).to_str().unwrap().to_string();
-                                    
-                                }
-                                
-                                rel_root.join(default_file).to_str().unwrap().to_string()
+                                get_path_from_optional_parent(rust_gen.def_loc.file.parent(), rust_gen.file.as_ref(), default_file)
                             },
                             None => default_file.into(),
                         }
@@ -351,7 +337,7 @@ impl RustGenerator {
                 default_file.into()
             },
         }
-        
+
     }
 }
 

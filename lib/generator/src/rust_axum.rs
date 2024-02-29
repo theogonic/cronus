@@ -182,11 +182,11 @@ use axum::{
             if PathBuf::from(file).is_absolute() {
                 return file.clone();
             }
-            
+
             return rel_root.join(file).to_str().unwrap().to_string();
-            
+
         }
-        
+
         rel_root.join("handler.rs").to_str().unwrap().to_string()
     }
 

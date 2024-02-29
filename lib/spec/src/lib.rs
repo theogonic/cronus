@@ -2,7 +2,7 @@ use std::{collections::{HashMap, VecDeque}, error::Error, fs, path::{Path, PathB
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RawSchemaEnumItem {
     pub name: String,
     pub value: u32,
@@ -112,6 +112,8 @@ pub struct OpenapiGeneratorOption {
     #[serde(skip)]
     pub def_loc: Arc<DefLoc>,
 
+    /// Output .rs file
+    pub file: Option<String>
 }
 
 
@@ -138,7 +140,7 @@ impl Default for DefLoc {
 
 
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RawSchema {
     #[serde(skip)]
     pub def_loc: Arc<DefLoc>,
@@ -203,7 +205,7 @@ impl RawSchema {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RawSchemaPropertyOption {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -217,17 +219,14 @@ pub struct RawSchemaPropertyOption {
 
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RawSchemaPropertyRestOption {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub path: Option<bool>,
-
     #[serde(skip_serializing_if = "Option::is_none")]
     pub query: Option<bool>
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RawSchemaPropertyRustOption {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -286,8 +285,7 @@ pub struct RawUsecaseMethodOption {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RawUsecaseMethodRestOption {
     pub method: String,
-    pub path: Option<String>,
-    pub query: Option<Vec<String>>,
+    pub path: Option<String>
 }
 
 /// The schema for a spec

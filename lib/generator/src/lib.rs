@@ -20,7 +20,7 @@ use tauri::TauriGenerator;
 use tracing::info;
 use ts::TypescriptGenerator;
 use ts_nestjs::TypescriptNestjsGenerator;
-use anyhow::{bail, Result};
+use anyhow::{bail, Context as _, Result};
 
 /// relative path => file content
 type GeneratorFileSystem = Rc<RefCell<HashMap<String, String>>>;
@@ -87,15 +87,13 @@ impl Context {
                     .write(true)
                     .append(true)
                     .create(true)
-                    .open(path)
-                    .unwrap();
+                    .open(path).context(format!("failed to open {}", path))?;
                 } else {
                     file = OpenOptions::new()
                     .write(true)
                     .create(true)
                     .truncate(true)
-                    .open(path)
-                    .unwrap();
+                    .open(path).context(format!("failed to open {}", path))?;
                     touched_files.insert(path.to_string());
                 }
                 

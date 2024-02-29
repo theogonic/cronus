@@ -1,31 +1,52 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct OpenApiDocument {
     pub openapi: String,
     pub info: InfoObject,
     pub paths: HashMap<String, PathItemObject>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub components: Option<OpenApiComponentsObject>
     // Other fields like servers, components, security, tags, etc. can be added here
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct OpenApiComponentsObject {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub schemas: Option<HashMap<String, SchemaObject>>,
+}
+
+
+impl OpenApiComponentsObject {
+    pub fn new() -> Self {
+        Self {
+            schemas: Default::default()
+        }
+    }
+}
+
 
 impl OpenApiDocument {
     pub fn new(openapi: &str, info: InfoObject) -> Self {
         return Self {
-            openapi: "3.0.0".to_owned(),
+            openapi: openapi.to_owned(),
             info,
             paths: Default::default(),
+            components: Default::default(),
         };
     }
 }
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InfoObject {
     pub title: String,
-    pub version: String,
+    pub version:  String,
+    pub description: Option<String>
     // Other fields like description, termsOfService, contact, license, etc. can be added here
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PathItemObject {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub get: Option<OperationObject>,
@@ -68,7 +89,7 @@ impl Default for PathItemObject {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct OperationObject {
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -92,7 +113,7 @@ pub struct OperationObject {
     pub tags: Option<Vec<String>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ParameterObject {
     pub name: String,
     #[serde(rename = "in")]
@@ -101,10 +122,11 @@ pub struct ParameterObject {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub required: bool,
+    pub schema: SchemaObject
     // Other fields like schema, allowEmptyValue, deprecated, etc. can be added here
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RequestBodyObject {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -114,21 +136,21 @@ pub struct RequestBodyObject {
     pub required: Option<bool>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MediaTypeObject {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub schema: Option<SchemaObject>,
     // Additional fields like examples, encoding can be added here
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResponsesObject {
     #[serde(flatten)]
     pub responses: HashMap<String, ResponseObject>,
     // Default responses can be added as additional fields
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResponseObject {
     pub description: String,
 
@@ -137,7 +159,7 @@ pub struct ResponseObject {
     // Additional fields like headers, links can be added here
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SchemaObject {
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>, // 'type' is a reserved keyword in Rust
@@ -173,6 +195,12 @@ pub struct SchemaObject {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<serde_json::Value>,
+
+    #[serde(rename = "$ref", skip_serializing_if = "Option::is_none")]
+    pub ref_: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nullable: Option<bool>
 }
 
 impl Default for SchemaObject {
@@ -190,6 +218,32 @@ impl Default for SchemaObject {
             not: Default::default(),
             description: Default::default(),
             default: Default::default(),
+            ref_: Default::default(),
+            nullable: Default::default()
+        }
+    }
+}
+
+impl SchemaObject {
+    pub fn new_with_ref(r: String) -> Self {
+        Self {
+            ref_: Some(r),
+            ..Default::default()
+        }
+    }
+
+    pub fn new_with_type(ty: String) -> Self {
+        Self {
+            type_: Some(ty),
+            ..Default::default()
+        }
+    }
+
+    pub fn new_with_items(items: Box<SchemaObject>) -> Self {
+        Self {
+            items: Some(items),
+            ..Default::default()
+
         }
     }
 }
