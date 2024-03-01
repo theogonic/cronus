@@ -14,13 +14,12 @@ use std::{rc::Rc, cell::{RefCell}, collections::{HashMap, HashSet}, path::{Path,
 use openapi::OpenAPIGenerator;
 use rust::RustGenerator;
 use rust_axum::RustAxumGenerator;
-use serde_yaml::Value;
-use cronus_spec::RawSpec;
+use cronus_spec::{RawSchema, RawSpec, RawUsecase, RawUsecaseMethod};
 use tauri::TauriGenerator;
 use tracing::info;
 use ts::TypescriptGenerator;
 use ts_nestjs::TypescriptNestjsGenerator;
-use anyhow::{bail, Context as _, Result};
+use anyhow::{bail, Context as _, Ok, Result};
 
 /// relative path => file content
 type GeneratorFileSystem = Rc<RefCell<HashMap<String, String>>>;
@@ -127,7 +126,18 @@ impl Ctxt {
 
 pub trait Generator {
     fn name(&self) -> &'static str;
-    fn generate(&self, ctx: &Ctxt);
+    fn before_all(&self, _ctx: &Ctxt) -> Result<()> {
+        Ok(())
+    }
+    fn after_all(&self, _ctx: &Ctxt) -> Result<()> {
+        Ok(())
+    }
+    fn generate_schema(&self, _ctx: &Ctxt, _schema_name:&str, _schema: &RawSchema)-> Result<()> {
+        Ok(())
+    }
+    fn generate_usecase(&self, _ctx: &Ctxt, _usecase_name: &str, _usecase: &RawUsecase) -> Result<()> {
+        Ok(())
+    }
 }
 
 pub fn generate(ctx: &Ctxt) -> Result<()> {
@@ -161,11 +171,10 @@ pub fn generate(ctx: &Ctxt) -> Result<()> {
                     }
                     match generator_map.get(generator_name.as_str().unwrap()) {
                         Some(g) => {
-                            ctx.init_gfs(g.name());
-                            g.generate(&ctx);
+                            run_generator(g.as_ref(), ctx)?;
                         },
                         None => {
-                            return bail!("Cannot find generator '{}'", generator_name.as_str().unwrap())
+                            bail!("Cannot find generator '{}'", generator_name.as_str().unwrap())
                         },
                     }
                    
@@ -182,6 +191,31 @@ pub fn generate(ctx: &Ctxt) -> Result<()> {
 
 }
 
+pub fn run_generator(g: &dyn Generator, ctx: &Ctxt) -> Result<()> {
+    g.before_all(ctx)?;
+    let schema_items = ctx.spec
+            .ty
+            .iter()
+            .flat_map(|t| t.iter());
+
+    for (name, schema) in schema_items {
+        g.generate_schema(ctx, name,schema)?
+    }
+
+    
+    let usecase_items = ctx.spec
+    .usecases
+    .iter()
+    .flat_map(|m| m.iter());
+
+    for (name, usecase) in usecase_items {
+        g.generate_usecase(ctx, name, usecase)?
+    }
+
+
+    g.after_all(ctx)
+
+}
 
 
 #[cfg(test)]

@@ -4,7 +4,7 @@ use convert_case::{Casing, Case};
 use cronus_spec::{RawUsecase, RawUsecaseMethod, RawUsecaseMethodRestOption, RawSchema};
 
 use crate::{Generator, Ctxt};
-
+use anyhow::{Ok, Result};
 
 
 pub struct TypescriptNestjsGenerator {
@@ -23,18 +23,7 @@ impl Generator for TypescriptNestjsGenerator {
         return "typescript_nestjs"
     }
 
-    fn generate(&self, ctx: &Ctxt) {
-        ctx.spec
-            .usecases
-            .iter()
-            .flat_map(|m| m.iter())
-            .for_each(|(name, usecase)| self.generate_usecase(ctx, name, usecase))
-    }
-}
-
-impl TypescriptNestjsGenerator {
-
-    pub fn generate_usecase(&self, ctx: &Ctxt,  name: &str, usecase: &RawUsecase) {
+    fn generate_usecase(&self, ctx: &Ctxt,  name: &str, usecase: &RawUsecase) -> Result<()> {
         let mut nestjs_code = String::new();
     
         // Start of the controller class
@@ -55,7 +44,15 @@ impl TypescriptNestjsGenerator {
         nestjs_code.push_str("}\n\n");
     
         ctx.append_file(self.name(), &self.dst(ctx), &nestjs_code);
+        Ok(())
     }
+
+
+}
+
+impl TypescriptNestjsGenerator {
+
+    
 
     fn generate_method(&self, usecase_name: &str, method: &RawUsecaseMethod, rest_option: &RawUsecaseMethodRestOption) -> String {
         let mut method_code = String::new();

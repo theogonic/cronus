@@ -1,5 +1,6 @@
 use std::{cell::RefCell, collections::{HashMap, HashSet}, fmt::format};
 
+use anyhow::{Ok, Result};
 use convert_case::{Case, Casing};
 use cronus_spec::{OpenapiGeneratorOption, RawSchema, RawUsecaseMethod};
 use tracing::{span, Level};
@@ -9,14 +10,15 @@ use crate::{openapi_utils::{InfoObject, MediaTypeObject, OpenApiComponentsObject
 
 
 pub struct OpenAPIGenerator {
-    generated_schemas: RefCell<HashMap<String, SchemaObject>>
-
+    generated_schemas: RefCell<HashMap<String, SchemaObject>>,
+    openapi_doc: RefCell<Option<OpenApiDocument>>
 }
 
 impl OpenAPIGenerator {
     pub fn new() -> Self {
         Self {
-            generated_schemas: Default::default()
+            generated_schemas: Default::default(),
+            openapi_doc: Default::default()
         }
     }
 }
@@ -26,25 +28,60 @@ impl Generator for OpenAPIGenerator {
         return "openapi"
     }
 
-    fn generate(&self, ctx: &Ctxt) {
-
-        let mut api = OpenApiDocument::new("3.0.0", InfoObject{
+    fn before_all(&self, _ctx: &Ctxt)-> Result<()> {
+        let api = OpenApiDocument::new("3.0.0", InfoObject{
             title:"doc".to_string(),
             version:"0.0.1".to_string(),
             description: None
         });
 
-        ctx.spec.ty
-        .iter()
-        .flat_map(|m| m.iter())
-        .for_each(|(name, schema)| {self.generate_schema(ctx, schema, Some(name.to_string()), None); });
+        *self.openapi_doc.borrow_mut() = Some(api);
+        Ok(())
+    }
 
-        ctx.spec
-            .usecases
-            .iter()
-            .flat_map(|m| m.iter())
-            .for_each(|(name, usecase)| self.generate_usecase(ctx, name, usecase,&mut api ));
+    fn generate_schema(&self, ctx: &Ctxt, schema_name:&str, schema: &RawSchema) -> Result<()> {
+        self.generate_schema_with_ignore(ctx, Some(schema_name.to_string()), schema,  None);
+        Ok(())
+    }
 
+    fn generate_usecase(&self, ctx: &Ctxt, usecase_name: &str, usecase: &cronus_spec::RawUsecase) -> Result<()> {
+        let mut binding = self.openapi_doc.borrow_mut();
+        let openapi =  binding.as_mut().unwrap();
+
+        let usecase_prefix = usecase.option.as_ref()
+            .and_then(|opt| opt.rest.as_ref())
+            .and_then(|rest_opt| rest_opt.path.as_ref())
+            .map(|p| if p.starts_with('/') { p.clone() } else { format!("/{}", p) })
+            .unwrap_or_else(|| "/".to_string());
+
+        for (method_name, method) in &usecase.methods {
+            if let Some(options) = &method.option {
+                if let Some(rest_option) = &options.rest {
+                    let method_path = rest_option.path.as_ref().map(|p| if usecase_prefix.ends_with("/") { format!("{}{}", usecase_prefix, p)} else { format!("{}/{}", usecase_prefix, p)} ).unwrap_or(usecase_prefix.clone());
+                    let path_item = openapi.paths.entry(method_path).or_insert_with(PathItemObject::default);
+                    let mut operation = self.create_operation_object(ctx, method_name, method);
+                    operation.tags = Some(vec![usecase_name.to_string()]);
+                    match rest_option.method.to_lowercase().as_str() {
+                        "get" => path_item.get = Some(operation),
+                        "put" => path_item.put = Some(operation),
+                        "post" => path_item.post = Some(operation),
+                        "delete" => path_item.delete = Some(operation),
+                        "options" => path_item.options = Some(operation),
+                        "head" => path_item.head = Some(operation),
+                        "patch" => path_item.patch = Some(operation),
+                        "trace" => path_item.trace = Some(operation),
+                        _ => {} // Handle unsupported methods or log an error
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn after_all(&self, ctx: &Ctxt) -> Result<()> {
+        let mut binding = self.openapi_doc.borrow_mut();
+        let openapi =  binding.as_mut().unwrap();
 
         if !self.generated_schemas.borrow().is_empty() {
             let mut components = OpenApiComponentsObject::new();
@@ -56,13 +93,15 @@ impl Generator for OpenAPIGenerator {
 
             components.schemas = Some(schemas);
 
-            api.components = Some(components);
+            openapi.components = Some(components);
         }
-        let yaml = serde_yaml::to_string(&api).unwrap();
+        let yaml = serde_yaml::to_string(&openapi).unwrap();
 
         ctx.append_file(self.name(), &self.dst(ctx), &yaml);
 
+        Ok(())
     }
+
 
 
 }
@@ -85,11 +124,11 @@ impl SchemaType {
 
 impl OpenAPIGenerator {
     /// Return the type name
-    fn generate_schema(
+    fn generate_schema_with_ignore(
         &self,
         ctx: &Ctxt,
-        schema: &RawSchema,
         override_ty: Option<String>,
+        schema: &RawSchema,
         ignore_props: Option<&HashSet<String>>
     ) -> SchemaType {
         let type_name: String;
@@ -97,7 +136,7 @@ impl OpenAPIGenerator {
             type_name = ty.to_case(Case::UpperCamel);
         }
         else if schema.items.is_some() {
-            return SchemaType::Arr(Box::new(self.generate_schema(ctx, schema.items.as_ref().unwrap(), override_ty, None)));
+            return SchemaType::Arr(Box::new(self.generate_schema_with_ignore(ctx, override_ty, schema.items.as_ref().unwrap(), None)));
         }
         else {
             type_name = schema.ty.as_ref().unwrap().clone();
@@ -121,7 +160,7 @@ impl OpenAPIGenerator {
         if let Some(ref_schema) = get_schema_by_name(&ctx, &type_name) {
             // check whether schema is a type referencing another user type
             if schema.properties.is_none() && schema.enum_items.is_none() && schema.items.is_none() {
-                return self.generate_schema(ctx, ref_schema, Some(type_name.to_string()), None);
+                return self.generate_schema_with_ignore(ctx,  Some(type_name.to_string()),ref_schema, None);
             }
         }
 
@@ -148,7 +187,7 @@ impl OpenAPIGenerator {
             type_: schema.ty.clone(),
             format: None, // Add logic for format if needed
             items: schema.items.as_ref().map(|item| {
-                self.generate_schema(ctx, item, None, None).to_schema_object()
+                self.generate_schema_with_ignore(ctx, None, item, None).to_schema_object()
             }),
             properties: schema.properties.as_ref().map(|props| {
                 props
@@ -159,7 +198,7 @@ impl OpenAPIGenerator {
                                 return None;
                             }
                         }
-                        let obj =  self.generate_schema(ctx, value, None, None).to_schema_object();
+                        let obj =  self.generate_schema_with_ignore(ctx, None, value, None).to_schema_object();
 
                         Some((key.clone(), *obj))
                     })
@@ -201,33 +240,7 @@ impl OpenAPIGenerator {
     }
 
     fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &cronus_spec::RawUsecase, openapi: &mut OpenApiDocument) {
-        let usecase_prefix = usecase.option.as_ref()
-            .and_then(|opt| opt.rest.as_ref())
-            .and_then(|rest_opt| rest_opt.path.as_ref())
-            .map(|p| if p.starts_with('/') { p.clone() } else { format!("/{}", p) })
-            .unwrap_or_else(|| "/".to_string());
-
-        for (method_name, method) in &usecase.methods {
-            if let Some(options) = &method.option {
-                if let Some(rest_option) = &options.rest {
-                    let method_path = rest_option.path.as_ref().map(|p| if usecase_prefix.ends_with("/") { format!("{}{}", usecase_prefix, p)} else { format!("{}/{}", usecase_prefix, p)} ).unwrap_or(usecase_prefix.clone());
-                    let path_item = openapi.paths.entry(method_path).or_insert_with(PathItemObject::default);
-                    let mut operation = self.create_operation_object(ctx, method_name, method);
-                    operation.tags = Some(vec![name.to_string()]);
-                    match rest_option.method.to_lowercase().as_str() {
-                        "get" => path_item.get = Some(operation),
-                        "put" => path_item.put = Some(operation),
-                        "post" => path_item.post = Some(operation),
-                        "delete" => path_item.delete = Some(operation),
-                        "options" => path_item.options = Some(operation),
-                        "head" => path_item.head = Some(operation),
-                        "patch" => path_item.patch = Some(operation),
-                        "trace" => path_item.trace = Some(operation),
-                        _ => {} // Handle unsupported methods or log an error
-                    }
-                }
-            }
-        }
+        
     }
 
     fn get_gen_option<'a>(&self, ctx: &'a Ctxt) -> Option<&'a OpenapiGeneratorOption> {
@@ -270,7 +283,7 @@ impl OpenAPIGenerator {
                                     },
                                     description: schema.option.as_ref().and_then(|d| d.description.clone()),
                                     required: schema.required.unwrap_or(false),
-                                    schema: *self.generate_schema(ctx, schema, None, None).to_schema_object()
+                                    schema: *self.generate_schema_with_ignore(ctx, None, schema,  None).to_schema_object()
                                 })
                             } else {
                                 None
@@ -290,7 +303,7 @@ impl OpenAPIGenerator {
                 let response_schema = match &method.res {
                     Some(res) => {
                         let res_ty = get_response_name(ctx, name);
-                        *(self.generate_schema(ctx, res, Some(res_ty), None).to_schema_object())
+                        *(self.generate_schema_with_ignore(ctx, Some(res_ty), res, None).to_schema_object())
 
                     },
                     None => {
@@ -329,7 +342,7 @@ impl OpenAPIGenerator {
                     HashMap::from([(
                         "application/json".to_string(),
                         MediaTypeObject {
-                            schema: Some(*self.generate_schema(ctx, req, Some(req_ty), Some(&query_and_path)).to_schema_object()),
+                            schema: Some(*self.generate_schema_with_ignore(ctx, Some(req_ty), req, Some(&query_and_path)).to_schema_object()),
                         },
                 )])
                 },
@@ -358,9 +371,11 @@ fn openapi_ref_type(s: &String) -> String {
 
 #[cfg(test)]
 mod tests {
+    use crate::run_generator;
+
     use super::*;
     use std::{collections::HashMap, path::PathBuf};
-    use anyhow::{Ok, Result};
+    use anyhow::{Result};
     use cronus_parser::api_parse;
 
     #[test]
@@ -383,7 +398,7 @@ mod tests {
         let spec = api_parse::parse(PathBuf::from(""), api_file)?;
         let ctx = Ctxt::new(spec);
         let g = OpenAPIGenerator::new();
-        g.generate(&ctx);
+        run_generator(&g, &ctx)?;
         let gfs = ctx.get_gfs(g.name());
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("openapi.yaml").unwrap();
@@ -398,9 +413,10 @@ mod tests {
         // Check request body schema
         let request_body = post_op.request_body.as_ref().unwrap();
         let request_schema = request_body.content.get("application/json").unwrap().schema.as_ref().unwrap();
-        assert_eq!(request_schema.properties.as_ref().unwrap().len(), 1);
-        assert!(request_schema.properties.as_ref().unwrap().contains_key("a"));
-        assert_eq!(request_schema.properties.as_ref().unwrap().get("a").unwrap().type_.as_ref().unwrap(), "string");
+        assert!(request_schema.properties.is_none());
+        let ref_req_schema = doc.components.as_ref().unwrap().schemas.as_ref().unwrap().get("CreateAbcdRequest").unwrap();
+        assert!(ref_req_schema.properties.as_ref().unwrap().contains_key("a"));
+        assert_eq!(ref_req_schema.properties.as_ref().unwrap().get("a").unwrap().type_.as_ref().unwrap(), "string");
 
         // Check response schema
         let response = post_op.responses.responses.get("200").unwrap();

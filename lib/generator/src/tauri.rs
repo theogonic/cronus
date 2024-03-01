@@ -17,7 +17,4 @@ impl Generator for TauriGenerator {
         return "tauri"
     }
 
-    fn generate(&self, ctx: &crate::Ctxt) {
-        todo!()
-    }
 }

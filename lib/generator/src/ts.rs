@@ -1,5 +1,6 @@
 
 
+use anyhow::{Ok, Result};
 use convert_case::{Casing, Case};
 use cronus_spec::{RawUsecase, RawSchema};
 use tracing::{span, Level};
@@ -24,31 +25,12 @@ impl Generator for TypescriptGenerator {
         return "typescript"
     }
 
-    fn generate(&self, ctx: &Ctxt) {
-
-        ctx.spec
-            .ty
-            .iter()
-            .flat_map(|t| t.iter())
-            .for_each(|(ty, schema)| {
-                self.generate_schema(ctx, schema, Some(ty.to_owned()));
-            });
-
-
-        ctx.spec
-            .usecases
-            .iter()
-            .flat_map(|m| m.iter())
-            .for_each(|(name, usecase)| self.generate_usecase(ctx, name, usecase));
+    fn generate_schema(&self, ctx: &Ctxt, schema_name:&str, schema: &RawSchema)-> Result<()> {
+        self.generate_schema(ctx, Some(schema_name.to_owned()),  schema);
+        Ok(())
     }
 
-
-    
-}
-
-
-impl TypescriptGenerator {
-    pub fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &RawUsecase) {
+    fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &RawUsecase) -> Result<()> {
         let span = span!(Level::TRACE, "generate_usecase", "usecase" = name);
         // Enter the span, returning a guard object.
         let _enter = span.enter();
@@ -63,7 +45,7 @@ impl TypescriptGenerator {
             let request_type = match &method.req {
                 Some(req) => {
                     let request_type = get_request_name(ctx, &method_name_camel);
-                    self.generate_schema(ctx, req, Some(request_type.clone()));
+                    self.generate_schema(ctx, Some(request_type.clone()), req, );
                     request_type
                 },
                 None => String::new(),
@@ -72,7 +54,7 @@ impl TypescriptGenerator {
             let response_type = match &method.res {
                 Some(res) => {
                     let response_type = get_response_name(ctx,  &method_name_camel);
-                    self.generate_schema(ctx, res, Some(response_type.clone()));
+                    self.generate_schema(ctx, Some(response_type.clone()), res, );
                     response_type
                 },
                 None => "Promise<void>".to_string(),
@@ -89,7 +71,16 @@ impl TypescriptGenerator {
     
         result += "}\n";
         ctx.append_file(self.name(), &self.dst(ctx), &result);
+
+        Ok(())
     }
+
+    
+}
+
+
+impl TypescriptGenerator {
+
 
     fn dst(&self, ctx: &Ctxt) -> String {
         if let Some(gen_config) = &ctx.spec.option.as_ref().unwrap().generator {
@@ -106,8 +97,8 @@ impl TypescriptGenerator {
 
     pub fn generate_schema(&self,
         ctx: &Ctxt,
+        override_name: Option<String>,
         schema: &RawSchema,
-        override_name: Option<String>
     ) {
         let interface_name: String;
         if let Some(ty) = override_name {

@@ -1,10 +1,11 @@
 use std::{cell::RefCell, path::PathBuf};
 
+use anyhow::Result;
 use convert_case::{Case, Casing};
 use cronus_spec::{RawUsecaseMethodRestOption};
 use tracing::{span, Level};
 
-use crate::{Generator, Ctxt, utils::{get_usecase_suffix, get_request_name, get_usecase_name}};
+use crate::{Generator, Ctxt, utils::{get_request_name, get_usecase_name}};
 
 
 
@@ -24,43 +25,36 @@ impl RustAxumGenerator {
 
 impl Generator for RustAxumGenerator {
     fn name(&self) -> &'static str {
-        return "rust_axum"
+        "rust_axum"
     }
 
-    fn generate(&self, ctx: &Ctxt) {
-        let span = span!(Level::TRACE, "RustAxumGenerator");
-        let _enter = span.enter();
+    fn generate_usecase(&self, ctx: &Ctxt, usecase_name: &str, usecase: &cronus_spec::RawUsecase) -> anyhow::Result<()> {
         ctx.append_file(self.name(), &self.dst(ctx), self.axum_dependencies());
-
-        ctx.spec
-            .usecases
-            .iter()
-            .flat_map(|m| m.iter())
-            .for_each(|(name, usecase)| self.generate_usecase(ctx, name, usecase));
-
-        // generate app state trait
-        ctx.append_file(self.name(), &self.dst(ctx), &self.gen_app_state_trait(ctx));
-
-        self.generate_router_init(ctx)
-    }
-}
-
-impl RustAxumGenerator {
-
-    fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &cronus_spec::RawUsecase) {
 
         for (method_name, method) in &usecase.methods {
             match method.option {
                 Some(ref option) => {
                     if let Some(rest) = &option.rest {
-                        self.generate_method(ctx, name,&method_name, method, rest);
+                        self.generate_method(ctx, usecase_name,&method_name, method, rest);
                     }
                 },
                 None => {},
             }
         }
 
+        Ok(())
     }
+
+    fn after_all(&self, ctx: &Ctxt) -> Result<()> {
+        // generate app state trait
+        ctx.append_file(self.name(), &self.dst(ctx), &self.gen_app_state_trait(ctx));
+        self.generate_router_init(ctx);
+        Ok(())
+    }
+
+}
+
+impl RustAxumGenerator {
 
 
     /// Generate the axum handler for the usecase's method with http option

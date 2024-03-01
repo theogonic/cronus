@@ -7,7 +7,7 @@ use crate::{
     utils::{self, get_path_from_optional_parent, get_request_name, get_response_name, get_schema_by_name, get_usecase_name, spec_ty_to_rust_builtin_ty}, Ctxt, Generator
 };
 use tracing::{self, debug, span, Level};
-
+use anyhow::{Ok, Result};
 
 pub struct RustGenerator {
     generated_tys: RefCell<HashSet<String>>
@@ -27,11 +27,8 @@ impl Generator for RustGenerator {
         "rust"
     }
 
-    fn generate(&self, ctx: &Ctxt) {
-        let span = span!(Level::TRACE, "RustGenerator");
-        // Enter the span, returning a guard object.
-        let _enter = span.enter();
-
+    fn before_all(&self, ctx: &Ctxt) -> Result<()> {
+        
         let common_uses = vec!["use serde::{Deserialize, Serialize};","use async_trait::async_trait;"];
         let common_uses_str = common_uses.join("\n") + "\n";
         ctx.append_file(self.name(), &self.dst(ctx), &common_uses_str);
@@ -53,31 +50,23 @@ impl Generator for RustGenerator {
             None => {},
         }
 
+        Ok(())
 
-        ctx.spec
-            .ty
-            .iter()
-            .flat_map(|t| t.iter())
-            .for_each(|(ty, schema)| {
-                self.generate_struct(ctx, schema, Some(ty.to_owned()));
-            });
-
-        ctx.spec
-            .usecases
-            .iter()
-            .flat_map(|m| m.iter())
-            .for_each(|(name, usecase)| self.generate_usecase(ctx, name, usecase))
     }
-}
 
-impl RustGenerator {
+    fn generate_schema(&self, ctx: &Ctxt, schema_name:&str, schema: &RawSchema) -> Result<()> {
+        self.generate_struct(ctx, schema, Some(schema_name.to_owned()));
+        Ok(())
+    }
+
+
     /// Generate the Rust trait for the usecase
     ///
     /// trait <name><usecase prefix> {
     ///   fn <method name>(&self, request) -> response;
     /// }
     ///
-    fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &cronus_spec::RawUsecase) {
+    fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &cronus_spec::RawUsecase) -> Result<()> {
         let span = span!(Level::TRACE, "generate_usecase", "usecase" = name);
         // Enter the span, returning a guard object.
         let _enter = span.enter();
@@ -165,9 +154,18 @@ impl RustGenerator {
         result += "}\n";
 
         ctx.append_file(self.name(), &self.dst(ctx), &result);
+
+        Ok(())
     }
 
    
+
+  
+    
+}
+
+impl RustGenerator {
+    
 
 
  
@@ -348,7 +346,7 @@ mod test {
 
     use cronus_parser::api_parse;
 
-    use crate::{Ctxt, Generator};
+    use crate::{run_generator, Ctxt, Generator};
     use anyhow::{Ok, Result};
     use super::RustGenerator;
 
@@ -363,7 +361,7 @@ mod test {
         let spec = api_parse::parse(PathBuf::from(""), api_file)?;
         let ctx = Ctxt::new(spec);
         let g = RustGenerator::new();
-        g.generate(&ctx);
+        run_generator(&g, &ctx);
         let gfs = ctx.get_gfs("rust");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("types.rs").unwrap();
@@ -389,7 +387,7 @@ mod test {
 
         let ctx = Ctxt::new(spec);
         let g = RustGenerator::new();
-        g.generate(&ctx);
+        run_generator(&g, &ctx);
         let gfs = ctx.get_gfs("rust");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("types.rs").unwrap();
@@ -412,7 +410,7 @@ mod test {
         let spec = api_parse::parse(PathBuf::from(""), api_file)?;
         let ctx = Ctxt::new(spec);
         let g = RustGenerator::new();
-        g.generate(&ctx);
+        run_generator(&g, &ctx);
         let gfs = ctx.get_gfs("rust");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("types.rs").unwrap();
@@ -443,7 +441,7 @@ mod test {
         let spec = api_parse::parse(PathBuf::from(""), api_file)?;
         let ctx = Ctxt::new(spec);
         let g = RustGenerator::new();
-        g.generate(&ctx);
+        run_generator(&g, &ctx);
         let gfs = ctx.get_gfs("rust");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("types.rs").unwrap();
