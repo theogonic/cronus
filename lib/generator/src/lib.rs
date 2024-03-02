@@ -185,8 +185,6 @@ pub fn generate(ctx: &Ctxt) -> Result<()> {
             info!("No generator(s) is configured.");
         }
     }
-    
-    ctx.dump()?;
     Ok(())
 
 }

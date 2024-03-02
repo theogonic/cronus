@@ -130,6 +130,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acbf1af155f9b9ef647e42cdc158db4b64a1b61f743629225fde6f3e0be2a7c7"
 
 [[package]]
+name = "console_error_panic_hook"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
+dependencies = [
+ "cfg-if",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "convert_case"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -149,7 +159,7 @@ dependencies = [
 
 [[package]]
 name = "cronus_cli"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -161,7 +171,7 @@ dependencies = [
 
 [[package]]
 name = "cronus_generator"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "convert_case",
@@ -175,17 +185,19 @@ dependencies = [
 
 [[package]]
 name = "cronus_generator_wasm"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
+ "console_error_panic_hook",
  "cronus_generator",
  "cronus_parser",
  "cronus_spec",
+ "serde-wasm-bindgen",
  "wasm-bindgen",
 ]
 
 [[package]]
 name = "cronus_parser"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "cronus_spec",
@@ -198,7 +210,7 @@ dependencies = [
 
 [[package]]
 name = "cronus_spec"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "serde",
@@ -262,6 +274,15 @@ name = "itoa"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af150ab688ff2122fcef229be89cb50dd66af9e01a4ff320cc137eecc9bacc38"
+
+[[package]]
+name = "js-sys"
+version = "0.3.65"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54c0c35952f67de54bb584e9fd912b3023117cbafc0a77d8f3dee1fb5f572fe8"
+dependencies = [
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "lazy_static"
@@ -397,6 +418,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "25dd9975e68d0cb5aa1120c288333fc98731bd1dd12f561e468ea4728c042b89"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-wasm-bindgen"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8302e169f0eddcc139c70f139d19d6467353af16f9fce27e8c30158036a1e16b"
+dependencies = [
+ "js-sys",
+ "serde",
+ "wasm-bindgen",
 ]
 
 [[package]]

@@ -361,7 +361,7 @@ mod test {
         let spec = api_parse::parse(PathBuf::from(""), api_file)?;
         let ctx = Ctxt::new(spec);
         let g = RustGenerator::new();
-        run_generator(&g, &ctx);
+        run_generator(&g, &ctx)?;
         let gfs = ctx.get_gfs("rust");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("types.rs").unwrap();
@@ -410,7 +410,7 @@ mod test {
         let spec = api_parse::parse(PathBuf::from(""), api_file)?;
         let ctx = Ctxt::new(spec);
         let g = RustGenerator::new();
-        run_generator(&g, &ctx);
+        run_generator(&g, &ctx)?;
         let gfs = ctx.get_gfs("rust");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("types.rs").unwrap();
@@ -441,7 +441,7 @@ mod test {
         let spec = api_parse::parse(PathBuf::from(""), api_file)?;
         let ctx = Ctxt::new(spec);
         let g = RustGenerator::new();
-        run_generator(&g, &ctx);
+        run_generator(&g, &ctx)?;
         let gfs = ctx.get_gfs("rust");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("types.rs").unwrap();

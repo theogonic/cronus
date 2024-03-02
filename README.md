@@ -5,8 +5,39 @@
 Cronus aims to help you focusing on **business logic code only** instead of the other **glue code**.
 
 
-
+Online playground is [here](https://theogonic.github.io/cronus-playground/).
 Documentation is [here](https://theogonic.github.io/cronus).
+
+## Usage
+```toml
+[build-dependencies]
+cronus_cli = { 0.2.2 }
+```
+
+And it can be used like:
+```bash
+$ cronus_cli <your api file>
+```
+
+And it can be further integrated into the building process:
+```rust
+// build.rs
+fn main() {
+  let dir: String = env::var("CARGO_MANIFEST_DIR").unwrap();
+
+  // Suppose your api file named "main.api" is located at 
+  // same directory with the Cargo.toml.
+  // 
+  // If your api file does not have the name "main.api", 
+  // the path should point to the that file instead of 
+  // a simple directory.  
+  std::process::Command::new("cronus_cli")
+      .arg(&dir)
+      .output()
+      .expect("failed to generate API");
+}
+
+```
 
 ## Introduction
 Cronus contains a list of code generators, which insipred by the **Clean Architecture**, for **Rust**, **Typescript**, **OpenAPI**, and more.

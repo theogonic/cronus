@@ -5,7 +5,7 @@ use convert_case::{Case, Casing};
 use cronus_spec::{RawUsecaseMethodRestOption};
 use tracing::{span, Level};
 
-use crate::{Generator, Ctxt, utils::{get_request_name, get_usecase_name}};
+use crate::{utils::{get_path_from_optional_parent, get_request_name, get_usecase_name}, Ctxt, Generator};
 
 
 
@@ -169,19 +169,12 @@ use axum::{
     }
 
     fn dst(&self, ctx: &Ctxt) -> String {
+        let default_file = "handler.rs";
+
         let gen_config = &ctx.spec.option.as_ref().unwrap().generator.as_ref().unwrap().rust_axum.as_ref().unwrap();
-        let rel_root = gen_config.def_loc.file.parent().unwrap();
 
-        if let Some(file) = &gen_config.file {
-            if PathBuf::from(file).is_absolute() {
-                return file.clone();
-            }
+        get_path_from_optional_parent(gen_config.def_loc.file.parent(), gen_config.file.as_ref(), default_file)
 
-            return rel_root.join(file).to_str().unwrap().to_string();
-
-        }
-
-        rel_root.join("handler.rs").to_str().unwrap().to_string()
     }
 
     

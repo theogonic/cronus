@@ -56,5 +56,6 @@ pub fn run(entry_file: &Path, search_paths: Option<&Vec<PathBuf>>) -> Result<()>
     let abs_file = std::path::absolute(entry_file)?;
     let spec = cronus_parser::from_file(&abs_file, true, search_paths)?;
     let ctx = Ctxt::new(spec);
-    generate(&ctx)
+    generate(&ctx)?;
+    ctx.dump()
 }
