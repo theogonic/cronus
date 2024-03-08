@@ -1,6 +1,6 @@
 use std::{cell::RefCell, path::PathBuf};
 
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use convert_case::{Case, Casing};
 use cronus_spec::{RawUsecaseMethodRestOption};
 use tracing::{span, Level};
@@ -28,8 +28,12 @@ impl Generator for RustAxumGenerator {
         "rust_axum"
     }
 
-    fn generate_usecase(&self, ctx: &Ctxt, usecase_name: &str, usecase: &cronus_spec::RawUsecase) -> anyhow::Result<()> {
+    fn before_all(&self, ctx: &Ctxt) -> Result<()> {
         ctx.append_file(self.name(), &self.dst(ctx), self.axum_dependencies());
+        Ok(())
+    }
+
+    fn generate_usecase(&self, ctx: &Ctxt, usecase_name: &str, usecase: &cronus_spec::RawUsecase) -> anyhow::Result<()> {
 
         for (method_name, method) in &usecase.methods {
             match method.option {
