@@ -5,7 +5,7 @@ use convert_case::{Case, Casing};
 use cronus_spec::{OpenapiGeneratorOption, RawSchema, RawUsecaseMethod};
 use tracing::{span, Level};
 
-use crate::{openapi_utils::{InfoObject, MediaTypeObject, OpenApiComponentsObject, OpenApiDocument, OperationObject, ParameterObject, PathItemObject, RequestBodyObject, ResponseObject, ResponsesObject, SchemaObject}, utils::{extract_url_variables, get_path_from_optional_parent, get_request_name, get_response_name, get_schema_by_name, spec_ty_to_openapi_builtin_ty, spec_ty_to_rust_builtin_ty}, Ctxt, Generator};
+use crate::{openapi_utils::{InfoObject, MediaTypeObject, OpenApiComponentsObject, OpenApiDocument, OperationObject, ParameterObject, PathItemObject, RequestBodyObject, ResponseObject, ResponsesObject, SchemaObject}, utils::{self, extract_url_variables, get_path_from_optional_parent, get_request_name, get_response_name, get_schema_by_name, spec_ty_to_openapi_builtin_ty, spec_ty_to_rust_builtin_ty}, Ctxt, Generator};
 
 
 
@@ -21,6 +21,20 @@ impl OpenAPIGenerator {
             openapi_doc: Default::default()
         }
     }
+}
+
+fn replace_colon_with_braces(input: &str) -> String {
+    input
+        .split('/')
+        .map(|segment| {
+            if segment.starts_with(':') {
+                format!("{{{}}}", &segment[1..])
+            } else {
+                segment.to_string()
+            }
+        })
+        .collect::<Vec<String>>()
+        .join("/")
 }
 
 impl Generator for OpenAPIGenerator {
@@ -48,17 +62,13 @@ impl Generator for OpenAPIGenerator {
         let mut binding = self.openapi_doc.borrow_mut();
         let openapi =  binding.as_mut().unwrap();
 
-        let usecase_prefix = usecase.option.as_ref()
-            .and_then(|opt| opt.rest.as_ref())
-            .and_then(|rest_opt| rest_opt.path.as_ref())
-            .map(|p| if p.starts_with('/') { p.clone() } else { format!("/{}", p) })
-            .unwrap_or_else(|| "/".to_string());
+        let usecase_prefix = utils::get_usecase_rest_path_prefix(usecase);
 
         for (method_name, method) in &usecase.methods {
             if let Some(options) = &method.option {
                 if let Some(rest_option) = &options.rest {
                     let method_path = rest_option.path.as_ref().map(|p| if usecase_prefix.ends_with("/") { format!("{}{}", usecase_prefix, p)} else { format!("{}/{}", usecase_prefix, p)} ).unwrap_or(usecase_prefix.clone());
-                    let path_item = openapi.paths.entry(method_path).or_insert_with(PathItemObject::default);
+                    let path_item = openapi.paths.entry(replace_colon_with_braces(&method_path)).or_insert_with(PathItemObject::default);
                     let mut operation = self.create_operation_object(ctx, method_name, method);
                     operation.tags = Some(vec![usecase_name.to_string()]);
                     match rest_option.method.to_lowercase().as_str() {
@@ -239,9 +249,6 @@ impl OpenAPIGenerator {
         .unwrap_or(default_file.to_string())
     }
 
-    fn generate_usecase(&self, ctx: &Ctxt, name: &str, usecase: &cronus_spec::RawUsecase, openapi: &mut OpenApiDocument) {
-        
-    }
 
     fn get_gen_option<'a>(&self, ctx: &'a Ctxt) -> Option<&'a OpenapiGeneratorOption> {
         ctx.spec.option.as_ref().and_then(|go| go.generator.as_ref().and_then(|gen| gen.openapi.as_ref()))
@@ -251,11 +258,7 @@ impl OpenAPIGenerator {
 
         // path parameters like /abc/:var, var is the path parameter
         // query parameters like /abc?var=xxx , var is the query parameter
-        let path_params: Option<HashSet<String>> = method.option.as_ref().and_then(|option| {
-            option.rest.as_ref().and_then(|rest|{
-                rest.path.as_ref().and_then(|path| Some(extract_url_variables(path).into_iter().collect()))
-            })
-        });
+        let path_params: Option<HashSet<String>> = utils::get_path_params(method);
 
         let mut query_params: HashSet<String> = Default::default();
 
@@ -266,21 +269,26 @@ impl OpenAPIGenerator {
                 .unwrap_or(&HashMap::new())
                 .iter()
                 .filter_map(|(key, schema)| {
+                    let is_path_var = path_params.as_ref().is_some_and(|path_params| path_params.contains(key));
+                    if is_path_var {
+                        return Some(ParameterObject {
+                            name: key.clone(),
+                            in_: "path".to_string(),
+                            description: schema.option.as_ref().and_then(|d| d.description.clone()),
+                            required: schema.required.unwrap_or(false),
+                            schema: *self.generate_schema_with_ignore(ctx, None, schema,  None).to_schema_object()
+                        })
+                    }
                     schema.option.as_ref().and_then(|option| {
                         option.rest.as_ref().and_then(|rest_option| {
-                            let is_path_var = path_params.as_ref().is_some_and(|path_params| path_params.contains(key));
                             let is_query_var = rest_option.query.unwrap_or(false);
                             if is_query_var {
                                 query_params.insert(key.clone());
                             }
-                            if is_path_var || is_query_var {
+                            if is_query_var {
                                 Some(ParameterObject {
                                     name: key.clone(),
-                                    in_: if is_path_var {
-                                        "path".to_string()
-                                    } else {
-                                        "query".to_string()
-                                    },
+                                    in_: "query".to_string(),
                                     description: schema.option.as_ref().and_then(|d| d.description.clone()),
                                     required: schema.required.unwrap_or(false),
                                     schema: *self.generate_schema_with_ignore(ctx, None, schema,  None).to_schema_object()
@@ -379,6 +387,42 @@ mod tests {
     use cronus_parser::api_parse;
 
     #[test]
+    fn test_openapi_path_var() -> Result<()> {
+        let api_file: &'static str = r#"
+        usecase abc {
+            [rest.path = "abcd/:a"]
+            [rest.method = "post"]
+            create_abcd {
+                in {
+                    a: string
+                }
+                out {
+                    b: string
+                }
+            }
+        }
+        "#;
+
+        let spec = api_parse::parse(PathBuf::from(""), api_file)?;
+        let ctx = Ctxt::new(spec);
+        let g = OpenAPIGenerator::new();
+        run_generator(&g, &ctx)?;
+        let gfs = ctx.get_gfs(g.name());
+        let gfs_borrow = gfs.borrow();
+        let file_content = gfs_borrow.get("openapi.yaml").unwrap();
+        let doc: OpenApiDocument = serde_yaml::from_str(&file_content)?;
+        assert_eq!(doc.paths.len(), 1);
+        assert!(doc.paths.get("/abcd/{a}").is_some());
+        let op = doc.paths.get("/abcd/{a}").unwrap();
+        assert_eq!(op.post.as_ref().unwrap().parameters.as_ref().unwrap().len(), 1);
+        let params =  op.post.as_ref().unwrap().parameters.as_ref().unwrap();
+        assert_eq!(params.first().unwrap().name, "a");
+
+        Ok(())
+    }
+
+
+    #[test]
     fn test_openapi_get() -> Result<()> {
         let api_file: &'static str = r#"
         usecase abc {
@@ -403,7 +447,6 @@ mod tests {
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("openapi.yaml").unwrap();
         let doc: OpenApiDocument = serde_yaml::from_str(&file_content)?;
-        println!("{}", file_content);
 
         assert_eq!(doc.paths.len(), 1);
         assert!(doc.paths.get("/abcd").is_some());

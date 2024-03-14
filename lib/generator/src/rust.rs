@@ -180,7 +180,7 @@ impl RustGenerator {
         let type_name: String;
         if let Some(ty) = &override_ty {
             type_name = ty.to_case(Case::UpperCamel);
-        } 
+        }
         else if schema.items.is_some() {
             type_name = self.generate_struct(ctx, schema.items.as_ref().unwrap(), None);
             return format!("Vec<{}>", type_name).to_owned()
@@ -188,7 +188,7 @@ impl RustGenerator {
         else {
             type_name = schema.ty.as_ref().unwrap().clone();
         }
-       
+
 
         let span = span!(Level::TRACE, "generate_struct", "type" = type_name);
         // Enter the span, returning a guard object.
@@ -387,7 +387,7 @@ mod test {
 
         let ctx = Ctxt::new(spec);
         let g = RustGenerator::new();
-        run_generator(&g, &ctx);
+        run_generator(&g, &ctx)?;
         let gfs = ctx.get_gfs("rust");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("types.rs").unwrap();

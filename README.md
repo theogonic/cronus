@@ -9,9 +9,8 @@ Online playground is [here](https://theogonic.github.io/cronus-playground/).
 Documentation is [here](https://theogonic.github.io/cronus).
 
 ## Usage
-```toml
-[build-dependencies]
-cronus_cli = { 0.2.2 }
+```bash
+$ cargo install cronus_cli
 ```
 
 And it can be used like:
@@ -144,9 +143,12 @@ pub fn router_init(usecases: std::sync::Arc<Usecases>) -> Router {
 }
 ```
 
-## Generators
+## Usecase Layer Generators
 - Rust
-- Axum(Rust) (work in progress)
+- Typescript
+
+## Transportation Layer Generator
+- Axum(Rust)
 - OpenAPI v3
 - Tauri (work in progress)
 

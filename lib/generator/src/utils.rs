@@ -1,7 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{collections::HashSet, path::{Path, PathBuf}};
 
 use convert_case::{Casing, Case};
-use cronus_spec::RawSchema;
+use cronus_spec::{RawSchema, RawUsecase, RawUsecaseMethod};
 
 use crate::Ctxt;
 
@@ -124,6 +124,53 @@ pub fn get_request_name(ctx: &Ctxt,  method_name:&str) ->String {
     return  (method_name.to_owned() + &get_request_suffix(ctx)).to_case(Case::UpperCamel)
 }
 
+pub fn get_path_params(method: &RawUsecaseMethod) -> Option<HashSet<String>> {
+    method.option.as_ref().and_then(|option| {
+        option.rest.as_ref().and_then(|rest|{
+            rest.path.as_ref().and_then(|path| {
+                let vars = extract_url_variables(path);
+                if vars.is_empty() {
+                    None
+                } else {
+                    Some(vars.into_iter().collect())
+                }
+
+            })
+        })
+    })
+}
+
+pub fn get_usecase_rest_path_prefix(usecase: &RawUsecase) -> String {
+    usecase.option.as_ref()
+    .and_then(|opt| opt.rest.as_ref())
+    .and_then(|rest_opt| rest_opt.path.as_ref())
+    .map(|p| if p.starts_with('/') { p.clone() } else { format!("/{}", p) })
+    .unwrap_or_else(|| "/".to_string())
+}
+
+pub fn get_query_params(method: &RawUsecaseMethod) -> Option<HashSet<String>> {
+    method.req.as_ref().and_then(|req_schema| {
+        req_schema.properties.as_ref()
+        .and_then(|props| {
+            let result: HashSet<String> = props.iter()
+            .filter_map(|(name, schema)| {
+                match schema.option.as_ref().and_then(|option| {
+                    option.rest.as_ref().and_then(|rest| rest.query)
+                }) {
+                    Some(query) => Some(name.clone()),
+                    None => None,
+                }
+            })
+            .collect();
+            if result.is_empty() {
+                None
+            } else {
+                Some(result)
+            }
+        })
+
+    })
+}
 
 #[cfg(test)]
 mod tests {
