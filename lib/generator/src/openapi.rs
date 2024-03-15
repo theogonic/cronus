@@ -275,7 +275,7 @@ impl OpenAPIGenerator {
                             name: key.clone(),
                             in_: "path".to_string(),
                             description: schema.option.as_ref().and_then(|d| d.description.clone()),
-                            required: schema.required.unwrap_or(false),
+                            required: true, // For the path parameter, required should be True
                             schema: *self.generate_schema_with_ignore(ctx, None, schema,  None).to_schema_object()
                         })
                     }
