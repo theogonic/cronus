@@ -5,7 +5,7 @@ COMMENT = _{ "//" ~ (!NEWLINE ~ ANY)* }
 
 // Identifiers and basic types
 identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
-type_identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_" | "[" | "]")* }
+type_identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_" | "[" | "]" | "<" | ">" | ",")* }
 path = @{ (!"\n" ~ ANY)+ }
 
 

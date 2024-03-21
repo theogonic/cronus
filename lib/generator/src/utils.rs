@@ -6,7 +6,7 @@ use cronus_spec::{RawSchema, RawUsecase, RawUsecaseMethod};
 use crate::Ctxt;
 
 
-pub fn spec_ty_to_rust_builtin_ty(spec_ty: &String) -> Option<String> {
+pub fn spec_ty_to_rust_builtin_ty(spec_ty: &str) -> Option<String> {
     if spec_ty == "string" {
         return Some("String".to_string());
     }
@@ -18,6 +18,15 @@ pub fn spec_ty_to_rust_builtin_ty(spec_ty: &String) -> Option<String> {
     }
     else if spec_ty == "bool" || spec_ty == "boolean" {
         return Some("bool".to_string());
+    }
+    else if spec_ty.starts_with("map<") {
+        let child_types:Vec<&str> = spec_ty[4..spec_ty.len()-1].split(",").collect();
+        let left_ty = child_types.get(0).unwrap();
+        let right_ty = child_types.get(1).unwrap();
+        let left = spec_ty_to_rust_builtin_ty(left_ty).unwrap_or(left_ty.to_case(Case::UpperCamel));
+        let right = spec_ty_to_rust_builtin_ty(right_ty).unwrap_or(right_ty.to_case(Case::UpperCamel));
+
+        return Some(format!("HashMap<{left},{right}>").to_string())
     }
     return None;
 }

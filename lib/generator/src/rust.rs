@@ -422,6 +422,53 @@ mod test {
     }
 
     #[test]
+    fn map_ty() -> Result<()>{
+        let api_file: &'static str = r#"
+        struct hello {
+            a: map<string,u32>
+        }
+        "#;
+
+        let spec = api_parse::parse(PathBuf::from(""), api_file)?;
+        let ctx = Ctxt::new(spec);
+        let g = RustGenerator::new();
+        run_generator(&g, &ctx)?;
+        let gfs = ctx.get_gfs("rust");
+        let gfs_borrow = gfs.borrow();
+        let file_content = gfs_borrow.get("types.rs").unwrap();
+        println!("{}", file_content);
+
+        assert!(file_content.find("a: HashMap<String,u32>").is_some());
+
+        Ok(())
+    }
+
+    #[test]
+    fn map_custom_ty() -> Result<()>{
+        let api_file: &'static str = r#"
+        struct world {
+            b: string
+        }
+        struct hello {
+            a: map<string,world>
+        }
+        "#;
+
+        let spec = api_parse::parse(PathBuf::from(""), api_file)?;
+        let ctx = Ctxt::new(spec);
+        let g = RustGenerator::new();
+        run_generator(&g, &ctx)?;
+        let gfs = ctx.get_gfs("rust");
+        let gfs_borrow = gfs.borrow();
+        let file_content = gfs_borrow.get("types.rs").unwrap();
+        println!("{}", file_content);
+
+        assert!(file_content.find("a: HashMap<String,World>").is_some());
+
+        Ok(())
+    }
+
+    #[test]
     fn custom_uses() -> Result<()>{
         let api_file: &'static str = r#"
         global [generator.rust.uses = ("anyhow::Result")]
