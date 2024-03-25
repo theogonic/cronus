@@ -83,6 +83,9 @@ pub struct RustGeneratorOption {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uses: Option<Vec<String>>,
 
+    /// If given type(s) is/are mentioned in the spec, do not generate
+    pub skip_types: Option<Vec<String>>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub no_error_type: Option<bool>,
 

@@ -1,11 +1,11 @@
 use std::{cell::RefCell, collections::{HashMap, HashSet}, fmt::format};
 
-use anyhow::{Ok, Result};
+use anyhow::{bail, Ok, Result};
 use convert_case::{Case, Casing};
 use cronus_spec::{OpenapiGeneratorOption, RawSchema, RawUsecaseMethod};
 use tracing::{span, Level};
 
-use crate::{openapi_utils::{InfoObject, MediaTypeObject, OpenApiComponentsObject, OpenApiDocument, OperationObject, ParameterObject, PathItemObject, RequestBodyObject, ResponseObject, ResponsesObject, SchemaObject}, utils::{self, extract_url_variables, get_path_from_optional_parent, get_request_name, get_response_name, get_schema_by_name, spec_ty_to_openapi_builtin_ty, spec_ty_to_rust_builtin_ty}, Ctxt, Generator};
+use crate::{openapi_utils::{InfoObject, MediaTypeObject, OpenApiComponentsObject, OpenApiDocument, OperationObject, ParameterObject, PathItemObject, RequestBodyObject, ResponseObject, ResponsesObject, SchemaObject}, utils::{self, extract_url_variables, get_path_from_optional_parent, get_request_name, get_response_name, get_schema_by_name, parse_map_type, spec_ty_to_openapi_builtin_ty, spec_ty_to_rust_builtin_ty}, Ctxt, Generator};
 
 
 
@@ -69,7 +69,7 @@ impl Generator for OpenAPIGenerator {
                 if let Some(rest_option) = &options.rest {
                     let method_path = rest_option.path.as_ref().map(|p| if usecase_prefix.ends_with("/") { format!("{}{}", usecase_prefix, p)} else { format!("{}/{}", usecase_prefix, p)} ).unwrap_or(usecase_prefix.clone());
                     let path_item = openapi.paths.entry(replace_colon_with_braces(&method_path)).or_insert_with(PathItemObject::default);
-                    let mut operation = self.create_operation_object(ctx, method_name, method);
+                    let mut operation = self.create_operation_object(ctx, method_name, method)?;
                     operation.tags = Some(vec![usecase_name.to_string()]);
                     match rest_option.method.to_lowercase().as_str() {
                         "get" => path_item.get = Some(operation),
@@ -119,7 +119,8 @@ impl Generator for OpenAPIGenerator {
 enum SchemaType {
     Ref(String),
     Basic(String),
-    Arr(Box<SchemaType>)
+    Arr(Box<SchemaType>),
+    Dict(Option<Box<SchemaType>>)
 }
 
 impl SchemaType {
@@ -127,7 +128,8 @@ impl SchemaType {
         match self {
             SchemaType::Ref(s) => Box::new(SchemaObject::new_with_ref(openapi_ref_type(&s))),
             SchemaType::Basic(s) => Box::new(SchemaObject::new_with_type(s)),
-            SchemaType::Arr(s) => Box::new(SchemaObject::new_with_items(s.to_schema_object()))
+            SchemaType::Arr(s) => Box::new(SchemaObject::new_with_items(s.to_schema_object())),
+            SchemaType::Dict(s) => Box::new(SchemaObject::new_dict(s.and_then(|s|Some(s.to_schema_object()))))
         }
     }
 }
@@ -140,13 +142,13 @@ impl OpenAPIGenerator {
         override_ty: Option<String>,
         schema: &RawSchema,
         ignore_props: Option<&HashSet<String>>
-    ) -> SchemaType {
+    ) -> Result<SchemaType> {
         let type_name: String;
         if let Some(ty) = &override_ty {
             type_name = ty.to_case(Case::UpperCamel);
         }
         else if schema.items.is_some() {
-            return SchemaType::Arr(Box::new(self.generate_schema_with_ignore(ctx, override_ty, schema.items.as_ref().unwrap(), None)));
+            return Ok(SchemaType::Arr(Box::new(self.generate_schema_with_ignore(ctx, override_ty, schema.items.as_ref().unwrap(), None)?)));
         }
         else {
             type_name = schema.ty.as_ref().unwrap().clone();
@@ -159,11 +161,34 @@ impl OpenAPIGenerator {
 
         // if type name belongs to built-in type, return directly
         if let Some(ty) = spec_ty_to_openapi_builtin_ty(&type_name) {
-            return SchemaType::Basic(ty);
+            return Ok(SchemaType::Basic(ty));
         }
 
+        // if type name is map<xxx,xxx>
+        if type_name.starts_with("map<") {
+            let (left_ty, right_ty) = parse_map_type(&type_name);
+            if left_ty != "string" {
+                bail!("Dictionary's key has to be 'string'")
+            }
+
+            let right_ty = if let Some(ty) = spec_ty_to_openapi_builtin_ty(right_ty) {
+                Some(SchemaType::Basic(ty))
+            } 
+            else if right_ty == "Value" || right_ty == "serde_json::Value" {
+                None
+            }
+            else {
+                Some(SchemaType::Ref(right_ty.into()))
+            };
+
+            return Ok(SchemaType::Dict(right_ty.and_then(|t| Some(Box::new(t)))));
+
+        }
+
+     
+
         if self.generated_schemas.borrow().contains_key(&type_name) {
-            return SchemaType::Ref(type_name);
+            return Ok(SchemaType::Ref(type_name));
         }
 
         // if it is referenced to a custom type, find and return
@@ -192,13 +217,17 @@ impl OpenAPIGenerator {
                 .collect()
         });
 
+        let items = if schema.items.is_some() {
+            Some(self.generate_schema_with_ignore(ctx, None, schema.items.as_ref().unwrap(), None)?.to_schema_object())
+        } else {
+            None
+        };
+
         // Ok, now we need to create a components-schemas for this custom schema
         let so = SchemaObject {
             type_: schema.ty.clone(),
             format: None, // Add logic for format if needed
-            items: schema.items.as_ref().map(|item| {
-                self.generate_schema_with_ignore(ctx, None, item, None).to_schema_object()
-            }),
+            items,
             properties: schema.properties.as_ref().map(|props| {
                 props
                     .iter()
@@ -208,12 +237,14 @@ impl OpenAPIGenerator {
                                 return None;
                             }
                         }
-                        let obj =  self.generate_schema_with_ignore(ctx, None, value, None).to_schema_object();
+                        // FIXME: proper handle result
+                        let obj =  self.generate_schema_with_ignore(ctx, None, value, None).unwrap().to_schema_object();
 
                         Some((key.clone(), *obj))
                     })
                     .collect()
-            }),
+            })
+            ,
             required: required.and_then(|arr| if arr.is_empty() { None } else {Some(arr)}),
             enum_: schema.enum_items.as_ref().map(|enum_items| {
                 enum_items.iter().map(|item| item.name.clone()).collect()
@@ -225,12 +256,13 @@ impl OpenAPIGenerator {
             description: schema.option.as_ref().and_then(|o| o.description.clone()),
             default: None, // Add logic for default if needed
             ref_: None,
-            nullable: None
+            nullable: None,
+            additional_properties: None
         };
 
         self.generated_schemas.borrow_mut().insert(type_name.clone(), so);
 
-        SchemaType::Ref(type_name)
+        Ok(SchemaType::Ref(type_name))
     }
 
     fn dst(&self, ctx: &Ctxt) -> String {
@@ -254,7 +286,7 @@ impl OpenAPIGenerator {
         ctx.spec.option.as_ref().and_then(|go| go.generator.as_ref().and_then(|gen| gen.openapi.as_ref()))
     }
 
-    fn create_operation_object(&self, ctx: &Ctxt, name:&str, method: &RawUsecaseMethod) -> OperationObject {
+    fn create_operation_object(&self, ctx: &Ctxt, name:&str, method: &RawUsecaseMethod) -> Result<OperationObject> {
 
         // path parameters like /abc/:var, var is the path parameter
         // query parameters like /abc?var=xxx , var is the query parameter
@@ -276,7 +308,10 @@ impl OpenAPIGenerator {
                             in_: "path".to_string(),
                             description: schema.option.as_ref().and_then(|d| d.description.clone()),
                             required: true, // For the path parameter, required should be True
-                            schema: *self.generate_schema_with_ignore(ctx, None, schema,  None).to_schema_object()
+
+                            // FIXME: proper handle result
+
+                            schema: *self.generate_schema_with_ignore(ctx, None, schema,  None).unwrap().to_schema_object()
                         })
                     }
                     schema.option.as_ref().and_then(|option| {
@@ -291,7 +326,9 @@ impl OpenAPIGenerator {
                                     in_: "query".to_string(),
                                     description: schema.option.as_ref().and_then(|d| d.description.clone()),
                                     required: schema.required.unwrap_or(false),
-                                    schema: *self.generate_schema_with_ignore(ctx, None, schema,  None).to_schema_object()
+                                    // FIXME: proper handle result
+
+                                    schema: *self.generate_schema_with_ignore(ctx, None, schema,  None).unwrap().to_schema_object()
                                 })
                             } else {
                                 None
@@ -311,7 +348,7 @@ impl OpenAPIGenerator {
                 let response_schema = match &method.res {
                     Some(res) => {
                         let res_ty = get_response_name(ctx, name);
-                        *(self.generate_schema_with_ignore(ctx, Some(res_ty), res, None).to_schema_object())
+                        *(self.generate_schema_with_ignore(ctx, Some(res_ty), res, None)?.to_schema_object())
 
                     },
                     None => {
@@ -350,7 +387,9 @@ impl OpenAPIGenerator {
                     HashMap::from([(
                         "application/json".to_string(),
                         MediaTypeObject {
-                            schema: Some(*self.generate_schema_with_ignore(ctx, Some(req_ty), req, Some(&query_and_path)).to_schema_object()),
+                            // FIXME: proper handle result
+
+                            schema: Some(*self.generate_schema_with_ignore(ctx, Some(req_ty), req, Some(&query_and_path)).unwrap().to_schema_object()),
                         },
                 )])
                 },
@@ -358,7 +397,7 @@ impl OpenAPIGenerator {
             }
         });
     
-        OperationObject {
+        Ok(OperationObject {
             summary: Some(format!("Operation for {}", name)),
             // description: method.req.as_ref().and_then(|schema| schema.description.clone()),
             description: None,
@@ -367,7 +406,7 @@ impl OpenAPIGenerator {
             request_body,
             responses,
             tags: None
-        }
+        })
     }
 }
 

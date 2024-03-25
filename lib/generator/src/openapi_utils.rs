@@ -174,6 +174,9 @@ pub struct SchemaObject {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<HashMap<String, SchemaObject>>,
 
+    #[serde(rename = "additionalProperties", skip_serializing_if = "Option::is_none")]
+    pub additional_properties: Option<Box<SchemaObject>>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required: Option<Vec<String>>,
     #[serde(rename = "enum", skip_serializing_if = "Option::is_none")]
@@ -220,7 +223,8 @@ impl Default for SchemaObject {
             description: Default::default(),
             default: Default::default(),
             ref_: Default::default(),
-            nullable: Default::default()
+            nullable: Default::default(),
+            additional_properties: Default::default()
         }
     }
 }
@@ -246,5 +250,14 @@ impl SchemaObject {
             ..Default::default()
 
         }
+    }
+
+    pub fn new_dict(additional_properties: Option<Box<SchemaObject>>) -> Self {
+        Self {
+            type_: Some("object".to_string()),
+            additional_properties,
+            ..Default::default()
+        }
+        
     }
 }

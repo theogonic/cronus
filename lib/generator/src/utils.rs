@@ -20,20 +20,24 @@ pub fn spec_ty_to_rust_builtin_ty(spec_ty: &str) -> Option<String> {
         return Some("bool".to_string());
     }
     else if spec_ty.starts_with("map<") {
-        let child_types:Vec<&str> = spec_ty[4..spec_ty.len()-1].split(",").collect();
-        let left_ty = child_types.get(0).unwrap();
-        let right_ty = child_types.get(1).unwrap();
+        let (left_ty, right_ty) = parse_map_type(spec_ty);
         let left = spec_ty_to_rust_builtin_ty(left_ty).unwrap_or(left_ty.to_case(Case::UpperCamel));
         let right = spec_ty_to_rust_builtin_ty(right_ty).unwrap_or(right_ty.to_case(Case::UpperCamel));
-
         return Some(format!("HashMap<{left},{right}>").to_string())
     }
     return None;
 }
 
+pub fn parse_map_type(map_ty: &str) -> (&str,&str) {
+    let child_types:Vec<&str> = map_ty[4..map_ty.len()-1].split(",").collect();
+    let left_ty = child_types.get(0).unwrap();
+    let right_ty = child_types.get(1).unwrap();
+    return (left_ty, right_ty)
+}
 
-/// valid openai builtin types: "array", "boolean", "integer", "number", "object", "string"
-pub fn spec_ty_to_openapi_builtin_ty(spec_ty: &String) -> Option<String> {
+
+/// valid openapi builtin types: "array", "boolean", "integer", "number", "object", "string"
+pub fn spec_ty_to_openapi_builtin_ty(spec_ty: &str) -> Option<String> {
     let result = if spec_ty == "string" {
          Some("string".to_string())
     }
