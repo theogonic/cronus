@@ -181,27 +181,55 @@ impl RustAxumGenerator {
         }
 
         if method.req.is_some() {
-            if has_path_or_query {
-                result += ", Json(mut request): Json<";
-
-            } else {
-                result += ", Json(request): Json<";
-
+            // If method request has some and method is not get
+            if rest.method != "get" {
+                if has_path_or_query {
+                    result += ", Json(mut request): Json<";
+    
+                } else {
+                    result += ", Json(request): Json<";
+                }
+                result += &get_request_name(ctx, method_name);
+                result += ">"
             }
-            result += &get_request_name(ctx, method_name);
-            result += ">"
+
+            // if method is get, since no http body, so we have to create our own request
+
+
+
         }
 
         result += ") -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {\n";
+        if method.req.is_some() && rest.method == "get" {
+            // creating the request by our own
+            result += &format!("let request = {} {{\n", &get_request_name(ctx, method_name));
+
+        }
 
         // handle request's path & query assignment
         // request.xxx = xxx
         match get_method_path_names_and_tys(method)? {
             Some((props, tys)) => {
-                let stmts:Vec<String> = props.iter()
-                .map(|prop| format!("request.{} = Some({});", prop, prop).to_string())
-                .collect();
-                result += &stmts.join("\n");
+                if rest.method != "get" {
+                    let stmts:Vec<String> = props.iter()
+                    .map(|prop| {
+                        let required = method.req.as_ref().unwrap().properties.as_ref().unwrap().get(prop).unwrap().required.unwrap_or(false);
+    
+                        if required {
+                            format!("request.{} = {};", prop, prop).to_string()
+                        } else {
+                            format!("request.{} = Some({});", prop, prop).to_string()
+                        }
+
+                    })
+                    .collect();
+                    result += &stmts.join("\n");
+                } else {
+                    for prop in &props {
+                        // using the short hand style to assign object prop (since our path name and prop name are the same)
+                        result += &format!("{},\n", prop)
+                    }
+                }
 
             },
             None => {}
@@ -210,14 +238,23 @@ impl RustAxumGenerator {
         // request.xxx = query.xxx
         match utils::get_query_params(method) {
             Some(params) => {
-                let stmts:Vec<String> = params.iter()
-                .map(|prop| format!("request.{} = Some(query.{});", prop, prop).to_string())
-                .collect();
-                result += &stmts.join("\n");
+                if rest.method != "get" {
+                    let stmts:Vec<String> = params.iter()
+                    .map(|prop| format!("request.{} = Some(query.{});", prop, prop).to_string())
+                    .collect();
+                    result += &stmts.join("\n");
+                } else {
+                    for prop in params.iter() {
+                        result += &format!("{}:query.{},\n", prop, prop);
+                    }
+                }
             },
-            None => {
+            None => {},
+        }
 
-            },
+        // if http method is get, we need to add close to our created request object
+        if method.req.is_some() && rest.method == "get" {
+            result += "};\n";
         }
 
         let req_var = if method.req.is_some() { "request" } else { ""};
