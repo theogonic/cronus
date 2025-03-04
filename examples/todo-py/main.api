@@ -1,0 +1,21 @@
+#[@python.file = "src/generated.py"]
+
+
+struct Todo {
+    id: string
+    content: string
+}
+
+usecase Todo {
+
+    [rest.method = "post"]
+    createTodo {
+        in {
+            content: string
+        }
+
+        out {
+            todo: Todo
+        }
+    }
+}

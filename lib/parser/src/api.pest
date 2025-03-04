@@ -5,6 +5,7 @@ COMMENT = _{ "//" ~ (!NEWLINE ~ ANY)* }
 
 // Identifiers and basic types
 identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+option_identifier = @{ ("@" | ASCII_ALPHA) ~ (ASCII_ALPHANUMERIC | "_" | ".")* }
 type_identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_" | "[" | "]" | "<" | ">" | ",")* }
 path = @{ (!"\n" ~ ANY)+ }
 
@@ -18,7 +19,7 @@ integer = { ASCII_DIGIT+ }
 string = { "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
 bool = { "true" | "false" }
 array = { "(" ~ (option_value ~ ("," ~ option_value)*)? ~ ")" }
-option = { "[" ~ identifier ~ ("." ~ identifier)* ~ ("=" ~ option_value)? ~ "]" }
+option = { "[" ~ option_identifier ~ ("=" ~ option_value)? ~ "]" }
 
 
 // Property definitions
@@ -60,13 +61,13 @@ struct_body = {
 }
 
 global_option = {
-    "global" ~
+    "#" ~
     option
 }
 
 // Root rule
 file = { 
     SOI ~
-    (usecase | struct_def | import | global_option)* ~
+    (usecase | struct_def | import | global_option )* ~
     EOI 
 }

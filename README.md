@@ -146,11 +146,16 @@ pub fn router_init(usecases: std::sync::Arc<Usecases>) -> Router {
 ## Usecase Layer Generators
 - Rust
 - Typescript
+- Python
 
 ## Transportation Layer Generator
-- Axum(Rust)
-- OpenAPI v3
+- Axum (HTTP, Rust)
+- FastAPI (HTTP, Python)
 - Tauri (work in progress)
+
+## Schema Generator
+- OpenAPI v3
+- Protobuf
 
 ## Dev
 
@@ -158,7 +163,8 @@ pub fn router_init(usecases: std::sync::Arc<Usecases>) -> Router {
 
 ```bash
 # Run the generators by the given API spec
-$ cargo run -- examples/todo/main.api
+$ cargo run -- examples/todo-rs/main.api
+$ cargo run -- examples/todo-py/main.api
 ```
 
 ## Docs

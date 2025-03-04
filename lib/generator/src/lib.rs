@@ -1,4 +1,3 @@
-
 mod rust;
 mod rust_axum;
 mod openapi;
@@ -6,8 +5,10 @@ mod openapi_utils;
 mod utils;
 mod ts;
 mod ts_nestjs;
+mod python;
 mod tauri;
 mod rust_utils;
+mod python_fastapi;
 
 use std::{rc::Rc, cell::{RefCell}, collections::{HashMap, HashSet}, path::{Path, PathBuf}, error::Error, fs::{self, OpenOptions, File}, io::Write};
 
@@ -147,7 +148,9 @@ pub fn generate(ctx: &Ctxt) -> Result<()> {
         Rc::new(OpenAPIGenerator::new()),
         Rc::new(TypescriptGenerator::new()),
         Rc::new(TypescriptNestjsGenerator::new()),
-        Rc::new(TauriGenerator::new())
+        Rc::new(TauriGenerator::new()),
+        Rc::new(python::PythonGenerator::new()),
+        Rc::new(python_fastapi::PythonFastApiGenerator::new()),
     ];
     let mut generator_map: HashMap<&str, Rc<dyn Generator>> = HashMap::new();
     generators

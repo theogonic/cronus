@@ -32,11 +32,37 @@ pub struct GlobalOption {
 #[serde(deny_unknown_fields)]
 pub struct GeneratorOption {
     pub rust: Option<RustGeneratorOption>,
+    pub python: Option<PythonGeneratorOption>,
+    pub python_fastapi: Option<PythonFastApiGeneratorOption>,
     pub rust_axum: Option<RustAxumGeneratorOption>,
     pub openapi: Option<OpenapiGeneratorOption>,
     pub typescript: Option<TypescriptGeneratorOption>,
     pub typescript_nestjs: Option<TypescriptNestjsGeneratorOption>
 }
+
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PythonFastApiGeneratorOption {
+    #[serde(skip)]
+    pub def_loc: Arc<DefLoc>,
+
+    /// Output .py file
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file: Option<String>,
+
+    #[serde(rename = "async", skip_serializing_if = "Option::is_none")]
+    pub async_flag: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub get_ctx_from: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub usecase_from: Option<String>
+
+}
+
+
 
 
 
@@ -58,6 +84,22 @@ pub struct TypescriptGeneratorOption {
 
     /// Output .ts file
     pub file: Option<String>,
+
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PythonGeneratorOption {
+    #[serde(skip)]
+    pub def_loc: Arc<DefLoc>,
+
+    /// Output .py file
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file: Option<String>,
+
+    #[serde(rename = "async", skip_serializing_if = "Option::is_none")]
+    pub async_flag: Option<bool>,
+
 
 }
 
@@ -215,10 +257,19 @@ pub struct RawSchemaPropertyOption {
     pub rest: Option<RawSchemaPropertyRestOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub python: Option<RawSchemaPropertyPythonOption>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub rust: Option<RawSchemaPropertyRustOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>
+
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct RawSchemaPropertyPythonOption {
 
 }
 

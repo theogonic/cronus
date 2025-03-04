@@ -55,7 +55,7 @@ impl Generator for RustGenerator {
     }
 
     fn generate_schema(&self, ctx: &Ctxt, schema_name:&str, schema: &RawSchema) -> Result<()> {
-        self.generate_struct(ctx, schema, Some(schema_name.to_owned()));
+        self.generate_struct(ctx, schema, Some(schema_name.to_owned()), None);
         Ok(())
     }
 
@@ -112,7 +112,7 @@ impl Generator for RustGenerator {
 
             if let Some(req) = &method.req {
                 let request_ty = get_request_name(ctx, method_name);
-                self.generate_struct(ctx, &req, Some(request_ty.clone()));
+                self.generate_struct(ctx, &req, Some(request_ty.clone()), None);
                 result += ", request: ";
                 result += &request_ty;
             }
@@ -123,7 +123,7 @@ impl Generator for RustGenerator {
             
             if let Some(res) = &method.res {
                 let response_ty = get_response_name(ctx, method_name);
-                self.generate_struct(ctx, &res, Some(response_ty.clone()));
+                self.generate_struct(ctx, &res, Some(response_ty.clone()), None);
                 result_t_type = response_ty;
             } 
 
@@ -176,18 +176,26 @@ impl RustGenerator {
         ctx: &Ctxt,
         schema: &RawSchema,
         override_ty: Option<String>,
+        root_schema_ty: Option<String>
     ) -> String {
         let type_name: String;
+
+        // find out the correct type name
         if let Some(ty) = &override_ty {
             type_name = ty.to_case(Case::UpperCamel);
         }
         else if schema.items.is_some() {
-            type_name = self.generate_struct(ctx, schema.items.as_ref().unwrap(), None);
+
+            type_name = self.generate_struct(ctx, schema.items.as_ref().unwrap(), None, root_schema_ty.clone());
+
             return format!("Vec<{}>", type_name).to_owned()
         }
         else {
             type_name = schema.ty.as_ref().unwrap().clone();
         }
+
+        println!("generating {type_name}[root={root_schema_ty:?}]");
+
 
 
         let span = span!(Level::TRACE, "generate_struct", "type" = type_name);
@@ -200,14 +208,21 @@ impl RustGenerator {
         }
 
         if self.generated_tys.borrow().contains(&type_name) {
+            if let Some(root_schema_ty) = root_schema_ty  {
+                if  root_schema_ty == type_name {
+                    return format!("Box<{type_name}>")
+                }
+            }
             return type_name;
         }
+
+
 
         // if it is referenced to a custom type, find and return 
         if let Some(ref_schema) = get_schema_by_name(&ctx, &type_name) {
             // check whether schema is a type referencing another user type
             if schema.properties.is_none() && schema.enum_items.is_none() && schema.items.is_none() {
-                return self.generate_struct(ctx, ref_schema, Some(type_name.to_string()));
+                return self.generate_struct(ctx, ref_schema, Some(type_name.to_string()), Some(type_name.to_string()));
             }
         }
         let mut attrs: Vec<String> = vec![];
@@ -251,6 +266,7 @@ impl RustGenerator {
             },
             None => {},
         }
+        self.generated_tys.borrow_mut().insert(type_name.clone());
 
         let mut result = format!("{}\npub struct {} {{\n", attrs.join("\n"), type_name).to_string();
 
@@ -289,7 +305,9 @@ impl RustGenerator {
                     None => false
                 };
 
-                let prop_ty = self.generate_struct(ctx, &prop_schema, None);
+                let prop_ty = self.generate_struct(ctx, &prop_schema, None, Some(type_name.clone()));
+                println!("{type_name} -> {prop_name}: {prop_ty}");
+
                 if optional {
                     result += &format!("Option<{}>", prop_ty);
 
@@ -303,7 +321,7 @@ impl RustGenerator {
         result += "}\n";
         ctx.append_file(self.name(), &self.dst(ctx), &result);
 
-        self.generated_tys.borrow_mut().insert(type_name.clone());
+
 
         type_name
     }

@@ -1,7 +1,14 @@
-global [generator.rust.file = "src/generated.rs"]
-global [generator.rust_axum.file = "src/generated.rs"]
-global [generator.rust.async]
-global [generator.rust.async_trait]
+#[@rust.file = "src/generated.rs"]
+#[@rust_axum.file = "src/generated.rs"]
+#[@rust.async]
+#[@rust.async_trait]
+
+
+
+[@rust = "tcp::TcpStream"]
+type A
+
+
 
 
 struct Todo {

@@ -103,6 +103,15 @@ fn set_def_loc_for_global_option(def_loc:Arc<DefLoc>,  global_option: Option<&mu
                         Some(r) => r.def_loc = def_loc.clone(),
                         None => {},
                     }
+                    match &mut g.python {
+                        Some(r) => r.def_loc = def_loc.clone(),
+                        None => {},
+                    }
+                    match &mut g.python_fastapi {
+                        Some(r) => r.def_loc = def_loc.clone(),
+                        None => {},
+                    }
+
                     match &mut g.rust_axum {
                         Some(r) => r.def_loc = def_loc.clone(),
                         None => {},
@@ -196,9 +205,16 @@ fn parse_option(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> Resul
 
     for inner_pair in pair.into_inner() {
         match inner_pair.as_rule() {
-            Rule::identifier => {
+            Rule::option_identifier => {
                 // Split the identifier by '.' and extend the keys vector
-                keys.extend(inner_pair.as_str().split('.').map(String::from));
+                let mut items:Vec<String> = inner_pair.as_str().split('.').map(String::from).collect();
+                if items[0].starts_with("@") {
+                    // @ is the shortcut for generator
+                    items[0].remove(0);
+                    items.insert(0, "generator".to_owned());
+                }
+
+                keys.extend(items);
             },
             Rule::option_value => {
                 for value_pair in inner_pair.into_inner() {
@@ -548,17 +564,32 @@ struct abc {
     #[should_panic(expected = "unknown field")]
     fn cannot_parse_undefined_option()  {
         let api_file: &'static str = r#"
-global [generator.rest]
+# [generator.rest]
         "#;
 
         let _ = api_parse::parse(PathBuf::from(""), api_file);
+
     }
 
 
     #[test]
     fn can_parse_global_option() -> Result<()>  {
         let api_file: &'static str = r#"
-global [generator.rust.file = "abcde"]
+# [generator.rust.file = "abcde"]
+        "#;
+
+        let spec = api_parse::parse(PathBuf::from(""), api_file)?;
+        assert!(spec.option.as_ref().unwrap().generator.is_some());
+        let rust_config = spec.option.as_ref().unwrap().generator.as_ref().unwrap().rust.as_ref().unwrap();
+        assert_eq!(rust_config.file.as_ref().unwrap(), &"abcde".to_string());
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_parse_global_option_with_generator_shortcut() -> Result<()>  {
+        let api_file: &'static str = r#"
+# [@rust.file = "abcde"]
         "#;
 
         let spec = api_parse::parse(PathBuf::from(""), api_file)?;
@@ -572,7 +603,7 @@ global [generator.rust.file = "abcde"]
     #[test]
     fn can_parse_global_option_with_implicit_bool() -> Result<()>  {
         let api_file: &'static str = r#"
-global [generator.rust.async]
+# [generator.rust.async]
         "#;
 
         let spec = api_parse::parse(PathBuf::from(""), api_file)?;
@@ -586,7 +617,7 @@ global [generator.rust.async]
     #[test]
     fn can_parse_usecase_option() -> Result<()>  {
         let api_file: &'static str = r#"
-        global [generator.rust.file = "abcde"]
+        # [generator.rust.file = "abcde"]
         
         [rest.path = "/abdf/def"]
         usecase abc {
