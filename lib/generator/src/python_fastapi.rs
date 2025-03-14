@@ -82,7 +82,36 @@ impl Generator for PythonFastApiGenerator {
         let mut result = String::new();
 
         let router_var = format!("{}_router", trait_name);
-        result += &format!("{} = APIRouter()\n", router_var);
+        let mut router_args:Vec<String> = vec![];
+
+        match &usecase.option {
+            Some(usecase_opt) => {
+                match &usecase_opt.rest {
+                    Some(rest) => {
+                        if let Some(path) = &rest.path {
+                            if !path.starts_with("/") {
+                                router_args.push(format!("prefix='/{}'", path));
+                            } else {
+                                router_args.push(format!("prefix='{}'", path));
+
+                            }
+
+                        }
+                    }
+                    None => bail!("python_fastapi router_arg option is not set"),
+                }
+            }
+            None => {
+            }
+        };
+
+        let router_args_str = if router_args.len() != 0 {
+            router_args.join(", ")
+        } else {
+            "".to_string()
+        };
+        
+        result += &format!("{} = APIRouter({})\n", router_var, router_args_str);
 
         for (method_name, method) in &usecase.methods {
             let rest = match method.option {
@@ -111,13 +140,16 @@ impl Generator for PythonFastApiGenerator {
 
             let rest_path = match &rest.path {
                 Some(path) => path,
-                None => &"/".to_string(),
+                None => &"".to_string(),
             };
 
             let path_params = utils::get_path_params(method);
 
             // tranlate path to fastapi path
-            let translated_path = turn_cronus_path_to_fastapi_path(&rest_path);
+            let mut translated_path = turn_cronus_path_to_fastapi_path(&rest_path, Case::Snake);
+            if !translated_path.is_empty() && !translated_path.starts_with("/") {
+                translated_path = format!("/{translated_path}");
+            }
             result += &format!("@{}.{}('{}')\n", router_var, rest.method, translated_path);
             if has_async {
                 result += "async ";
@@ -125,8 +157,9 @@ impl Generator for PythonFastApiGenerator {
             result += &format!("def ");
             result += &method_name.to_case(Case::Snake);
             result += "(";
+            
+            let mut arg_strs: Vec<String> = vec![];
 
-            let mut has_body = false;
             // prepare body if http method is not get
 
             if let Some(req) = &method.req {
@@ -147,9 +180,7 @@ impl Generator for PythonFastApiGenerator {
                     let body_ty = format!("{}Body", method_name.to_case(Case::UpperCamel));
                     if cloned_req.properties.as_ref().unwrap().len() != 0 {
                         self.generate_struct(ctx, &cloned_req, Some(body_ty.clone()), None);
-                        result += "body: ";
-                        result += &body_ty;
-                        has_body = true;
+                        arg_strs.push(format!("body: {}", body_ty));
                     }
                 } else {
                     req.properties.as_ref().unwrap().into_iter().for_each(|(prop_name, prop_schema)| {
@@ -158,11 +189,9 @@ impl Generator for PythonFastApiGenerator {
                                 return;
                             }
                         }
-                        result += &prop_name.to_case(Case::Snake);
-                        result += ": ";
+
                         let ty = self.generate_struct(ctx, prop_schema, None, None);
-                        result += &ty;
-                        result += ", ";
+                        arg_strs.push(format!("{}: {}", prop_name.to_case(Case::Snake), ty));
                     });
                 }
             }
@@ -171,33 +200,26 @@ impl Generator for PythonFastApiGenerator {
             match get_method_path_names_and_tys(method)? {
                 Some((props, tys)) => {
                     for (i, prop) in props.iter().enumerate() {
-                        if i == 0 {
-                            if has_body {
-                                result += ", ";
-                            }
-                        }
-                        if i != props.len() - 1 {
-                            result += ", ";
-                        }
-                        result += &format!("{}: {}", prop.to_case(Case::Snake), tys[i]);
+                        arg_strs.push(format!("{}: {}", prop.to_case(Case::Snake), tys[i]));
                     }
                 }
                 None => {}
             }
 
-            if !result.ends_with(", ") {
-                result += ", ";
-            }
-
             // get ctx depends
-            result += "ctx = Depends(get_ctx)";
-
+            arg_strs.push("ctx = Depends(get_ctx)".to_string());
+            let arg_str = arg_strs.join(", ");
+            if !arg_str.is_empty() {
+                result += &arg_str;
+            }
             result += ")";
 
             let mut result_type: String = "None".to_string();
 
+            let mut has_res = false;
             // generate response
             if let Some(res) = &method.res {
+                has_res = true;
                 let response_ty = get_response_name(ctx, method_name);
                 self.generate_struct(ctx, &res, Some(response_ty.clone()), None);
                 result_type = response_ty;
@@ -206,8 +228,10 @@ impl Generator for PythonFastApiGenerator {
 
             result += ":\n";
 
+            let mut has_request = false;
             // request object creation
             if let Some(req) = &method.req {
+                has_request = true;
                 result += "  request = ";
                 result += &get_request_name(ctx, method_name);
                 result += "(";
@@ -246,11 +270,24 @@ impl Generator for PythonFastApiGenerator {
                 result += ")\n";
             }
 
+            if has_res {
+                result += "  return"
+            }
+
             // assign request body
             if has_async {
-                result += "  await ";
+                if has_res {
+                    result += " await ";
+                } else {
+                    result += "  await ";
+
+                }
             }
-            let call_usecase = format!("ctx.{}.{}(request)", trait_name, method_name.to_case(Case::Snake));
+            let call_usecase = format!("ctx.{}.{}({})", trait_name, method_name.to_case(Case::Snake), if has_request {
+                "request"
+            } else {
+                ""
+            });
             result += &call_usecase;
             result += "\n";
         }
@@ -278,25 +315,34 @@ impl Generator for PythonFastApiGenerator {
     }
 }
 
-fn turn_cronus_path_to_fastapi_path(path: &str) -> String {
+fn turn_cronus_path_to_fastapi_path(path: &str, var_case: Case) -> String {
     // turn /:id to /{id}
     let mut result = String::new();
     let mut in_param = false;
+    let mut param: String = String::new();
     for c in path.chars() {
+        if in_param && c != '/' {
+            param.push(c);
+        } 
         if c == ':' {
             in_param = true;
             result.push('{');
         } else if c == '/' {
             if in_param {
+                result += &param.to_case(var_case);
                 result.push('}');
                 in_param = false;
+                param.clear();
             }
             result.push(c);
         } else {
-            result.push(c);
+            if !in_param {
+                result.push(c);
+            }
         }
     }
     if in_param {
+        result += &param.to_case(var_case);
         result.push('}');
     }
     result

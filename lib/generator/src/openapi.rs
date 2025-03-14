@@ -240,7 +240,7 @@ impl OpenAPIGenerator {
                         // FIXME: proper handle result
                         let obj =  self.generate_schema_with_ignore(ctx, None, value, None).unwrap().to_schema_object();
 
-                        Some((key.clone(), *obj))
+                        Some((key.to_case(Case::Snake), *obj))
                     })
                     .collect()
             })
@@ -294,6 +294,20 @@ impl OpenAPIGenerator {
 
         let mut query_params: HashSet<String> = Default::default();
 
+        let http_method = match method.option.as_ref() {
+            Some(options) => {
+                if let Some(rest_option) = &options.rest {
+                    &rest_option.method
+                } else {
+                    bail!("No options specified for the usecase")
+                }
+            },
+            None => {
+                bail!("No options specified for the usecase")
+            }
+        };
+
+
         // parameters include path and query parameters
         let parameters = method.req.as_ref().map(|req| {
             req.properties
@@ -314,27 +328,28 @@ impl OpenAPIGenerator {
                             schema: *self.generate_schema_with_ignore(ctx, None, schema,  None).unwrap().to_schema_object()
                         })
                     }
-                    schema.option.as_ref().and_then(|option| {
-                        option.rest.as_ref().and_then(|rest_option| {
-                            let is_query_var = rest_option.query.unwrap_or(false);
-                            if is_query_var {
-                                query_params.insert(key.clone());
-                            }
-                            if is_query_var {
-                                Some(ParameterObject {
-                                    name: key.clone(),
-                                    in_: "query".to_string(),
-                                    description: schema.option.as_ref().and_then(|d| d.description.clone()),
-                                    required: schema.required.unwrap_or(false),
-                                    // FIXME: proper handle result
-
-                                    schema: *self.generate_schema_with_ignore(ctx, None, schema,  None).unwrap().to_schema_object()
-                                })
-                            } else {
-                                None
-                            }
+                    let prop_is_query = schema.option.as_ref().and_then(|option| {
+                        option.rest.as_ref().and_then(|rest_option|  {
+                            rest_option.query
                         })
-                    })
+                    }).unwrap_or(false);
+
+                    let is_query_var = http_method == "get" || prop_is_query;
+                            
+                    if is_query_var {
+                        query_params.insert(key.clone());
+                        Some(ParameterObject {
+                            name: key.clone(),
+                            in_: "query".to_string(),
+                            description: schema.option.as_ref().and_then(|d| d.description.clone()),
+                            required: schema.required.unwrap_or(false),
+                            // FIXME: proper handle result
+
+                            schema: *self.generate_schema_with_ignore(ctx, None, schema,  None).unwrap().to_schema_object()
+                        })
+                    } else {
+                        None
+                    }
                 })
                 .collect::<Vec<ParameterObject>>()
         });
@@ -376,7 +391,11 @@ impl OpenAPIGenerator {
         };
 
         let request_body = method.req.as_ref().map(|req| {
-            RequestBodyObject {
+            if http_method == "get" {
+                return None;
+            }
+
+            return Some(RequestBodyObject {
                 description: None, // Add description if needed
                 content: {
                     let req_ty = get_request_name(ctx, name);
@@ -394,7 +413,7 @@ impl OpenAPIGenerator {
                 )])
                 },
                 required: Some(true), // Set to true if the request body is required
-            }
+            })
         });
     
         Ok(OperationObject {
@@ -403,7 +422,7 @@ impl OpenAPIGenerator {
             description: None,
             operation_id: Some(name.to_string()),
             parameters,
-            request_body,
+            request_body: request_body.unwrap_or(None),
             responses,
             tags: None
         })
