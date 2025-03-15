@@ -28,7 +28,7 @@ fn replace_colon_with_braces(input: &str) -> String {
         .split('/')
         .map(|segment| {
             if segment.starts_with(':') {
-                format!("{{{}}}", &segment[1..])
+                format!("{{{}}}", String::from(&segment[1..]).to_case(Case::Snake) )
             } else {
                 segment.to_string()
             }
@@ -318,7 +318,7 @@ impl OpenAPIGenerator {
                     let is_path_var = path_params.as_ref().is_some_and(|path_params| path_params.contains(key));
                     if is_path_var {
                         return Some(ParameterObject {
-                            name: key.clone(),
+                            name: key.to_case(Case::Snake),
                             in_: "path".to_string(),
                             description: schema.option.as_ref().and_then(|d| d.description.clone()),
                             required: true, // For the path parameter, required should be True
@@ -339,7 +339,7 @@ impl OpenAPIGenerator {
                     if is_query_var {
                         query_params.insert(key.clone());
                         Some(ParameterObject {
-                            name: key.clone(),
+                            name: key.to_case(Case::Snake),
                             in_: "query".to_string(),
                             description: schema.option.as_ref().and_then(|d| d.description.clone()),
                             required: schema.required.unwrap_or(false),
