@@ -24,7 +24,10 @@ pub struct GlobalOption {
 
     /// Default: "response", other popular choices are: "output", "res", etc..
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub usecase_response_suffix: Option<String>
+    pub usecase_response_suffix: Option<String>,
+
+    /// If given type(s) is/are mentioned in the spec, do not generate
+    pub skip_types: Option<Vec<String>>
 }
 
 
@@ -57,9 +60,17 @@ pub struct PythonFastApiGeneratorOption {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub get_ctx_from: Option<String>,
 
+    /// where the python usecase types are defined (which module)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub usecase_from: Option<String>
+    pub usecase_from: Option<String>,
+    
+    pub extra_imports: Option<Vec<String>>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_method_args: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_request_fields: Option<Vec<String>>
 }
 
 
@@ -125,8 +136,7 @@ pub struct RustGeneratorOption {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uses: Option<Vec<String>>,
 
-    /// If given type(s) is/are mentioned in the spec, do not generate
-    pub skip_types: Option<Vec<String>>,
+    
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub no_error_type: Option<bool>,
@@ -333,7 +343,19 @@ pub struct RawUsecaseMethodOption {
     pub rest: Option<RawUsecaseMethodRestOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub python_fastapi: Option<RawUsecaseMethodPythonFastApiOption>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RawUsecaseMethodPythonFastApiOption {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_method_args: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_request_fields: Option<Vec<String>>
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -28,7 +28,19 @@ pub fn generate_from_yaml(content: &str) -> Result<JsValue, String> {
             Err(err.to_string())
         },
     }
+}
 
+#[wasm_bindgen]
+pub fn api_to_yaml(content: &str) -> Result<JsValue, String> {
+    match cronus_parser::api_parse::parse(PathBuf::new(), content) {
+        Ok(spec) => {
+            let yaml = cronus_parser::to_yaml_str(&spec).map_err(|e| e.to_string())?;
+            Ok(serde_wasm_bindgen::to_value(&yaml).unwrap())
+        },
+        Err(err) => {
+            Err(err.to_string())
+        },
+    }
 }
 
 fn run_raw_spec(spec: RawSpec) -> Result<JsValue, String> {

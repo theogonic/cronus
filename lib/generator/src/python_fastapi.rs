@@ -45,12 +45,26 @@ impl Generator for PythonFastApiGenerator {
             },
         };
         let get_ctx_import = &format!("from {get_ctx_from} import get_ctx");
-        let common_imports = vec![
+        let mut common_imports = vec![
             get_ctx_import,
             "from pydantic import BaseModel",
             "from fastapi import APIRouter, Depends, Request, status",
             "from typing import Optional",
         ];
+
+        match gen_opt {
+            Some(gen_opt) => {
+                // handle extra imports
+                if let Some(extra_imports) = &gen_opt.extra_imports {
+                    for import in extra_imports {
+                        common_imports.push(import);
+                    }
+                }
+            },
+            None => {}
+        }
+
+
         let common_imports_str = common_imports.join("\n") + "\n";
         ctx.append_file(self.name(), &self.dst(ctx), &common_imports_str);
         Ok(())
@@ -208,10 +222,38 @@ impl Generator for PythonFastApiGenerator {
 
             // get ctx depends
             arg_strs.push("ctx = Depends(get_ctx)".to_string());
+
+            // handle extra method args (global level)
+            match self.get_gen_option(ctx) {
+                Some(gen_opt) => {
+                    if let Some(extra_args) = &gen_opt.extra_method_args {
+                        for arg in extra_args {
+                            arg_strs.push(arg.to_string());
+                        }
+                    }
+                },
+                None => {}
+            }
+
+            // handle extra method args (method level)
+            if let Some(method_opt) = &method.option {
+                if let Some(py_method_opt) = &method_opt.python_fastapi {
+                    if let Some(extra_args) = &py_method_opt.extra_method_args {
+                        for arg in extra_args {
+                            arg_strs.push(arg.to_string());
+                        }
+                    }
+                }
+            }
+
+
             let arg_str = arg_strs.join(", ");
             if !arg_str.is_empty() {
                 result += &arg_str;
             }
+
+
+
             result += ")";
 
             let mut result_type: String = "None".to_string();
@@ -228,45 +270,80 @@ impl Generator for PythonFastApiGenerator {
 
             result += ":\n";
 
-            let mut has_request = false;
+            // let mut has_request = false;
+            let mut request_fields:Vec<String> = Vec::new();
             // request object creation
             if let Some(req) = &method.req {
-                has_request = true;
-                result += "  request = ";
-                result += &get_request_name(ctx, method_name);
-                result += "(";
-                let mut first = true;
+                // has_request = true;
+                // result += "  request = ";
+                // result += &get_request_name(ctx, method_name);
+                // result += "(";
+                // let mut first = true;
                 for (prop_name, prop_schema) in req.properties.as_ref().unwrap() {
-                    if first {
-                        first = false;
-                    } else {
-                        result += ", ";
-                    }
-                    result += &prop_name.to_case(Case::Snake);
-                    result += "=";
+                    // if first {
+                    //     first = false;
+                    // } else {
+                    //     result += ", ";
+                    // }
+                    let mut field = String::new();
+                    field += &prop_name.to_case(Case::Snake);
+                    field += "=";
 
                     // if property is in body, use body.xxx
                     // otherwise, use xxx directly
                     let mut in_path = false;
                     if let Some(path_params) = path_params.as_ref() {
                         if path_params.contains(prop_name)  {
-                            result += &prop_name.to_case(Case::Snake);
+                            field += &prop_name.to_case(Case::Snake);
                             in_path = true;
                         }
                     }
 
                     if !in_path {
                         if rest.method == "get" {
-                            result += &prop_name.to_case(Case::Snake);
+                            field += &prop_name.to_case(Case::Snake);
                         }
                         else {
-                            result += "body.";
-                            result += &prop_name.to_case(Case::Snake);
+                            field += "body.";
+                            field += &prop_name.to_case(Case::Snake);
                         }
                     }
 
+                    request_fields.push(field);
+
 
                 }
+               // result += ")\n";
+            }
+
+            // handle extra request fields (global level)
+            match self.get_gen_option(ctx) {
+                Some(gen_opt) => {
+                    if let Some(extra_request_fields) = &gen_opt.extra_request_fields {
+                        for field in extra_request_fields {
+                            request_fields.push(field.to_string());
+                        }
+                    }
+                },
+                None => {}
+            }
+
+            // handle extra request fields (method level)
+            if let Some(method_opt) = &method.option {
+                if let Some(py_method_opt) = &method_opt.python_fastapi {
+                    if let Some(extra_request_fields) = &py_method_opt.extra_request_fields {
+                        for field in extra_request_fields {
+                            request_fields.push(field.to_string());
+                        }
+                    }
+                }
+            }
+
+            if request_fields.len() != 0 {
+                result += "  request = ";
+                result += &get_request_name(ctx, method_name);
+                result += "(";
+                result += &request_fields.join(",\n    ");
                 result += ")\n";
             }
 
@@ -283,7 +360,7 @@ impl Generator for PythonFastApiGenerator {
 
                 }
             }
-            let call_usecase = format!("ctx.{}.{}({})", trait_name, method_name.to_case(Case::Snake), if has_request {
+            let call_usecase = format!("ctx.{}.{}({})", trait_name, method_name.to_case(Case::Snake), if request_fields.len() != 0 {
                 "request"
             } else {
                 ""

@@ -53,6 +53,10 @@ pub fn from_yaml_str(str: &str) -> Result<RawSpec> {
     Ok(spec)
 }
 
+pub fn to_yaml_str(spec: &RawSpec) -> Result<String> {
+    let yaml = serde_yaml::to_string(spec)?;
+    Ok(yaml)
+}
 
 pub fn resolve_imports(spec: &mut RawSpec, explored: &mut HashSet<String>, spec_parent:&Path, search_paths: Option<&Vec<PathBuf>>) -> Result<()> {
 
