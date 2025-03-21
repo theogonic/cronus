@@ -4,6 +4,7 @@
         "lib/generator/Cargo.toml",
         "lib/parser/Cargo.toml",
         "lib/spec/Cargo.toml",
+        "lib/generator-wasm/Cargo.toml",
         "./lib/generator/testdata/hello/rust_axum/Cargo.toml"
     ]
 }

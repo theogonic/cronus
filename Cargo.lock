@@ -165,6 +165,8 @@ dependencies = [
  "clap",
  "cronus_generator",
  "cronus_parser",
+ "cronus_spec",
+ "serde_yaml",
  "tracing",
  "tracing-subscriber",
 ]

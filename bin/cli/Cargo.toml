@@ -2,7 +2,7 @@
 name = "cronus_cli"
 version.workspace = true
 edition = "2021"
-description = "The CLI for cronus API spec."
+description = "The CLI for cronus"
 license = "MIT"
 repository = "https://github.com/theogonic/cronus"
 documentation = "https://theogonic.github.io/cronus/"
@@ -12,6 +12,8 @@ readme = "../../README.md"
 clap = { version = "4.4.7", features = ["derive"] }
 cronus_generator =  { workspace = true }
 cronus_parser =  { workspace = true }
+cronus_spec =  { workspace = true }
+serde_yaml = {workspace = true}
 tracing = "0.1"
 tracing-subscriber = "0.3"
 anyhow = "1.0"
