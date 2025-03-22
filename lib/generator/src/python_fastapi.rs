@@ -265,26 +265,61 @@ impl Generator for PythonFastApiGenerator {
                 let response_ty = get_response_name(ctx, method_name);
                 self.generate_struct(ctx, &res, Some(response_ty.clone()), None);
                 result_type = response_ty;
-                result += &format!(" -> {}", result_type);
-            }
+                
+            } 
+
+            result += &format!(" -> {}", result_type);
 
             result += ":\n";
 
             // let mut has_request = false;
             let mut request_fields:Vec<String> = Vec::new();
+
+            // collect extra fields, which should be assigned from body or path/query variable
+            let mut extra_props:HashSet<String> = HashSet::new();
+
+            // handle extra request fields (global level)
+            match self.get_gen_option(ctx) {
+                Some(gen_opt) => {
+                    if let Some(extra_request_fields) = &gen_opt.extra_request_fields {
+                        for field in extra_request_fields {
+                            request_fields.push(field.to_string());
+                            let mut parts = field.split("=");
+                            if let Some(part) = parts.next() {
+                                extra_props.insert(part.trim().to_string());
+                            }
+                        }
+                    }
+                },
+                None => {}
+            }
+
+            // handle extra request fields (method level)
+            if let Some(method_opt) = &method.option {
+                if let Some(py_method_opt) = &method_opt.python_fastapi {
+                    if let Some(extra_request_fields) = &py_method_opt.extra_request_fields {
+                        for field in extra_request_fields {
+                            request_fields.push(field.to_string());
+                            let mut parts = field.split("=");
+                            if let Some(part) = parts.next() {
+                                extra_props.insert(part.trim().to_string());
+                            }
+                        }
+                    }
+                }
+            }
+
             // request object creation
             if let Some(req) = &method.req {
-                // has_request = true;
-                // result += "  request = ";
-                // result += &get_request_name(ctx, method_name);
-                // result += "(";
-                // let mut first = true;
+                
+
+
+
                 for (prop_name, prop_schema) in req.properties.as_ref().unwrap() {
-                    // if first {
-                    //     first = false;
-                    // } else {
-                    //     result += ", ";
-                    // }
+                    if extra_props.contains(prop_name) {
+                        // skip extra props
+                        continue;
+                    }
                     let mut field = String::new();
                     field += &prop_name.to_case(Case::Snake);
                     field += "=";
@@ -313,31 +348,9 @@ impl Generator for PythonFastApiGenerator {
 
 
                 }
-               // result += ")\n";
             }
 
-            // handle extra request fields (global level)
-            match self.get_gen_option(ctx) {
-                Some(gen_opt) => {
-                    if let Some(extra_request_fields) = &gen_opt.extra_request_fields {
-                        for field in extra_request_fields {
-                            request_fields.push(field.to_string());
-                        }
-                    }
-                },
-                None => {}
-            }
-
-            // handle extra request fields (method level)
-            if let Some(method_opt) = &method.option {
-                if let Some(py_method_opt) = &method_opt.python_fastapi {
-                    if let Some(extra_request_fields) = &py_method_opt.extra_request_fields {
-                        for field in extra_request_fields {
-                            request_fields.push(field.to_string());
-                        }
-                    }
-                }
-            }
+            
 
             if request_fields.len() != 0 {
                 result += "  request = ";
