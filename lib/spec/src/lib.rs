@@ -273,6 +273,9 @@ pub struct RawSchemaPropertyOption {
     pub rust: Option<RawSchemaPropertyRustOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub openapi: Option<RawSchemaPropertyOpenApiOption>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>
 
 }
@@ -281,6 +284,13 @@ pub struct RawSchemaPropertyOption {
 #[serde(deny_unknown_fields)]
 pub struct RawSchemaPropertyPythonOption {
 
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct RawSchemaPropertyOpenApiOption {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exclude: Option<bool>
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

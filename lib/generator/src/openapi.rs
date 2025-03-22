@@ -203,6 +203,11 @@ impl OpenAPIGenerator {
             props
                 .iter()
                 .filter_map(|(key, value)| {
+                    if value.option.as_ref()
+                        .and_then(|o| o.openapi.as_ref().and_then(| opt| opt.exclude))
+                        .unwrap_or(false) {
+                            return None; // skip properties with openapi option
+                        }
                     if let Some(ignore_props) = ignore_props {
                         if ignore_props.contains(key) {
                             return None;
@@ -232,6 +237,13 @@ impl OpenAPIGenerator {
                 props
                     .iter()
                     .filter_map(|(key, value)| {
+                        println!{"key: {}, value: {:?}", key, value};
+                        if value.option.as_ref()
+                        .and_then(|o| o.openapi.as_ref().and_then(| opt| opt.exclude))
+                        .unwrap_or(false) {
+                            return None; // skip properties with openapi option
+                        }
+
                         if let Some(ignore_props) = ignore_props {
                             if ignore_props.contains(key) {
                                 return None;
@@ -315,6 +327,12 @@ impl OpenAPIGenerator {
                 .unwrap_or(&HashMap::new())
                 .iter()
                 .filter_map(|(key, schema)| {
+                    if schema.option.as_ref()
+                        .and_then(|o| o.openapi.as_ref().and_then(| opt| opt.exclude))
+                        .unwrap_or(false) {
+                            return None; // skip properties with openapi option
+                        }
+                        
                     let is_path_var = path_params.as_ref().is_some_and(|path_params| path_params.contains(key));
                     if is_path_var {
                         return Some(ParameterObject {

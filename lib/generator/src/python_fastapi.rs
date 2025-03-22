@@ -173,6 +173,36 @@ impl Generator for PythonFastApiGenerator {
             result += "(";
             
             let mut arg_strs: Vec<String> = vec![];
+            let mut extra_args: Vec<&String> = vec![];
+            let mut extra_method_arg_names: HashSet<String> = HashSet::new();
+            // handle extra method args (global level)
+            match self.get_gen_option(ctx) {
+                Some(gen_opt) => {
+                    if let Some(_extra_args) = &gen_opt.extra_method_args {
+                        extra_args.extend(_extra_args.iter());
+                        
+                    }
+                },
+                None => {}
+            }
+
+            // handle extra method args (method level)
+            if let Some(method_opt) = &method.option {
+                if let Some(py_method_opt) = &method_opt.python_fastapi {
+                    if let Some(_extra_args) = &py_method_opt.extra_method_args {
+                        extra_args.extend(_extra_args.iter());
+                    }
+                }
+            }
+
+            for arg in &extra_args {
+                let mut parts = arg.split("=");
+                if let Some(part) = parts.next() {
+                    extra_method_arg_names.insert(part.trim().to_string());
+                }
+            }
+
+            
 
             // prepare body if http method is not get
 
@@ -198,10 +228,15 @@ impl Generator for PythonFastApiGenerator {
                     }
                 } else {
                     req.properties.as_ref().unwrap().into_iter().for_each(|(prop_name, prop_schema)| {
+                            if extra_method_arg_names.contains(prop_name) {
+                                return;
+                            }
                         if let Some(path_params) = path_params.as_ref() {
                             if path_params.contains(prop_name) {
                                 return;
                             }
+                            
+
                         }
 
                         let ty = self.generate_struct(ctx, prop_schema, None, None);
@@ -223,28 +258,12 @@ impl Generator for PythonFastApiGenerator {
             // get ctx depends
             arg_strs.push("ctx = Depends(get_ctx)".to_string());
 
-            // handle extra method args (global level)
-            match self.get_gen_option(ctx) {
-                Some(gen_opt) => {
-                    if let Some(extra_args) = &gen_opt.extra_method_args {
-                        for arg in extra_args {
-                            arg_strs.push(arg.to_string());
-                        }
-                    }
-                },
-                None => {}
+            for arg in extra_args {
+                arg_strs.push(arg.to_string());
             }
 
-            // handle extra method args (method level)
-            if let Some(method_opt) = &method.option {
-                if let Some(py_method_opt) = &method_opt.python_fastapi {
-                    if let Some(extra_args) = &py_method_opt.extra_method_args {
-                        for arg in extra_args {
-                            arg_strs.push(arg.to_string());
-                        }
-                    }
-                }
-            }
+
+            
 
 
             let arg_str = arg_strs.join(", ");
@@ -507,7 +526,7 @@ impl PythonFastApiGenerator {
             type_name = schema.ty.as_ref().unwrap().clone();
         }
 
-        println!("generating {type_name}[root={root_schema_ty:?}]");
+        // println!("generating {type_name}[root={root_schema_ty:?}]");
 
         let span = span!(Level::TRACE, "generate_struct", "type" = type_name);
         // Enter the span, returning a guard object.
