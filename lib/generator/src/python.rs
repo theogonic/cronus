@@ -215,13 +215,15 @@ impl PythonGenerator {
 
         let mut result = format!("@dataclass\nclass {}:\n",  type_name).to_string();
 
-
+        let mut required_fields =  Vec::new();
+        let mut optional_fields =  Vec::new(); 
         if let Some(properties) = &schema.properties {
             for (prop_name, prop_schema) in properties {
                 let snaked_prop_name = prop_name.to_case(Case::Snake);
-                result += "  ";
-                result += &snaked_prop_name;
-                result += ": ";
+                let mut field = String::new();
+                field += "  ";
+                field += &snaked_prop_name;
+                field += ": ";
 
                 let optional = match prop_schema.required {
                     Some(req) => !req,
@@ -231,14 +233,22 @@ impl PythonGenerator {
                 let prop_ty = self.generate_struct(ctx, &prop_schema, None, Some(type_name.clone()));
 
                 if optional {
-                    result += &format!("Optional[{}] = None", prop_ty);
+                    field += &format!("Optional[{}] = None", prop_ty);
 
                 } else {
-                    result += &prop_ty;
+                    field += &prop_ty;
                 }
-                result += "\n";
+                field += "\n";
+
+                if optional {
+                    optional_fields.push(field);
+                } else {
+                    required_fields.push(field);
+                }
             }
         }
+        result += required_fields.join("").as_str();
+        result += optional_fields.join("").as_str();
 
 
         ctx.append_file(self.name(), &self.dst(ctx), &result);
