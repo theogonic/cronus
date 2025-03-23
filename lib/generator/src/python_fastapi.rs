@@ -174,7 +174,6 @@ impl Generator for PythonFastApiGenerator {
             
             let mut arg_strs: Vec<String> = vec![];
             let mut extra_args: Vec<&String> = vec![];
-            let mut extra_method_arg_names: HashSet<String> = HashSet::new();
             // handle extra method args (global level)
             match self.get_gen_option(ctx) {
                 Some(gen_opt) => {
@@ -195,12 +194,7 @@ impl Generator for PythonFastApiGenerator {
                 }
             }
 
-            for arg in &extra_args {
-                let mut parts = arg.split("=");
-                if let Some(part) = parts.next() {
-                    extra_method_arg_names.insert(part.trim().to_string());
-                }
-            }
+
 
             
 
@@ -221,16 +215,37 @@ impl Generator for PythonFastApiGenerator {
                         }
                     }
 
-                    let body_ty = format!("{}Body", method_name.to_case(Case::UpperCamel));
-                    if cloned_req.properties.as_ref().unwrap().len() != 0 {
-                        self.generate_struct(ctx, &cloned_req, Some(body_ty.clone()), None);
-                        arg_strs.push(format!("body: {}", body_ty));
+                    let mut need_generate_body = false;
+
+                    for (prop_name, prop_schema) in cloned_req.properties.as_ref().unwrap() {
+                        if prop_schema.option.as_ref()
+                            .and_then(|o| o.python_fastapi.as_ref().and_then(| opt| opt.exclude))
+                            .unwrap_or(false) {
+                            // skip properties if exclude is set
+                            continue;
+                        }
+                        need_generate_body = true;
+                        break
+                    }
+                    
+                    if need_generate_body {
+                       
+                        let body_ty = format!("{}Body", method_name.to_case(Case::UpperCamel));
+                        if cloned_req.properties.as_ref().unwrap().len() != 0 {
+                            self.generate_struct(ctx, &cloned_req, Some(body_ty.clone()), None);
+                            arg_strs.push(format!("body: {}", body_ty));
+
+                        }
                     }
                 } else {
                     req.properties.as_ref().unwrap().into_iter().for_each(|(prop_name, prop_schema)| {
-                            if extra_method_arg_names.contains(prop_name) {
-                                return;
-                            }
+                        if prop_schema.option.as_ref()
+                        .and_then(|o| o.python_fastapi.as_ref().and_then(| opt| opt.exclude))
+                        .unwrap_or(false) {
+                    // skip properties if exclude is set
+                    return;
+                        }
+
                         if let Some(path_params) = path_params.as_ref() {
                             if path_params.contains(prop_name) {
                                 return;
@@ -300,7 +315,7 @@ impl Generator for PythonFastApiGenerator {
             // let mut has_request = false;
             let mut request_fields:Vec<String> = Vec::new();
 
-            // collect extra fields, which should be assigned from body or path/query variable
+            // collect extra fields, which should not be assigned from body or path/query variable
             let mut extra_props:HashSet<String> = HashSet::new();
 
             // handle extra request fields (global level)
@@ -572,6 +587,14 @@ impl PythonFastApiGenerator {
 
         if let Some(properties) = &schema.properties {
             for (prop_name, prop_schema) in properties {
+
+                if prop_schema.option.as_ref()
+                        .and_then(|o| o.python_fastapi.as_ref().and_then(| opt| opt.exclude))
+                        .unwrap_or(false) {
+                    // skip properties if exclude is set
+                    continue;
+                        }
+
                 let snaked_prop_name = prop_name.to_case(Case::Snake);
                 result += "  ";
                 result += &snaked_prop_name;

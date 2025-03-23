@@ -276,6 +276,9 @@ pub struct RawSchemaPropertyOption {
     pub openapi: Option<RawSchemaPropertyOpenApiOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub python_fastapi: Option<RawSchemaPropertyPythonFastApiOption>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>
 
 }
@@ -292,6 +295,14 @@ pub struct RawSchemaPropertyOpenApiOption {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude: Option<bool>
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct RawSchemaPropertyPythonFastApiOption {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exclude: Option<bool>
+}
+
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]

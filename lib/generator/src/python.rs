@@ -231,7 +231,7 @@ impl PythonGenerator {
                 let prop_ty = self.generate_struct(ctx, &prop_schema, None, Some(type_name.clone()));
 
                 if optional {
-                    result += &format!("Optional[{}]", prop_ty);
+                    result += &format!("Optional[{}] = None", prop_ty);
 
                 } else {
                     result += &prop_ty;
