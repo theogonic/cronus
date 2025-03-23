@@ -240,7 +240,13 @@ impl Generator for PythonFastApiGenerator {
                         }
 
                         let ty = self.generate_struct(ctx, prop_schema, None, None);
-                        arg_strs.push(format!("{}: {}", prop_name.to_case(Case::Snake), ty));
+                        if prop_schema.required.unwrap_or(false) {
+                            arg_strs.push(format!("{}: {}", prop_name.to_case(Case::Snake), ty));
+
+                        } else {
+                            arg_strs.push(format!("{}: Optional[{}] = None", prop_name.to_case(Case::Snake), ty));
+
+                        }
                     });
                 }
             }
