@@ -17,12 +17,15 @@ use tracing::{self, debug, span, Level};
 
 pub struct PythonFastApiGenerator {
     generated_tys: RefCell<HashSet<String>>,
+    // imported types from usecase, to avoid duplicate imports
+    imported_tys: RefCell<HashSet<String>>,
 }
 
 impl PythonFastApiGenerator {
     pub fn new() -> Self {
         Self {
             generated_tys: Default::default(),
+            imported_tys: Default::default(),
         }
     }
 }
@@ -173,12 +176,14 @@ impl Generator for PythonFastApiGenerator {
             result += "(";
             
             let mut arg_strs: Vec<String> = vec![];
-            let mut extra_args: Vec<&String> = vec![];
+            let mut default_arg_strs: Vec<String> = vec![];
+
+            let mut extra_method_args: Vec<String> = vec![];
             // handle extra method args (global level)
             match self.get_gen_option(ctx) {
                 Some(gen_opt) => {
                     if let Some(_extra_args) = &gen_opt.extra_method_args {
-                        extra_args.extend(_extra_args.iter());
+                        extra_method_args.extend(_extra_args.clone());
                         
                     }
                 },
@@ -189,8 +194,18 @@ impl Generator for PythonFastApiGenerator {
             if let Some(method_opt) = &method.option {
                 if let Some(py_method_opt) = &method_opt.python_fastapi {
                     if let Some(_extra_args) = &py_method_opt.extra_method_args {
-                        extra_args.extend(_extra_args.iter());
+                        extra_method_args.extend(_extra_args.clone());
                     }
+                }
+            }
+
+            for arg in extra_method_args {
+                if arg.contains("=") {
+                    // handle default args
+                    default_arg_strs.push(arg.to_string());
+                } else {
+                    // handle extra args
+                    arg_strs.push(arg.to_string());
                 }
             }
 
@@ -259,7 +274,7 @@ impl Generator for PythonFastApiGenerator {
                             arg_strs.push(format!("{}: {}", prop_name.to_case(Case::Snake), ty));
 
                         } else {
-                            arg_strs.push(format!("{}: Optional[{}] = None", prop_name.to_case(Case::Snake), ty));
+                            default_arg_strs.push(format!("{}: Optional[{}] = None", prop_name.to_case(Case::Snake), ty));
 
                         }
                     });
@@ -277,12 +292,10 @@ impl Generator for PythonFastApiGenerator {
             }
 
             // get ctx depends
-            arg_strs.push("ctx = Depends(get_ctx)".to_string());
+            default_arg_strs.push("ctx = Depends(get_ctx)".to_string());
 
-            for arg in extra_args {
-                arg_strs.push(arg.to_string());
-            }
-
+            
+            arg_strs.extend(default_arg_strs);
 
             
 
@@ -291,6 +304,7 @@ impl Generator for PythonFastApiGenerator {
             if !arg_str.is_empty() {
                 result += &arg_str;
             }
+
 
 
 
@@ -582,9 +596,31 @@ impl PythonFastApiGenerator {
         }
 
         self.generated_tys.borrow_mut().insert(type_name.clone());
+        if schema.enum_items.is_some() {
+            if !self.imported_tys.borrow().contains(&type_name) {
+                self.imported_tys.borrow_mut().insert(type_name.clone());
+                let gen_opt = self.get_gen_option(ctx);
+
+                let usecase_from: &str = match gen_opt {
+                    Some(gen_opt) => match &gen_opt.usecase_from {
+                        Some(usecase_from) => usecase_from.as_ref(),
+                        None => panic!("python_fastapi usecase_from option is not set")
+                    },
+                    None => {
+                        panic!("python_fastapi usecase_from option is not set");
+                    },
+                };
+                let imports_str = format!("from {} import {}\n", usecase_from, type_name);
+                ctx.append_file(self.name(), &self.dst(ctx), &imports_str);
+
+            }
+            
+            return type_name;
+        }
 
         let mut result = format!("class {}(BaseModel):\n", type_name).to_string();
-
+        let mut required_fields: Vec<String> = Vec::new();
+        let mut optional_fields: Vec<String> = Vec::new();
         if let Some(properties) = &schema.properties {
             for (prop_name, prop_schema) in properties {
 
@@ -594,11 +630,11 @@ impl PythonFastApiGenerator {
                     // skip properties if exclude is set
                     continue;
                         }
-
+                let mut field = String::new();
                 let snaked_prop_name = prop_name.to_case(Case::Snake);
-                result += "  ";
-                result += &snaked_prop_name;
-                result += ": ";
+                field += "  ";
+                field += &snaked_prop_name;
+                field += ": ";
 
                 let optional = match prop_schema.required {
                     Some(req) => !req,
@@ -609,12 +645,26 @@ impl PythonFastApiGenerator {
                     self.generate_struct(ctx, &prop_schema, None, Some(type_name.clone()));
 
                 if optional {
-                    result += &format!("Optional[{}]", prop_ty);
+                    field += &format!("Optional[{}] = None", prop_ty);
                 } else {
-                    result += &prop_ty;
+                    field += &prop_ty;
                 }
-                result += "\n";
+                field += "\n";
+
+                if optional {
+                    optional_fields.push(field);
+                } else {
+                    required_fields.push(field);
+                }
             }
+
+            if required_fields.len() != 0 {
+                result += &required_fields.join("");
+            }
+            if optional_fields.len() != 0 {
+                result += &optional_fields.join("");
+            }
+            result += "\n";
         }
 
         ctx.append_file(self.name(), &self.dst(ctx), &result);

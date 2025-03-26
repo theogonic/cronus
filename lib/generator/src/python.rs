@@ -29,7 +29,12 @@ impl Generator for PythonGenerator {
 
     fn before_all(&self, ctx: &Ctxt) -> Result<()> {
         
-        let common_imports = vec!["from abc import ABC, abstractmethod", "from dataclasses import dataclass", "from typing import Optional"];
+        let common_imports = vec![
+            "from abc import ABC, abstractmethod", 
+            "from dataclasses import dataclass", 
+            "from typing import Optional",
+            "from enum import Enum"
+        ];
         let common_imports_str = common_imports.join("\n") + "\n";
         ctx.append_file(self.name(), &self.dst(ctx), &common_imports_str);
 
@@ -212,6 +217,15 @@ impl PythonGenerator {
 
 
         self.generated_tys.borrow_mut().insert(type_name.clone());
+        // if it is a enum type, generate the enum definition
+        if let Some(enum_items) = &schema.enum_items {
+            let mut enum_def = format!("class {}(str, Enum):\n", type_name);
+            for item in enum_items {
+                enum_def += &format!("  {} = '{}'\n", item.name.to_case(Case::UpperSnake), item.name.to_case(Case::UpperSnake));
+            }
+            ctx.append_file(self.name(), &self.dst(ctx), &enum_def);
+            return type_name;
+        }
 
         let mut result = format!("@dataclass\nclass {}:\n",  type_name).to_string();
 

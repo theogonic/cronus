@@ -259,7 +259,7 @@ impl OpenAPIGenerator {
             ,
             required: required.and_then(|arr| if arr.is_empty() { None } else {Some(arr)}),
             enum_: schema.enum_items.as_ref().map(|enum_items| {
-                enum_items.iter().map(|item| item.name.clone()).collect()
+                enum_items.iter().map(|item| item.name.to_case(Case::UpperSnake)).collect()
             }),
             all_of: None, // Add logic for allOf if needed
             one_of: None, // Add logic for oneOf if needed

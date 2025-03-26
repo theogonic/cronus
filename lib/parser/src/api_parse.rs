@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use anyhow::bail;
 use anyhow::Result;
+use cronus_spec::RawSchemaEnumItem;
 use serde::de::DeserializeOwned;
 use cronus_spec::DefLoc;
 use cronus_spec::GlobalOption;
@@ -42,7 +43,23 @@ fn parse_file(def_loc:Arc<DefLoc>, pairs: Pair<Rule>) -> Result<RawSpec> {
                     bail!("expect to have name of the schema in the top level at {}:{}", line, col)
                 }
             }
-            
+            Rule::enum_def => {
+                let (name, schema) = parse_enum_def(def_loc.clone(), pair)?;
+                if let Some(n) = name {
+                    match spec.ty {
+                        Some(ref mut tys) => {
+                            tys.insert(n, schema);
+                        },
+                        None => {
+                            let mut tys = HashMap::new();
+                            tys.insert(n, schema);
+                            spec.ty = Some(tys);
+                        },
+                    }
+                } else {
+                    bail!("expect to have name of the enum in the top level at {}:{}", line, col)
+                }
+            }
             Rule::usecase => {
                 let (name, usecase) = parse_usecase(def_loc.clone(), pair)?;
                 match spec.usecases {
@@ -184,6 +201,88 @@ fn parse_struct_def(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> R
     }
 
     Ok((name, schema))
+}
+
+fn parse_enum_def(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> Result<(Option<String>, RawSchema)> {
+    let mut name = None;
+    let mut enum_items = Vec::new();
+    for inner_pair in pair.into_inner() {
+        match inner_pair.as_rule() {
+            Rule::identifier => name = Some(inner_pair.as_str().to_string()),
+            Rule::enum_body => {
+                enum_items = parse_enum_body(def_loc.clone(), inner_pair)?;
+            },
+            _ => {
+                panic!("missing rule handling")
+            }
+        }
+    }
+
+    let schema = RawSchema {
+        def_loc,
+        ty: None,
+        properties: None,
+        items: None,
+        required: None,
+        namespace: None,
+        enum_items: Some(enum_items),
+        option: None,
+        extends: None,
+        flat_extends: None,
+    };
+
+    Ok((name, schema))
+}
+
+fn parse_enum_body(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> Result<Vec<RawSchemaEnumItem>> {
+    let mut enum_items: Vec<RawSchemaEnumItem> = Vec::new();
+
+    for inner_pair in pair.into_inner() {
+        match inner_pair.as_rule() {
+            Rule::enum_property => {
+                // Parse each enum property and add it to the enum_items vector
+                let enum_item = parse_enum_property(def_loc.clone(), inner_pair)?;
+                enum_items.push(enum_item);
+            },
+            _ => {
+                bail!("unexpected rule found in enum body: {:?}", inner_pair.as_rule())
+            }
+        }
+        
+    }
+
+    Ok(enum_items)
+}
+
+fn parse_enum_property(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> Result<RawSchemaEnumItem> {
+    let mut name = String::new();
+    let mut enum_value: Option<i32> = None;
+    for inner_pair in pair.into_inner() {
+        match inner_pair.as_rule() {
+            Rule::identifier => {
+                name = inner_pair.as_str().to_string();
+            },
+            Rule::option => {
+                let (keys, value) = parse_option(def_loc.clone(), inner_pair.clone())?;
+                if keys.len() == 1 && keys[0] == "value" {
+                    // If the option is "value", we can set the value of the enum item
+                    if let serde_yaml::Value::Number(num) = value {
+                        if let Some(v) = num.as_i64() {
+                            enum_value = Some(v as i32); // Convert to i32
+                        } else {
+                            bail!("value must be an integer for enum item: {:?}", inner_pair.as_str());
+                        }
+                    }
+                }
+            },
+            _ => {
+                bail!("unexpected rule found in enum property: {:?}", inner_pair.as_rule())
+            }
+        }
+    }
+
+
+    Ok(RawSchemaEnumItem { name: name, value: enum_value })
 }
 
 fn parse_struct_body(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> Result<HashMap<String, RawSchema>> {
@@ -610,6 +709,54 @@ struct abc {
         assert!(spec.option.as_ref().unwrap().generator.is_some());
         let rust_config = spec.option.as_ref().unwrap().generator.as_ref().unwrap().rust.as_ref().unwrap();
         assert_eq!(rust_config.async_flag, Some(true));
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_parse_enum() -> Result<()> {
+        let api_file: &'static str = r#"
+        enum abc {
+            a
+            b
+            c
+            }
+        "#;
+
+        let spec = api_parse::parse(PathBuf::from(""), api_file)?;
+
+        let tys = spec.ty.unwrap();
+        assert!(tys.len() == 1);
+        let enum_items = tys.get("abc").as_ref().unwrap().enum_items.as_ref().unwrap();
+        assert_eq!(enum_items.len(), 3);
+        assert_eq!(enum_items[0].name, "a");
+        assert_eq!(enum_items[1].name, "b");
+        assert_eq!(enum_items[2].name, "c");
+
+        Ok(())
+    }
+
+    #[test]
+    fn can_parse_enum_with_value() -> Result<()> {
+        let api_file: &'static str = r#"
+        enum abc {
+            [value = 1] 
+            a
+            b
+            c
+            }
+        "#;
+
+        let spec = api_parse::parse(PathBuf::from(""), api_file)?;
+
+        let tys = spec.ty.unwrap();
+        assert!(tys.len() == 1);
+        let enum_items = tys.get("abc").as_ref().unwrap().enum_items.as_ref().unwrap();
+        assert_eq!(enum_items.len(), 3);
+        assert_eq!(enum_items[0].name, "a");
+        assert_eq!(enum_items[0].value, Some(1));
+        assert_eq!(enum_items[1].name, "b");
+        assert_eq!(enum_items[2].name, "c");
 
         Ok(())
     }

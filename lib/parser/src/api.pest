@@ -60,6 +60,23 @@ struct_body = {
     "}" 
 }
 
+// Enum definitions
+enum_def = { 
+    option* ~
+    "enum" ~ identifier ~ enum_body
+}
+
+enum_property = {  option* ~ identifier  }
+
+
+enum_body = {
+    "{" ~
+    enum_property* ~
+    "}" 
+}
+
+
+
 global_option = {
     "#" ~
     option
@@ -68,6 +85,6 @@ global_option = {
 // Root rule
 file = { 
     SOI ~
-    (usecase | struct_def | import | global_option )* ~
+    (usecase | struct_def | enum_def | import | global_option )* ~
     EOI 
 }
