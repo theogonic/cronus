@@ -76,19 +76,20 @@ pub fn resolve_imports(spec: &mut RawSpec, explored: &mut HashSet<String>, spec_
 
 #[tracing::instrument]
 fn get_import_path(import: &str, default_path:&Path, available_paths: Option<&Vec<PathBuf>>) -> Result<PathBuf> {
-    let defualt_relative =  default_path.join(import);
+    let cleaned = import.replace("\r", "");
+    let defualt_relative =  default_path.join(&cleaned);
     if defualt_relative.exists() {
         return Ok(defualt_relative)
     }
 
     if let Some(paths) = available_paths {
         for p in paths {
-            let candidate = p.join(import);
+            let candidate = p.join(&cleaned);
             if candidate.exists() {
                 return Ok(candidate)
             }
         }
     }
 
-    bail!("no available file found for import '{}'", import)
+    bail!("no available file found for import '{}'", cleaned)
 }
