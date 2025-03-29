@@ -594,15 +594,13 @@ import def.api
     fn can_parse_usecase() -> Result<()> {
         let api_file: &'static str = r#"
 usecase abc {
-    create_abc {}
+    create_abc
     create_abcd {
-        in {
             a: string
-        }
-        out {
-            b: string
-        }
+    } -> {
+       b: string
     }
+
 }
         "#;
 
@@ -615,8 +613,7 @@ usecase abc {
         let method_abc = usecase.methods.get("create_abc").unwrap();
         assert!(method_abc.req.is_none());
         assert!(method_abc.res.is_none());
-        println!("{:?}", method_abc.option);
-    
+
         assert!(method_abc.option.is_none());
 
         let method_abcd = usecase.methods.get("create_abcd").unwrap();
@@ -768,15 +765,15 @@ struct abc {
         
         [rest.path = "/abdf/def"]
         usecase abc {
-            create_abc {}
-            create_abcd {
-                in {
+            create_abc
+            create_abcd
+                 {
                     a: string
                 }
-                out {
+                -> {
                     b: string
                 }
-            }
+
         }
         "#;
 

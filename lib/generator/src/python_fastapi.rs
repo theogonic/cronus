@@ -561,7 +561,6 @@ impl PythonFastApiGenerator {
             type_name = schema.ty.as_ref().unwrap().clone();
         }
 
-        // println!("generating {type_name}[root={root_schema_ty:?}]");
 
         let span = span!(Level::TRACE, "generate_struct", "type" = type_name);
         // Enter the span, returning a guard object.
@@ -750,7 +749,6 @@ mod test {
         let gfs = ctx.get_gfs("python");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("generated.py").unwrap();
-        println!("{}", file_content);
         assert!(file_content.find("async def create_user").is_some());
 
         Ok(())

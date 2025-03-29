@@ -183,7 +183,6 @@ impl PythonGenerator {
             type_name = schema.ty.as_ref().unwrap().clone();
         }
 
-        println!("generating {type_name}[root={root_schema_ty:?}]");
 
 
 
@@ -352,7 +351,6 @@ mod test {
         let gfs = ctx.get_gfs("python");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("generated.py").unwrap();
-        println!("{}", file_content);
         assert!(file_content.find("async def create_user").is_some());
 
         Ok(())

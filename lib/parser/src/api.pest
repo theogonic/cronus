@@ -28,11 +28,11 @@ optional_property = { "?" }
 
 
 // Sections for 'in' and 'out' blocks
-in_block = { "in" ~ struct_body }
-out_block = { "out" ~ struct_body }
+in_block = {  struct_body }
+out_block = { struct_body }
 
 // Usecase definitions
-usecase = { 
+usecase = {
     option* ~
     "usecase" ~ identifier ~ "{" ~
     method_def* ~
@@ -41,10 +41,9 @@ usecase = {
 
 method_def = {
   option* ~
-  identifier ~ "{" ~
+  identifier  ~
    in_block? ~
-    out_block? ~
-  "}"
+   ("->" ~ out_block)?
 }
 
 // Struct definitions

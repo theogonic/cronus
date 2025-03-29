@@ -237,7 +237,6 @@ impl OpenAPIGenerator {
                 props
                     .iter()
                     .filter_map(|(key, value)| {
-                        println!{"key: {}, value: {:?}", key, value};
                         if value.option.as_ref()
                         .and_then(|o| o.openapi.as_ref().and_then(| opt| opt.exclude))
                         .unwrap_or(false) {

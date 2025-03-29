@@ -428,7 +428,6 @@ mod tests {
         let gfs = ctx.get_gfs(g.name());
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("handler.rs").unwrap();
-        println!("{}", file_content);
         assert!(file_content.contains("axum::extract::Path((a))"));
         Ok(())
     }
@@ -457,7 +456,6 @@ mod tests {
         let gfs = ctx.get_gfs(g.name());
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("handler.rs").unwrap();
-        println!("{}", file_content);
         assert!(!file_content.contains("axum::extract::Path("));
         Ok(())
     }
@@ -487,7 +485,6 @@ mod tests {
         let gfs = ctx.get_gfs(g.name());
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("handler.rs").unwrap();
-        println!("{}", file_content);
         assert!(file_content.contains("axum::extract::Query<AbcCreateAbcdQuery>"));
         Ok(())
     }

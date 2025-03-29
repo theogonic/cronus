@@ -194,7 +194,6 @@ impl RustGenerator {
             type_name = schema.ty.as_ref().unwrap().clone();
         }
 
-        println!("generating {type_name}[root={root_schema_ty:?}]");
 
 
 
@@ -306,7 +305,6 @@ impl RustGenerator {
                 };
 
                 let prop_ty = self.generate_struct(ctx, &prop_schema, None, Some(type_name.clone()));
-                println!("{type_name} -> {prop_name}: {prop_ty}");
 
                 if optional {
                     result += &format!("Option<{}>", prop_ty);
@@ -409,7 +407,6 @@ mod test {
         let gfs = ctx.get_gfs("rust");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("types.rs").unwrap();
-        println!("{:?} -- {}", ctx.spec, file_content);
 
         assert!(file_content.find("a: Hello1").is_some());
         assert!(file_content.find("b: String").is_some());
@@ -432,7 +429,6 @@ mod test {
         let gfs = ctx.get_gfs("rust");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("types.rs").unwrap();
-        println!("{}", file_content);
 
         assert!(file_content.find("a: Vec<String>").is_some());
 
@@ -454,7 +450,6 @@ mod test {
         let gfs = ctx.get_gfs("rust");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("types.rs").unwrap();
-        println!("{}", file_content);
 
         assert!(file_content.find("a: HashMap<String,u32>").is_some());
 
@@ -479,7 +474,6 @@ mod test {
         let gfs = ctx.get_gfs("rust");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("types.rs").unwrap();
-        println!("{}", file_content);
 
         assert!(file_content.find("a: HashMap<String,World>").is_some());
 
@@ -510,7 +504,6 @@ mod test {
         let gfs = ctx.get_gfs("rust");
         let gfs_borrow = gfs.borrow();
         let file_content = gfs_borrow.get("types.rs").unwrap();
-        println!("{}", file_content);
         assert!(file_content.find("use anyhow::Result;").is_some());
         assert!(file_content.find("struct CreateAbcdRequest").is_some());
         assert!(file_content.find("a: String").is_some());

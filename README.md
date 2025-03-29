@@ -162,9 +162,13 @@ pub fn router_init(usecases: std::sync::Arc<Usecases>) -> Router {
 ### Common
 
 ```bash
+# Install the cli binary to the default folder so that you can call it
+# everywhere as long as the folder is included in environment variable.
+$ cargo install --path bin/cli
 # Run the generators by the given API spec
 $ cargo run -- examples/todo-rs/main.api
 $ cargo run -- examples/todo-py/main.api
+
 ```
 
 ## Docs
