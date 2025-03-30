@@ -19,6 +19,12 @@ pub struct PythonFastApiGenerator {
     generated_tys: RefCell<HashSet<String>>,
     // imported types from usecase, to avoid duplicate imports
     imported_tys: RefCell<HashSet<String>>,
+    // This keeps track of the get_ctx's context fields used in the generated code
+    // used to generate ctx dataclass
+    used_ctx_fields: RefCell<HashSet<String>>,
+
+    // used to generate a function, input is FastAPI, body is to include all the routers
+    mentioned_routers: RefCell<HashSet<String>>,
 }
 
 impl PythonFastApiGenerator {
@@ -26,6 +32,8 @@ impl PythonFastApiGenerator {
         Self {
             generated_tys: Default::default(),
             imported_tys: Default::default(),
+            used_ctx_fields: RefCell::new(HashSet::new()),
+            mentioned_routers: RefCell::new(HashSet::new()),
         }
     }
 }
@@ -77,13 +85,50 @@ impl Generator for PythonFastApiGenerator {
         self.generate_struct(ctx, schema, Some(schema_name.to_owned()), None);
         Ok(())
     }
+    
+    fn after_all(&self, ctx: &Ctxt) -> Result<()> {
+        // generate the final ctx dataclass
+        let _borrow = self.used_ctx_fields.borrow();
+        let ctx_fields: Vec<&String> = _borrow.iter().collect();
+        if !ctx_fields.is_empty() {
+            let ctx_body = ctx_fields
+                .iter()
+                .map(|field| {
+                    // format each field as `field_name: str`
+                    format!("{}: Optional[str]", field.to_case(Case::Snake))
+                })
+                .collect::<Vec<String>>()
+                .join("\n    ");
+            ctx.append_file(self.name(), &self.dst(ctx), &format!(r#"
+@dataclass
+class Ctx:
+    {ctx_body}
+"#));
+        }
+
+        // generate the function to include routers
+        let _borrow = self.mentioned_routers.borrow();
+        let mentioned_routers: Vec<&String> = _borrow.iter().collect();
+        if !mentioned_routers.is_empty() {
+            // Generate a function to include all routers
+            let routers_str = mentioned_routers
+                .iter()
+                .map(|router| format!("app.include_router({router})"))
+                .collect::<Vec<String>>()
+                .join("\n    ");
+            let include_routers_body = format!("return APIRouter({})", routers_str);
+            ctx.append_file(self.name(), &self.dst(ctx), &format!(r#"
+def include_routers(app: FastAPI) -> FastAPI:
+    {include_routers_body}
+"#));
+        } 
+        Ok(())
+    }
 
     /// Generate the Python trait for the usecase
     /// @router.get('/')
-    /// def xxx():
-    ///   ctx.usecase.xxx()
-    ///
-    ///
+    /// def xxx(..., ctx = Depends(get_ctx)):
+    ///   ctx.<usecase>.xxx()
     fn generate_usecase(
         &self,
         ctx: &Ctxt,
@@ -99,6 +144,7 @@ impl Generator for PythonFastApiGenerator {
         let mut result = String::new();
 
         let router_var = format!("{}_router", trait_name);
+        self.mentioned_routers.borrow_mut().insert(router_var.clone());
         let mut router_args:Vec<String> = vec![];
 
         match &usecase.option {
@@ -432,6 +478,7 @@ impl Generator for PythonFastApiGenerator {
             } else {
                 ""
             });
+            self.used_ctx_fields.borrow_mut().insert(trait_name.to_string());
             result += &call_usecase;
             result += "\n";
         }
