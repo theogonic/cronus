@@ -19,9 +19,9 @@ pub struct PythonFastApiGenerator {
     generated_tys: RefCell<HashSet<String>>,
     // imported types from usecase, to avoid duplicate imports
     imported_tys: RefCell<HashSet<String>>,
-    // This keeps track of the get_ctx's context fields used in the generated code
+    // This keeps track of the get_ctx's context fields and types used in the generated code
     // used to generate ctx dataclass
-    used_ctx_fields: RefCell<HashSet<String>>,
+    used_ctx_fields: RefCell<HashSet<(String, String)>>,
 
     // used to generate a function, input is FastAPI, body is to include all the routers
     mentioned_routers: RefCell<HashSet<String>>,
@@ -59,8 +59,9 @@ impl Generator for PythonFastApiGenerator {
         let mut common_imports = vec![
             get_ctx_import,
             "from pydantic import BaseModel",
-            "from fastapi import APIRouter, Depends, Request, status",
+            "from fastapi import FastAPI, APIRouter, Depends, Request, status",
             "from typing import Optional",
+            "from dataclasses import dataclass", 
         ];
 
         match gen_opt {
@@ -89,13 +90,13 @@ impl Generator for PythonFastApiGenerator {
     fn after_all(&self, ctx: &Ctxt) -> Result<()> {
         // generate the final ctx dataclass
         let _borrow = self.used_ctx_fields.borrow();
-        let ctx_fields: Vec<&String> = _borrow.iter().collect();
+        let ctx_fields: Vec<&(String, String)> = _borrow.iter().collect();
         if !ctx_fields.is_empty() {
             let ctx_body = ctx_fields
                 .iter()
-                .map(|field| {
+                .map(|(field, field_ty)| {
                     // format each field as `field_name: str`
-                    format!("{}: Optional[str]", field.to_case(Case::Snake))
+                    format!("{field}: {field_ty}")
                 })
                 .collect::<Vec<String>>()
                 .join("\n    ");
@@ -116,10 +117,10 @@ class Ctx:
                 .map(|router| format!("app.include_router({router})"))
                 .collect::<Vec<String>>()
                 .join("\n    ");
-            let include_routers_body = format!("return APIRouter({})", routers_str);
             ctx.append_file(self.name(), &self.dst(ctx), &format!(r#"
 def include_routers(app: FastAPI) -> FastAPI:
-    {include_routers_body}
+    {routers_str}
+    return app
 "#));
         } 
         Ok(())
@@ -139,7 +140,7 @@ def include_routers(app: FastAPI) -> FastAPI:
         // Enter the span, returning a guard object.
         let _enter = span.enter();
         let trait_name = name.to_case(Case::Snake);
-        let mut py_imports: Vec<String> = vec![];
+        let mut py_imports: HashSet<String> = HashSet::new();
         // TODO: customized error type
         let mut result = String::new();
 
@@ -263,7 +264,7 @@ def include_routers(app: FastAPI) -> FastAPI:
 
             if let Some(req) = &method.req {
                 let request_ty = get_request_name(ctx, method_name);
-                py_imports.push(request_ty.clone());
+                py_imports.insert(request_ty.clone());
 
                 if rest.method != "get" {
                     let mut cloned_req = req.clone();
@@ -478,7 +479,9 @@ def include_routers(app: FastAPI) -> FastAPI:
             } else {
                 ""
             });
-            self.used_ctx_fields.borrow_mut().insert(trait_name.to_string());
+            let usecase_ty = get_usecase_name(ctx, &trait_name);
+            py_imports.insert(usecase_ty.clone());
+            self.used_ctx_fields.borrow_mut().insert((trait_name.to_string(), usecase_ty));
             result += &call_usecase;
             result += "\n";
         }
@@ -496,7 +499,7 @@ def include_routers(app: FastAPI) -> FastAPI:
                     bail!("python_fastapi usecase_from option is not set");
                 },
             };
-            let imports_str = format!("from {} import {}\n", usecase_from, py_imports.join(", "));
+            let imports_str = format!("from {} import {}\n", usecase_from, py_imports.into_iter().collect::<Vec<String>>().join(", "));
             ctx.append_file(self.name(), &self.dst(ctx), &imports_str);
         }
 
