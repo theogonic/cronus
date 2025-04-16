@@ -32,7 +32,7 @@ pub fn spec_ty_to_py_builtin_ty(spec_ty: &str) -> Option<String> {
     if spec_ty == "string" {
         return Some("str".to_string());
     }
-    else if spec_ty == "integer" || spec_ty == "int" || spec_ty == "i32" {
+    else if spec_ty == "integer" || spec_ty == "int" || spec_ty == "i32"|| spec_ty == "number" {
         return Some("int".to_string());
     }
     else if spec_ty == "u32" {
@@ -40,6 +40,9 @@ pub fn spec_ty_to_py_builtin_ty(spec_ty: &str) -> Option<String> {
     }
     else if spec_ty == "bool" || spec_ty == "boolean" {
         return Some("bool".to_string());
+    }
+    else if spec_ty == "float"  {
+        return Some("float".to_string());
     }
     else if spec_ty.starts_with("map<") {
         let (left_ty, right_ty) = parse_map_type(spec_ty);
