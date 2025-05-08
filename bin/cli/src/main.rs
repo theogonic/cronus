@@ -23,6 +23,10 @@ enum Commands {
         /// Output to stdout
         #[arg(short, long, default_value_t = false)]
         stdout: bool,
+
+        /// Search paths
+        #[arg(short, long, value_parser)]
+        search_paths: Option<Vec<PathBuf>>,
     },
     /// Convert api to yaml
     Yaml {
@@ -57,7 +61,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let args = Args::parse();
     match args.command {
-        Some(Commands::Gen { input, stdout }) => {
+        Some(Commands::Gen { input, stdout, search_paths }) => {
             match input {
                 Some(i) => {
                     let target_path = PathBuf::from(i);
@@ -68,13 +72,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 for default_file in &default_files {
                                     let try_file = Path::join(&target_path, default_file);
                                     if try_file.exists() {
-                                        run(&try_file, None)?;
+                                        run(&try_file, search_paths.as_ref())?;
                                         break;
                                     }
                                 }
                                     
                             } else if md.is_file() {
-                                run(&target_path, None)?;
+                                run(&target_path, search_paths.as_ref())?;
                             } else {
                                 return Err(format!("Unsupported path: {:?}", md).into())
                             }
