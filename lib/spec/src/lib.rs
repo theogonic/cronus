@@ -440,10 +440,9 @@ impl RawSpec {
         // Merge 'imports' Vec
         if let Some(to_merge_imports) = to_merge.imports {
             if let Some(imports) = &mut self.imports {
-                // Check for duplicates before extending
                 for import in &to_merge_imports {
                     if imports.contains(import) {
-                        bail!("Duplicate import '{}'", import)
+                        continue;
                     }
                 }
                 imports.extend(to_merge_imports);

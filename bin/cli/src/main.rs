@@ -3,7 +3,7 @@ use cronus_generator::{Ctxt, generate};
 use tracing::{Level, span, debug};
 use anyhow::Result;
 use tracing_subscriber::{util::SubscriberInitExt, fmt::format::FmtSpan};
-use std::{collections::HashMap, error::Error, fs::metadata, io::Read, path::{Path, PathBuf}};
+use std::{collections::{HashMap, HashSet}, error::Error, fs::metadata, io::Read, path::{Path, PathBuf}};
 
 
 #[derive(Parser, Debug)]
@@ -155,7 +155,8 @@ fn read_from_stdin() -> String {
 #[tracing::instrument]
 pub fn run(entry_file: &Path, search_paths: Option<&Vec<PathBuf>>) -> Result<()> {
     let abs_file = std::path::absolute(entry_file)?;
-    let spec = cronus_parser::from_file(&abs_file, true, search_paths)?;
+    let mut explored = HashSet::new();
+    let spec = cronus_parser::from_file(&abs_file, true, search_paths, &mut explored)?;
     let ctx = Ctxt::new(spec);
     generate(&ctx)?;
     ctx.dump()

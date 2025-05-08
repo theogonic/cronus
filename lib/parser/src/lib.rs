@@ -17,7 +17,7 @@ pub fn from_api(file: &Path) -> Result<RawSpec> {
 }
 
 #[tracing::instrument]
-pub fn from_file(file: &Path, resolve_import: bool, search_paths: Option<&Vec<PathBuf>>) -> Result<RawSpec> {
+pub fn from_file(file: &Path, resolve_import: bool, search_paths: Option<&Vec<PathBuf>>, explored: &mut HashSet<PathBuf>) -> Result<RawSpec> {
     match file.extension() {
         Some(ext) => {
             match ext.to_str() {
@@ -33,8 +33,7 @@ pub fn from_file(file: &Path, resolve_import: bool, search_paths: Option<&Vec<Pa
                     }
                     
                     if resolve_import {
-                        let mut explored: HashSet<String> = Default::default();
-                        resolve_imports(&mut spec, &mut explored, file.parent().unwrap(), search_paths)?;
+                        resolve_imports(&mut spec, explored, file.parent().unwrap(), search_paths)?;
                     }
                     
                     Ok(spec)
@@ -58,15 +57,16 @@ pub fn to_yaml_str(spec: &RawSpec) -> Result<String> {
     Ok(yaml)
 }
 
-pub fn resolve_imports(spec: &mut RawSpec, explored: &mut HashSet<String>, spec_parent:&Path, search_paths: Option<&Vec<PathBuf>>) -> Result<()> {
+pub fn resolve_imports(spec: &mut RawSpec, explored: &mut HashSet<PathBuf>, spec_parent:&Path, search_paths: Option<&Vec<PathBuf>>) -> Result<()> {
 
     for import in spec.imports.clone().into_iter().flatten() {
-        if explored.contains(&import) {
+       
+        let import_path = get_import_path(&import, spec_parent,search_paths)?;
+        if explored.contains(&import_path) {
             continue
         }
-        explored.insert(import.clone());
-        let import_path = get_import_path(&import, spec_parent,search_paths)?;
-        let imported_spec = from_file(&import_path, true, search_paths)?;
+        explored.insert(import_path.clone());
+        let imported_spec = from_file(&import_path, true, search_paths, explored)?;
 
         spec.merge(imported_spec)?
     }

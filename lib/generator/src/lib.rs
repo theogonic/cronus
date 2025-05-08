@@ -221,7 +221,7 @@ pub fn run_generator(g: &dyn Generator, ctx: &Ctxt) -> Result<()> {
 
 #[cfg(test)]
 mod test {
-    use std::{path::{Path, PathBuf}, process::Command};
+    use std::{collections::HashSet, path::{Path, PathBuf}, process::Command};
 
     use cronus_spec::RawSpec;
     use anyhow::{bail, Result};
@@ -251,7 +251,8 @@ mod test {
     fn e2e_hello_rust() -> Result<()> {
         let proj_dir = get_cargo_manifest_dir().unwrap().join("testdata").join("hello").join("rust");
         let spec_file = proj_dir.join("main.api");
-        let spec = cronus_parser::from_file(&spec_file, true, None)?;
+        let mut explored = HashSet::new();  
+        let spec = cronus_parser::from_file(&spec_file, true, None, &mut explored)?;
         let ctx = Ctxt::new(spec);
         generate(&ctx)?;
         run_cargo_check(&proj_dir)
@@ -261,7 +262,8 @@ mod test {
     fn e2e_hello_rust_axum() -> Result<()> {
         let proj_dir = get_cargo_manifest_dir().unwrap().join("testdata").join("hello").join("rust_axum");
         let spec_file = proj_dir.join("main.api");
-        let spec = cronus_parser::from_file(&spec_file, true, None)?;
+        let mut explored = HashSet::new();  
+        let spec = cronus_parser::from_file(&spec_file, true, None, &mut explored)?;
         let ctx = Ctxt::new(spec);
         generate(&ctx)?;
         run_cargo_check(&proj_dir)
