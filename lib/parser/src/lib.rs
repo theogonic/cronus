@@ -62,6 +62,7 @@ pub fn resolve_imports(spec: &mut RawSpec, explored: &mut HashSet<PathBuf>, spec
     for import in spec.imports.clone().into_iter().flatten() {
        
         let import_path = get_import_path(&import, spec_parent,search_paths)?;
+        println!("import path: {:?}", import_path);
         if explored.contains(&import_path) {
             continue
         }
@@ -77,14 +78,14 @@ pub fn resolve_imports(spec: &mut RawSpec, explored: &mut HashSet<PathBuf>, spec
 #[tracing::instrument]
 fn get_import_path(import: &str, default_path:&Path, available_paths: Option<&Vec<PathBuf>>) -> Result<PathBuf> {
     let cleaned = import.replace("\r", "");
-    let defualt_relative =  default_path.join(&cleaned);
+    let defualt_relative = std::path::absolute(default_path.join(&cleaned))?;
     if defualt_relative.exists() {
         return Ok(defualt_relative)
     }
 
     if let Some(paths) = available_paths {
         for p in paths {
-            let candidate = p.join(&cleaned);
+            let candidate = std::path::absolute(p.join(&cleaned))?;
             if candidate.exists() {
                 return Ok(candidate)
             }
