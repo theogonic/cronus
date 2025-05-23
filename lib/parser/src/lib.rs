@@ -62,7 +62,6 @@ pub fn resolve_imports(spec: &mut RawSpec, explored: &mut HashSet<PathBuf>, spec
     for import in spec.imports.clone().into_iter().flatten() {
        
         let import_path = get_import_path(&import, spec_parent,search_paths)?;
-        println!("import path: {:?}", import_path);
         if explored.contains(&import_path) {
             continue
         }

@@ -344,7 +344,6 @@ fn parse_option_value(pair: pest::iterators::Pair<Rule>) -> serde_yaml::Value {
         Rule::array => parse_array(pair),
         Rule::option_value => parse_option_value(pair.into_inner().next().unwrap()),
         _ => {
-            println!("Unexpected token: {:?}", pair);
             unreachable!()
         }, // We should not reach here as per the grammar
     }
@@ -544,7 +543,11 @@ fn parse_method_def(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> R
                 method_name = inner_pair.as_str().to_string();
             },
             Rule::option => {
-                let (keys, value) = parse_option(def_loc.clone(), inner_pair)?;
+                let  ( keys, mut value) = parse_option(def_loc.clone(), inner_pair)?;
+               
+                if keys.len() == 1 && keys[0] == "redis" {
+                    value = serde_yaml::Value::Mapping(serde_yaml::Mapping::new());
+                }
                 insert_value_by_keys(&mut options, keys, value)?;
             },
             Rule::in_block => {

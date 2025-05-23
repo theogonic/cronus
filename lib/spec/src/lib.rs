@@ -35,15 +35,32 @@ pub struct GlobalOption {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct GeneratorOption {
-    pub rust: Option<RustGeneratorOption>,
     pub python: Option<PythonGeneratorOption>,
     pub python_fastapi: Option<PythonFastApiGeneratorOption>,
+    pub python_redis: Option<PythonRedisGeneratorOption>,
+    pub rust: Option<RustGeneratorOption>,
     pub rust_axum: Option<RustAxumGeneratorOption>,
     pub openapi: Option<OpenapiGeneratorOption>,
     pub typescript: Option<TypescriptGeneratorOption>,
     pub typescript_nestjs: Option<TypescriptNestjsGeneratorOption>
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PythonRedisGeneratorOption {
+    #[serde(skip)]
+    pub def_loc: Arc<DefLoc>,
+
+    /// Output .py file
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file: Option<String>,
+
+    #[serde(rename = "async", skip_serializing_if = "Option::is_none")]
+    pub async_flag: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub usecase_from: Option<String>,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -365,10 +382,24 @@ pub struct RawUsecaseMethodOption {
     pub rest: Option<RawUsecaseMethodRestOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub redis: Option<RawUsecaseMethodRedisOption>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub python_fastapi: Option<RawUsecaseMethodPythonFastApiOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RawUsecaseMethodRedisOption {
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub queue_name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ack_queue_name: Option<String>
 }
 
 #[derive(Debug, Serialize, Deserialize)]

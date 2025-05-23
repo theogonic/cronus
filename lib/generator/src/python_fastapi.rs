@@ -732,23 +732,15 @@ impl PythonFastApiGenerator {
     fn dst(&self, ctx: &Ctxt) -> String {
         let default_file = "generated.py";
 
-        match &ctx.spec.option {
-            Some(go) => match &go.generator {
-                Some(gen) => match &gen.python_fastapi {
-                    Some(gen) => {
-                        let dest_path = get_path_from_optional_parent(
-                            gen.def_loc.file.parent(),
-                            gen.file.as_ref(),
-                            default_file,
-                        );
-                        return dest_path;
-                    }
-                    None => default_file.into(),
-                },
-                None => default_file.into(),
-            },
-            None => default_file.into(),
-        }
+        self.get_gen_option(ctx)
+            .and_then(|gen| {
+            Some(get_path_from_optional_parent(
+                gen.def_loc.file.parent(),
+                gen.file.as_ref(),
+                default_file,
+            ))
+            })
+            .unwrap_or_else(|| default_file.into())
     }
 }
 
