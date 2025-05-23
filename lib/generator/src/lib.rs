@@ -6,7 +6,6 @@ mod utils;
 mod ts;
 mod ts_nestjs;
 mod python;
-mod tauri;
 mod rust_utils;
 mod python_fastapi;
 
@@ -16,7 +15,6 @@ use openapi::OpenAPIGenerator;
 use rust::RustGenerator;
 use rust_axum::RustAxumGenerator;
 use cronus_spec::{RawSchema, RawSpec, RawUsecase, RawUsecaseMethod};
-use tauri::TauriGenerator;
 use tracing::info;
 use ts::TypescriptGenerator;
 use ts_nestjs::TypescriptNestjsGenerator;
@@ -148,7 +146,6 @@ pub fn generate(ctx: &Ctxt) -> Result<()> {
         Rc::new(OpenAPIGenerator::new()),
         Rc::new(TypescriptGenerator::new()),
         Rc::new(TypescriptNestjsGenerator::new()),
-        Rc::new(TauriGenerator::new()),
         Rc::new(python::PythonGenerator::new()),
         Rc::new(python_fastapi::PythonFastApiGenerator::new()),
     ];
