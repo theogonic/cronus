@@ -9,10 +9,10 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.4.3"
+version = "0.4.4"
 
 [workspace.dependencies]
-cronus_spec = { path = "lib/spec", version = "0.4.3" }
-cronus_parser = { path = "lib/parser", version = "0.4.3" }
-cronus_generator = { path = "lib/generator", version = "0.4.3" }
+cronus_spec = { path = "lib/spec", version = "0.4.4" }
+cronus_parser = { path = "lib/parser", version = "0.4.4" }
+cronus_generator = { path = "lib/generator", version = "0.4.4" }
 serde_yaml = "0.9.33"
