@@ -70,7 +70,7 @@ class {service_name}RedisSender({service_name}):
         self._redis = redis
     
     {method_strs}
-    "#
+"#
     )
 }
 
@@ -110,7 +110,7 @@ fn async_receiver_str(ctx: &crate::Ctxt, service_name:&str, methods: &Vec<(&Stri
             except Exception as e:
                 logger.error(f"Error processing send_reset_password task: {{e}}")
                 await asyncio.sleep(5)
-        "#);
+"#);
         method_strs.push_str(&method_str);
     }
     
@@ -119,7 +119,7 @@ fn async_receiver_str(ctx: &crate::Ctxt, service_name:&str, methods: &Vec<(&Stri
     }).collect::<Vec<_>>().join(",\n");
     let start_method_str = format!(
         r#"
-    async def start(self):
+    def start(self):
         tasks = [{create_task_stmts}]
         for task in tasks:
             self._tasks.append(asyncio.create_task(task))
