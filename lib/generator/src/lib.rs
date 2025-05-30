@@ -9,6 +9,7 @@ mod python;
 mod rust_utils;
 mod python_fastapi;
 mod python_redis;
+mod golang;
 
 use std::{rc::Rc, cell::{RefCell}, collections::{HashMap, HashSet}, path::{Path, PathBuf}, error::Error, fs::{self, OpenOptions, File}, io::Write};
 
@@ -150,6 +151,7 @@ pub fn generate(ctx: &Ctxt) -> Result<()> {
         Rc::new(python::PythonGenerator::new()),
         Rc::new(python_fastapi::PythonFastApiGenerator::new()),
         Rc::new(python_redis::PythonRedisGenerator::new()),
+        Rc::new(golang::GolangGenerator::new()),
     ];
     let mut generator_map: HashMap<&str, Rc<dyn Generator>> = HashMap::new();
     generators

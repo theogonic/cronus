@@ -35,10 +35,11 @@ pub struct GlobalOption {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct GeneratorOption {
+    pub rust: Option<RustGeneratorOption>,
+    pub golang: Option<GolangGeneratorOption>,
     pub python: Option<PythonGeneratorOption>,
     pub python_fastapi: Option<PythonFastApiGeneratorOption>,
     pub python_redis: Option<PythonRedisGeneratorOption>,
-    pub rust: Option<RustGeneratorOption>,
     pub rust_axum: Option<RustAxumGeneratorOption>,
     pub openapi: Option<OpenapiGeneratorOption>,
     pub typescript: Option<TypescriptGeneratorOption>,
@@ -60,6 +61,22 @@ pub struct PythonRedisGeneratorOption {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub usecase_from: Option<String>,
+
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GolangGeneratorOption {
+    #[serde(skip)]
+    pub def_loc: Arc<DefLoc>,
+
+    /// Output .go file
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file: Option<String>,
+
+    /// Golang Package Name
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub package: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

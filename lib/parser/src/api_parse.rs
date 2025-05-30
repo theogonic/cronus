@@ -133,6 +133,11 @@ fn set_def_loc_for_global_option(def_loc:Arc<DefLoc>,  global_option: Option<&mu
                         None => {},
                     }
 
+                    match &mut g.golang {
+                        Some(r) => r.def_loc = def_loc.clone(),
+                        None => {},
+                    }
+
                     match &mut g.rust_axum {
                         Some(r) => r.def_loc = def_loc.clone(),
                         None => {},

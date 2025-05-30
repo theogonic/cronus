@@ -28,6 +28,28 @@ pub fn spec_ty_to_rust_builtin_ty(spec_ty: &str) -> Option<String> {
     return None;
 }
 
+pub fn spec_ty_to_golang_builtin_ty(spec_ty: &str) -> Option<String> {
+    if spec_ty == "string" {
+        return Some("string".to_string());
+    }
+    else if spec_ty == "integer" || spec_ty == "int" || spec_ty == "i32" {
+        return Some("int32".to_string());
+    }
+    else if spec_ty == "u32" {
+        return Some("uint32".to_string());
+    }
+    else if spec_ty == "bool" || spec_ty == "boolean" {
+        return Some("bool".to_string());
+    }
+    else if spec_ty.starts_with("map<") {
+        let (left_ty, right_ty) = parse_map_type(spec_ty);
+        let left = spec_ty_to_golang_builtin_ty(left_ty).unwrap_or(left_ty.to_case(Case::UpperCamel));
+        let right = spec_ty_to_golang_builtin_ty(right_ty).unwrap_or(right_ty.to_case(Case::UpperCamel));
+        return Some(format!("map[{left}]{right}").to_string())
+    }
+    return None;
+}
+
 pub fn spec_ty_to_py_builtin_ty(spec_ty: &str) -> Option<String> {
     if spec_ty == "string" {
         return Some("str".to_string());
