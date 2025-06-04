@@ -105,7 +105,7 @@ fn parse_file(def_loc:Arc<DefLoc>, pairs: Pair<Rule>) -> Result<RawSpec> {
         insert_value_by_keys(&mut option_mapping, keys, value)?;
     }
 
-    spec.option = yaml_mapping_to_option(option_mapping);
+    spec.option = yaml_mapping_to_option(option_mapping)?;
     set_def_loc_for_global_option(def_loc.clone(), spec.option.as_mut());
 
     Ok(spec)
@@ -134,6 +134,11 @@ fn set_def_loc_for_global_option(def_loc:Arc<DefLoc>,  global_option: Option<&mu
                     }
 
                     match &mut g.golang {
+                        Some(r) => r.def_loc = def_loc.clone(),
+                        None => {},
+                    }
+
+                    match &mut g.golang_gin {
                         Some(r) => r.def_loc = def_loc.clone(),
                         None => {},
                     }
@@ -444,7 +449,7 @@ fn parse_property(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> Res
     }
 
     
-    let op:Option<RawSchemaPropertyOption> = yaml_mapping_to_option(options);
+    let op:Option<RawSchemaPropertyOption> = yaml_mapping_to_option(options)?;
 
     let schema = RawSchema {
         def_loc,
@@ -536,8 +541,8 @@ fn parse_block(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> Result
     
 }
 
-fn yaml_mapping_to_option< T: DeserializeOwned>(m: serde_yaml::Mapping) -> Option<T> {
-    if m.is_empty() { None } else { serde_yaml::from_value(serde_yaml::Value::Mapping(m)).unwrap() }
+fn yaml_mapping_to_option< T: DeserializeOwned>(m: serde_yaml::Mapping) -> Result<Option<T>> {
+    if m.is_empty() { Ok(None) } else { Ok(serde_yaml::from_value(serde_yaml::Value::Mapping(m))?) }
 }
 
 fn parse_method_def(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> Result<(String, RawUsecaseMethod)> {
@@ -572,7 +577,7 @@ fn parse_method_def(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> R
     let method = RawUsecaseMethod {
         req,
         res,
-        option: yaml_mapping_to_option(options)
+        option: yaml_mapping_to_option(options)?
     };
 
     Ok((method_name, method))

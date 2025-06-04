@@ -37,6 +37,7 @@ pub struct GlobalOption {
 pub struct GeneratorOption {
     pub rust: Option<RustGeneratorOption>,
     pub golang: Option<GolangGeneratorOption>,
+    pub golang_gin: Option<GolangGinGeneratorOption>,
     pub python: Option<PythonGeneratorOption>,
     pub python_fastapi: Option<PythonFastApiGeneratorOption>,
     pub python_redis: Option<PythonRedisGeneratorOption>,
@@ -44,6 +45,32 @@ pub struct GeneratorOption {
     pub openapi: Option<OpenapiGeneratorOption>,
     pub typescript: Option<TypescriptGeneratorOption>,
     pub typescript_nestjs: Option<TypescriptNestjsGeneratorOption>
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GolangGinGeneratorOption {
+    #[serde(skip)]
+    pub def_loc: Arc<DefLoc>,
+
+    /// Output .go file
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file: Option<String>,
+
+    /// Golang Package Name
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub package: Option<String>,
+
+    /// Golang Domain Generated Package Name
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub domain_package: Option<String>,
+
+    /// Golang Domain Generated Package Import
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub domain_import: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_request_fields: Option<Vec<String>>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -314,6 +341,9 @@ pub struct RawSchemaPropertyOption {
     pub python_fastapi: Option<RawSchemaPropertyPythonFastApiOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub golang_gin: Option<RawSchemaPropertyGolangGinOption>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>
 
 }
@@ -327,6 +357,13 @@ pub struct RawSchemaPropertyPythonOption {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RawSchemaPropertyOpenApiOption {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exclude: Option<bool>
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct RawSchemaPropertyGolangGinOption {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude: Option<bool>
 }
@@ -405,6 +442,9 @@ pub struct RawUsecaseMethodOption {
     pub python_fastapi: Option<RawUsecaseMethodPythonFastApiOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub golang_gin: Option<RawUsecaseMethodGolangGinOption>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>
 }
 
@@ -417,6 +457,13 @@ pub struct RawUsecaseMethodRedisOption {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ack_queue_name: Option<String>
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RawUsecaseMethodGolangGinOption {
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_request_fields: Option<Vec<String>>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
