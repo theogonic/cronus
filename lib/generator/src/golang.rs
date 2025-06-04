@@ -79,7 +79,7 @@ impl Generator for GolangGenerator {
 
             if let Some(req) = &method.req {
                 let request_ty = get_request_name(ctx, method_name);
-                self.generate_struct(ctx, &req, Some(request_ty.clone()), None);
+                self.generate_struct(ctx, &req, Some(request_ty.clone()), None)?;
                 method_params.push(format!("request *{}", request_ty));
             }
             let params_str = method_params.join(", ");
@@ -88,7 +88,7 @@ impl Generator for GolangGenerator {
             
             if let Some(res) = &method.res {
                 let response_ty = get_response_name(ctx, method_name);
-                self.generate_struct(ctx, &res, Some(response_ty.clone()), None);
+                self.generate_struct(ctx, &res, Some(response_ty.clone()), None)?;
                 result += format!("(*{}, error)", response_ty).as_str();
             } else {
                 result += "error";
@@ -126,7 +126,7 @@ impl GolangGenerator {
         schema: &RawSchema,
         override_ty: Option<String>,
         root_schema_ty: Option<String>
-    ) -> String {
+    ) -> Result<String> {
         let type_name: String;
 
         // find out the correct type name
@@ -135,9 +135,9 @@ impl GolangGenerator {
         }
         else if schema.items.is_some() {
 
-            type_name = self.generate_struct(ctx, schema.items.as_ref().unwrap(), None, root_schema_ty.clone());
+            type_name = self.generate_struct(ctx, schema.items.as_ref().unwrap(), None, root_schema_ty.clone())?;
 
-            return format!("[]*{}", type_name).to_owned()
+            return Ok(format!("[]*{}", type_name).to_owned());
         }
         else {
             type_name = schema.ty.as_ref().unwrap().clone();
@@ -152,16 +152,16 @@ impl GolangGenerator {
 
         // if type name belongs to built-in type, return directly
         if let Some(ty) = spec_ty_to_golang_builtin_ty(&type_name) {
-            return ty;
+            return Ok(ty);
         }
 
         if self.generated_tys.borrow().contains(&type_name) {
             if let Some(root_schema_ty) = root_schema_ty  {
                 if  root_schema_ty == type_name {
-                    return format!("{type_name}")
+                    return Ok(format!("{type_name}"))
                 }
             }
-            return type_name;
+            return Ok(type_name);
         }
 
 
@@ -175,6 +175,32 @@ impl GolangGenerator {
         }
 
         self.generated_tys.borrow_mut().insert(type_name.clone());
+
+        // if it is a enum type, generate the enum definition
+        if let Some(enum_items) = &schema.enum_items {
+            let enum_int = enum_items.iter().any(|item| item.value.is_some());
+            let enum_actual_ty = if enum_int {
+                "int"
+            } else {
+                "string"
+            };
+            let mut enum_def = format!("type {} {}\n", type_name, enum_actual_ty);
+            for item in enum_items {
+                let enum_value = if enum_int {
+                    if item.value.is_none() {
+                        return Err(anyhow::anyhow!("Enum item {} has no value when other enum has set", item.name));
+                    }
+                    format!("{}", item.value.unwrap())
+                } else {
+                    format!("\"{}\"", item.name.to_uppercase())
+                };
+                enum_def += &format!("const {} {} = {}\n", item.name.to_case(Case::UpperSnake), type_name, enum_value);
+            }
+            ctx.append_file(self.name(), &self.dst(ctx), &enum_def);
+            return Ok(type_name);
+        }
+
+
 
         let mut result = format!("type {} struct {{\n", type_name).to_string();
 
@@ -213,7 +239,7 @@ impl GolangGenerator {
                     None => false
                 };
 
-                let prop_ty = self.generate_struct(ctx, &prop_schema, None, Some(type_name.clone()));
+                let prop_ty = self.generate_struct(ctx, &prop_schema, None, Some(type_name.clone()))?;
 
                 if optional {
                     result += &format!("*{}", prop_ty);
@@ -230,7 +256,7 @@ impl GolangGenerator {
 
 
 
-        type_name
+        Ok(type_name)
     }
 
     fn get_gen_option<'a>(&self, ctx: &'a Ctxt) -> Option<&'a GolangGeneratorOption> {

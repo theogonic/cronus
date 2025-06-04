@@ -405,7 +405,8 @@ impl GolangGinGenerator {
             let ty = spec_ty_to_golang_builtin_ty(prop_schema.ty.as_ref().unwrap())
                 .unwrap_or_else(|| prop_schema.ty.as_ref().unwrap().clone());
             let camel_prop_name = prop_name.to_case(Case::Camel);
-            result += &format!("  {} {} `json:\"{}\" form:\"{}\" uri:\"{}\"`\n", camel_prop_name, ty, camel_prop_name, camel_prop_name, camel_prop_name);
+            let upper_camel_prop_name = camel_prop_name.to_case(Case::UpperCamel);
+            result += &format!("  {} {} `json:\"{}\" form:\"{}\" uri:\"{}\"`\n", upper_camel_prop_name, ty, camel_prop_name, camel_prop_name, camel_prop_name);
         }
         result += "}";
         result
@@ -466,6 +467,16 @@ impl GolangGinGenerator {
             extra_fields.extend(extra_request_fields.iter().cloned());
         }
 
+        let all_fields: HashSet<String> = method.req.as_ref()
+                    .and_then(|req| req.properties.as_ref())
+                    .map_or_else(HashSet::new, |props| {
+                        props.iter().map(|(k, _)| k.to_string()).collect::<HashSet<String>>()
+                    });
+
+        // remove extra fields from all fields if they are not present in the request
+        extra_fields.retain(|field| all_fields.contains(&field.split(':').next().unwrap().trim().to_string()));
+
+
 
         if method.req.is_some() {
             // if get, use query parameters
@@ -512,14 +523,13 @@ impl GolangGinGenerator {
                         // skip properties if exclude is set
                         continue;
                     }
-                    let camel_prop_name = prop_name.to_case(Case::Camel);
                     let upper_camel_prop_name = prop_name.to_case(Case::UpperCamel);
                     let passed_by = if prop_schema.required.unwrap_or(false) {
                         ""
                     } else {
                         "&"
                     };
-                    result += &format!("  {}: {}request.{},\n", upper_camel_prop_name, passed_by, camel_prop_name);
+                    result += &format!("  {}: {}request.{},\n", upper_camel_prop_name, passed_by, upper_camel_prop_name);
                 }
             }
 
