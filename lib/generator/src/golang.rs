@@ -247,6 +247,12 @@ impl GolangGenerator {
                 } else {
                     result += &prop_ty;
                 }
+
+                let add_json_tag = true; // TODO: make it configurable
+                if add_json_tag {
+                    result += &format!(" `json:\"{},omitempty\"`", prop_name.to_case(Case::Camel));
+                }
+
                 result += "\n";
             }
         }

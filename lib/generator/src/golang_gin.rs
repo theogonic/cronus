@@ -404,9 +404,16 @@ impl GolangGinGenerator {
             }
             let ty = spec_ty_to_golang_builtin_ty(prop_schema.ty.as_ref().unwrap())
                 .unwrap_or_else(|| prop_schema.ty.as_ref().unwrap().clone());
+            let actual_ty = if prop_schema.required.unwrap_or(false) {
+                // if required, use the type directly
+                ty
+            } else {
+                // if not required, use pointer type
+                format!("*{}", ty)
+            };
             let camel_prop_name = prop_name.to_case(Case::Camel);
             let upper_camel_prop_name = camel_prop_name.to_case(Case::UpperCamel);
-            result += &format!("  {} {} `json:\"{}\" form:\"{}\" uri:\"{}\"`\n", upper_camel_prop_name, ty, camel_prop_name, camel_prop_name, camel_prop_name);
+            result += &format!("  {} {} `json:\"{}\" form:\"{}\" uri:\"{}\"`\n", upper_camel_prop_name, actual_ty, camel_prop_name, camel_prop_name, camel_prop_name);
         }
         result += "}";
         result
@@ -439,7 +446,7 @@ impl GolangGinGenerator {
 
         // path variable extraction
         let path_params = utils::get_path_params(method);
-        if let Some(path_params) = path_params {
+        if path_params.is_some() {
             result += " if err := ctx.ShouldBindUri(&request); err != nil {\n";
             result += "    ctx.JSON(http.StatusBadRequest, gin.H{\"error\": err.Error()})\n";
             result += "    return\n";
@@ -470,7 +477,7 @@ impl GolangGinGenerator {
         let all_fields: HashSet<String> = method.req.as_ref()
                     .and_then(|req| req.properties.as_ref())
                     .map_or_else(HashSet::new, |props| {
-                        props.iter().map(|(k, _)| k.to_string()).collect::<HashSet<String>>()
+                        props.iter().map(|(k, _)| k.to_string().to_case(Case::UpperCamel)).collect::<HashSet<String>>()
                     });
 
         // remove extra fields from all fields if they are not present in the request
@@ -524,12 +531,12 @@ impl GolangGinGenerator {
                         continue;
                     }
                     let upper_camel_prop_name = prop_name.to_case(Case::UpperCamel);
-                    let passed_by = if prop_schema.required.unwrap_or(false) {
-                        ""
-                    } else {
-                        "&"
-                    };
-                    result += &format!("  {}: {}request.{},\n", upper_camel_prop_name, passed_by, upper_camel_prop_name);
+                    // let passed_by = if prop_schema.required.unwrap_or(false) {
+                    //     ""
+                    // } else {
+                    //     "&"
+                    // };
+                    result += &format!("  {}: request.{},\n", upper_camel_prop_name, upper_camel_prop_name);
                 }
             }
 
