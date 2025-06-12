@@ -223,6 +223,15 @@ pub struct RustAxumGeneratorOption {
     pub file: Option<String>
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub enum Case {
+    #[serde(rename = "camel")]
+    Camel,
+    #[serde(rename = "snake")]
+    Snake
+}
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OpenapiGeneratorOption {
@@ -230,7 +239,11 @@ pub struct OpenapiGeneratorOption {
     pub def_loc: Arc<DefLoc>,
 
     /// Output .rs file
-    pub file: Option<String>
+    pub file: Option<String>,
+
+    /// Case for the fields of request, response etc. in OpenAPI spec
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub field_case: Option<Case>
 }
 
 
@@ -478,7 +491,8 @@ pub struct RawUsecaseMethodPythonFastApiOption {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RawUsecaseMethodRestOption {
     pub method: String,
-    pub path: Option<String>
+    pub path: Option<String>,
+    pub content_type: Option<String>, // e.g. Default is "application/json"
 }
 
 /// The schema for a spec

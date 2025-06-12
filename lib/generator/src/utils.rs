@@ -208,12 +208,58 @@ pub fn get_usecase_rest_path_prefix(usecase: &RawUsecase) -> String {
     .unwrap_or_else(|| "/".to_string())
 }
 
+pub fn get_pqb(method: &RawUsecaseMethod) -> (Option<HashSet<String>>, Option<HashSet<String>>, Option<HashSet<String>>) {
+    
+    if method.req.is_none() {
+        return (None, None, None);
+    }
+
+    let mut path_props: Option<HashSet<String>> = get_path_params(method);
+    
+
+    let mut query_props: HashSet<String> = HashSet::new();
+    let mut body_props: HashSet<String> = HashSet::new();
+    
+
+    method.req.as_ref().and_then(|req_schema| {
+        req_schema.properties.as_ref().and_then(|props| {
+            for (name, schema) in props.iter() {
+                let rest_option = method.option.as_ref().and_then(|option| option.rest.as_ref());
+                let rest_method: Option<&String> = rest_option.and_then(|rest| Some( &rest.method ));
+                let mut is_query = rest_method.and_then(|m| Some(m == "get")).unwrap_or(false);
+                
+                if !is_query {
+                    is_query = schema.option.as_ref()
+                    .and_then(|opt| opt.rest.as_ref())
+                    .and_then(|rest| rest.query)
+                    .unwrap_or(false);
+                }
+                
+                if is_query {
+                    query_props.insert(name.clone());
+                }   else {
+                    body_props.insert(name.clone());
+                }
+
+                
+            }
+            Some(())
+        })
+    });
+
+    return (path_props, Some(query_props), Some(body_props));
+    
+
+
+}
+
 pub fn get_query_params(method: &RawUsecaseMethod) -> Option<HashSet<String>> {
     method.req.as_ref().and_then(|req_schema| {
         req_schema.properties.as_ref()
         .and_then(|props| {
             let result: HashSet<String> = props.iter()
             .filter_map(|(name, schema)| {
+                // if method is get, then all parameters, except path parameters, are query parameters
                 match schema.option.as_ref().and_then(|option| {
                     option.rest.as_ref().and_then(|rest| rest.query)
                 }) {

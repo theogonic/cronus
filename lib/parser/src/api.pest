@@ -16,7 +16,7 @@ import = { "import" ~ path }
 // Options
 option_value = { integer | string | bool | array  }
 integer = { ASCII_DIGIT+ }
-string = { "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+string = { "\"" ~ (("\\\"" | !"\"" ~ ANY))* ~ "\"" }
 bool = { "true" | "false" }
 array = { "(" ~ (option_value ~ ("," ~ option_value)*)? ~ ")" }
 option = { "[" ~ option_identifier ~ ("=" ~ option_value)? ~ "]" }

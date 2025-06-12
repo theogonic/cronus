@@ -23,12 +23,12 @@ impl OpenAPIGenerator {
     }
 }
 
-fn replace_colon_with_braces(input: &str) -> String {
+fn replace_colon_with_braces(input: &str, case: Case) -> String {
     input
         .split('/')
         .map(|segment| {
             if segment.starts_with(':') {
-                format!("{{{}}}", String::from(&segment[1..]).to_case(Case::Snake) )
+                format!("{{{}}}", String::from(&segment[1..]).to_case(case) )
             } else {
                 segment.to_string()
             }
@@ -63,12 +63,13 @@ impl Generator for OpenAPIGenerator {
         let openapi =  binding.as_mut().unwrap();
 
         let usecase_prefix = utils::get_usecase_rest_path_prefix(usecase);
+        let case = self.get_case(ctx);
 
         for (method_name, method) in &usecase.methods {
             if let Some(options) = &method.option {
                 if let Some(rest_option) = &options.rest {
                     let method_path = rest_option.path.as_ref().map(|p| if usecase_prefix.ends_with("/") { format!("{}{}", usecase_prefix, p)} else { format!("{}/{}", usecase_prefix, p)} ).unwrap_or(usecase_prefix.clone());
-                    let path_item = openapi.paths.entry(replace_colon_with_braces(&method_path)).or_insert_with(PathItemObject::default);
+                    let path_item = openapi.paths.entry(replace_colon_with_braces(&method_path, case)).or_insert_with(PathItemObject::default);
                     let mut operation = self.create_operation_object(ctx, method_name, method)?;
                     operation.tags = Some(vec![usecase_name.to_string()]);
                     match rest_option.method.to_lowercase().as_str() {
@@ -135,6 +136,18 @@ impl SchemaType {
 }
 
 impl OpenAPIGenerator {
+
+    fn get_case(&self, ctx: &Ctxt) -> Case {
+        ctx.spec.option.as_ref()
+            .and_then(|go| go.generator.as_ref())
+            .and_then(|gen| gen.openapi.as_ref())
+            .and_then(|opt| opt.field_case.as_ref())
+            .map_or(Case::Snake, |c| match c {
+                cronus_spec::Case::Snake => Case::Snake,
+                cronus_spec::Case::Camel => Case::Camel,
+            })
+    }
+
     /// Return the type name
     fn generate_schema_with_ignore(
         &self,
@@ -143,6 +156,7 @@ impl OpenAPIGenerator {
         schema: &RawSchema,
         ignore_props: Option<&HashSet<String>>
     ) -> Result<SchemaType> {
+        let case = self.get_case(ctx);
         let type_name: String;
         if let Some(ty) = &override_ty {
             type_name = ty.to_case(Case::UpperCamel);
@@ -251,7 +265,7 @@ impl OpenAPIGenerator {
                         // FIXME: proper handle result
                         let obj =  self.generate_schema_with_ignore(ctx, None, value, None).unwrap().to_schema_object();
 
-                        Some((key.to_case(Case::Snake), *obj))
+                        Some((key.to_case(case), *obj))
                     })
                     .collect()
             })
@@ -298,7 +312,7 @@ impl OpenAPIGenerator {
     }
 
     fn create_operation_object(&self, ctx: &Ctxt, name:&str, method: &RawUsecaseMethod) -> Result<OperationObject> {
-
+let case = self.get_case(ctx);
         // path parameters like /abc/:var, var is the path parameter
         // query parameters like /abc?var=xxx , var is the query parameter
         let path_params: Option<HashSet<String>> = utils::get_path_params(method);
@@ -335,7 +349,7 @@ impl OpenAPIGenerator {
                     let is_path_var = path_params.as_ref().is_some_and(|path_params| path_params.contains(key));
                     if is_path_var {
                         return Some(ParameterObject {
-                            name: key.to_case(Case::Snake),
+                            name: key.to_case(case),
                             in_: "path".to_string(),
                             description: schema.option.as_ref().and_then(|d| d.description.clone()),
                             required: true, // For the path parameter, required should be True
@@ -356,7 +370,7 @@ impl OpenAPIGenerator {
                     if is_query_var {
                         query_params.insert(key.clone());
                         Some(ParameterObject {
-                            name: key.to_case(Case::Snake),
+                            name: key.to_case(case),
                             in_: "query".to_string(),
                             description: schema.option.as_ref().and_then(|d| d.description.clone()),
                             required: schema.required.unwrap_or(false),

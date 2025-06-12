@@ -137,7 +137,7 @@ impl GolangGenerator {
 
             type_name = self.generate_struct(ctx, schema.items.as_ref().unwrap(), None, root_schema_ty.clone())?;
 
-            return Ok(format!("[]*{}", type_name).to_owned());
+            return Ok(format!("[]{}", type_name).to_owned());
         }
         else {
             type_name = schema.ty.as_ref().unwrap().clone();
@@ -250,7 +250,7 @@ impl GolangGenerator {
 
                 let add_json_tag = true; // TODO: make it configurable
                 if add_json_tag {
-                    result += &format!(" `json:\"{},omitempty\"`", prop_name.to_case(Case::Camel));
+                    result += &format!(" `json:\"{}\"`", prop_name.to_case(Case::Camel));
                 }
 
                 result += "\n";
