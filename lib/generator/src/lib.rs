@@ -11,6 +11,8 @@ mod python_fastapi;
 mod python_redis;
 mod golang;
 mod golang_gin;
+mod java;
+mod java_springweb;
 
 use std::{rc::Rc, cell::{RefCell}, collections::{HashMap, HashSet}, path::{Path, PathBuf}, error::Error, fs::{self, OpenOptions, File}, io::Write};
 
@@ -154,6 +156,8 @@ pub fn generate(ctx: &Ctxt) -> Result<()> {
         Rc::new(python_redis::PythonRedisGenerator::new()),
         Rc::new(golang::GolangGenerator::new()),
         Rc::new(golang_gin::GolangGinGenerator::new()),
+        Rc::new(java::JavaGenerator::new()),
+        Rc::new(java_springweb::JavaSpringWebGenerator::new()),
     ];
     let mut generator_map: HashMap<&str, Rc<dyn Generator>> = HashMap::new();
     generators

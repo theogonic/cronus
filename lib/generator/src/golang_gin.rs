@@ -457,7 +457,12 @@ impl GolangGinGenerator {
             .ok_or_else(|| anyhow::anyhow!("No rest option for method {}", method_name))?;
         result += "func (ctx *gin.Context) {\n";
 
-        let (path_params, query_params, body_params) = utils::get_pqb(method);
+        let (path_params, query_params, body_params) = utils::get_pqb(method, |prop| {
+            prop.option.as_ref()
+                .and_then(|o| o.golang_gin.as_ref())
+                .and_then(|g| g.exclude)
+                .unwrap_or(false)
+        });
         let is_multipart = method
             .option
             .as_ref()

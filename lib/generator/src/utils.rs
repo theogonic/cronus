@@ -28,6 +28,28 @@ pub fn spec_ty_to_rust_builtin_ty(spec_ty: &str) -> Option<String> {
     return None;
 }
 
+pub fn spec_ty_to_java_builtin_ty(spec_ty: &str) -> Option<String> {
+    if spec_ty == "string" {
+        return Some("String".to_string());
+    }
+    else if spec_ty == "integer" || spec_ty == "int" || spec_ty == "i32" {
+        return Some("Integer".to_string());
+    }
+    else if spec_ty == "u32" {
+        return Some("Long".to_string());
+    }
+    else if spec_ty == "bool" || spec_ty == "boolean" {
+        return Some("Boolean".to_string());
+    }
+    else if spec_ty.starts_with("map<") {
+        let (left_ty, right_ty) = parse_map_type(spec_ty);
+        let left = spec_ty_to_java_builtin_ty(left_ty).unwrap_or(left_ty.to_case(Case::UpperCamel));
+        let right = spec_ty_to_java_builtin_ty(right_ty).unwrap_or(right_ty.to_case(Case::UpperCamel));
+        return Some(format!("Map<{left},{right}>").to_string())
+    }
+    return None;
+}
+
 pub fn spec_ty_to_golang_builtin_ty(spec_ty: &str) -> Option<String> {
     if spec_ty == "string" {
         return Some("string".to_string());
@@ -208,13 +230,13 @@ pub fn get_usecase_rest_path_prefix(usecase: &RawUsecase) -> String {
     .unwrap_or_else(|| "/".to_string())
 }
 
-pub fn get_pqb(method: &RawUsecaseMethod) -> (Option<HashSet<String>>, Option<HashSet<String>>, Option<HashSet<String>>) {
-    
+pub fn get_pqb(method: &RawUsecaseMethod, should_prop_exclude: impl Fn(&RawSchema) -> bool) -> (Option<HashSet<String>>, Option<HashSet<String>>, Option<HashSet<String>>) {
+
     if method.req.is_none() {
         return (None, None, None);
     }
 
-    let mut path_props: Option<HashSet<String>> = get_path_params(method);
+    let path_props: Option<HashSet<String>> = get_path_params(method);
     
 
     let mut query_props: HashSet<String> = HashSet::new();
@@ -224,6 +246,15 @@ pub fn get_pqb(method: &RawUsecaseMethod) -> (Option<HashSet<String>>, Option<Ha
     method.req.as_ref().and_then(|req_schema| {
         req_schema.properties.as_ref().and_then(|props| {
             for (name, schema) in props.iter() {
+                // if the property is excluded, skip it
+                if should_prop_exclude(schema) {
+                    continue;
+                }
+
+                // if the property is a path parameter, skip it
+                if path_props.as_ref().map_or(false, |pp| pp.contains(name)) {
+                    continue;
+                }
                 let rest_option = method.option.as_ref().and_then(|option| option.rest.as_ref());
                 let rest_method: Option<&String> = rest_option.and_then(|rest| Some( &rest.method ));
                 let mut is_query = rest_method.and_then(|m| Some(m == "get")).unwrap_or(false);

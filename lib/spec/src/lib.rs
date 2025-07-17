@@ -44,7 +44,71 @@ pub struct GeneratorOption {
     pub rust_axum: Option<RustAxumGeneratorOption>,
     pub openapi: Option<OpenapiGeneratorOption>,
     pub typescript: Option<TypescriptGeneratorOption>,
-    pub typescript_nestjs: Option<TypescriptNestjsGeneratorOption>
+    pub typescript_nestjs: Option<TypescriptNestjsGeneratorOption>,
+    pub java: Option<JavaGeneratorOption>,
+    pub java_springweb: Option<JavaSpringWebGeneratorOption>
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct JavaGeneratorOption {
+    #[serde(skip)]
+    pub def_loc: Arc<DefLoc>,
+
+    /// Output directory for .java files
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dir: Option<String>,
+
+    /// Java Package Name
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub package: Option<String>,
+
+    /// Custom imports
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub imports: Option<Vec<String>>,
+
+    /// Custom exception type for usecase methods
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exception_type: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_method_parameters: Option<Vec<String>>,
+
+    /// Do not add throws clauses to usecase methods
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub no_exceptions: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exclude_types: Option<Vec<String>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct JavaSpringWebGeneratorOption {
+    #[serde(skip)]
+    pub def_loc: Arc<DefLoc>,
+
+    /// Output directory for .java files
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dir: Option<String>,
+
+    /// Java Package Name
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub package: Option<String>,
+
+
+    /// Java Domain Generated Package Import
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub domain_import: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_request_statements: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_method_parameters: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_imports: Option<Vec<String>>, 
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -357,6 +421,9 @@ pub struct RawSchemaPropertyOption {
     pub golang_gin: Option<RawSchemaPropertyGolangGinOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub java_springweb: Option<RawSchemaPropertyJavaSpringWebOption>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>
 
 }
@@ -387,6 +454,14 @@ pub struct RawSchemaPropertyPythonFastApiOption {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude: Option<bool>
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct RawSchemaPropertyJavaSpringWebOption {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub exclude: Option<bool>
+}
+
 
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -458,8 +533,12 @@ pub struct RawUsecaseMethodOption {
     pub golang_gin: Option<RawUsecaseMethodGolangGinOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>
+    pub description: Option<String>,
+
+   
 }
+
+
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

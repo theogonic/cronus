@@ -91,5 +91,5 @@ fn get_import_path(import: &str, default_path:&Path, available_paths: Option<&Ve
         }
     }
 
-    bail!("no available file found for import '{}'", cleaned)
+    bail!("no available file found for import '{}', search paths: {:?}", cleaned, available_paths)
 }
