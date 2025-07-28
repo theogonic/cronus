@@ -493,7 +493,7 @@ mod tests {
         "#;
 
         let spec = api_parse::parse(PathBuf::from(""), api_file)?;
-        let ctx = Ctxt::new(spec);
+        let ctx = Ctxt::new(spec, None);
         let g = OpenAPIGenerator::new();
         run_generator(&g, &ctx)?;
         let gfs = ctx.get_gfs(g.name());
@@ -529,7 +529,7 @@ mod tests {
         "#;
 
         let spec = api_parse::parse(PathBuf::from(""), api_file)?;
-        let ctx = Ctxt::new(spec);
+        let ctx = Ctxt::new(spec, None);
         let g = OpenAPIGenerator::new();
         run_generator(&g, &ctx)?;
         let gfs = ctx.get_gfs(g.name());

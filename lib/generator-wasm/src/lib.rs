@@ -46,7 +46,7 @@ pub fn api_to_yaml(content: &str) -> Result<JsValue, String> {
 fn run_raw_spec(spec: RawSpec) -> Result<JsValue, String> {
     log(&serde_wasm_bindgen::to_value(&spec).unwrap());
 
-    let ctx = Ctxt::new(spec);
+    let ctx = Ctxt::new(spec, None);
     match cronus_generator::generate(&ctx) {
         Ok(_) => {
 

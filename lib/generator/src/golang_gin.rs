@@ -370,6 +370,12 @@ impl GolangGinGenerator {
         uri_tag_props: Option<HashSet<String>>,
         json_tag_props: Option<HashSet<String>>,
     ) -> Result<String> {
+        let domain_pkg = self
+            .get_gen_option(ctx)
+            .and_then(|gen_opt| gen_opt.domain_package.as_ref())
+            .ok_or_else(|| {
+                anyhow::anyhow!("golang_gin domain_package option is not set")
+            })?;
         let mut result = String::new();
         result += "struct {\n";
         for (prop_name, prop_schema) in schema.properties.as_ref().unwrap() {
@@ -390,12 +396,14 @@ impl GolangGinGenerator {
                     .and_then(|items| items.ty.as_ref())
                     .ok_or_else(|| anyhow::anyhow!("items type is not set for {}", prop_name))?;
                 let ty = spec_ty_to_golang_builtin_ty(item_ty)
-                    .unwrap_or_else(|| item_ty.clone());
+                    .unwrap_or_else(||
+                        format!("{}.{}", domain_pkg.to_owned(), item_ty)
+                    );
                 format!("[]{}", ty)
                 
             } else {
                 spec_ty_to_golang_builtin_ty(prop_schema.ty.as_ref().unwrap())
-                .unwrap_or_else(|| prop_schema.ty.as_ref().unwrap().clone())
+                    .unwrap_or_else(||format!("{}.{}", domain_pkg.to_owned(), prop_schema.ty.as_ref().unwrap()))
             };
             
            
@@ -489,23 +497,29 @@ impl GolangGinGenerator {
 
         // request variable creation
         if let Some(req) = &method.req {
-            let request_ty = get_request_name(ctx, method_name);
-            result += &format!(
-                "  var request {}\n",
-                self.gen_anonymous_struct(
-                    ctx,
-                    req,
-                    Some(request_ty.clone()),
-                    form_tag_props,
-                    path_params.clone(),
-                    if is_multipart {None} else {body_params }
-                )?
-            );
+            let should_skip = form_tag_props.as_ref().is_none_or(|t| t.is_empty()) &&
+                path_params.as_ref().is_none_or(|t| t.is_empty()) &&
+                body_params.as_ref().is_none_or(|t| t.is_empty());
+
+            if !should_skip {
+                let request_ty = get_request_name(ctx, method_name);
+                result += &format!(
+                    "  var request {}\n",
+                    self.gen_anonymous_struct(
+                        ctx,
+                        req,
+                        Some(request_ty.clone()),
+                        form_tag_props,
+                        path_params.clone(),
+                        if is_multipart {None} else {body_params.clone() }
+                    )?
+                );
+            }
         }
 
         
         // path variable extraction
-        if path_params.is_some() {
+        if path_params.is_some() && !path_params.as_ref().unwrap().is_empty() {
             result += " if err := ctx.ShouldBindUri(&request); err != nil {\n";
             result += "    ctx.JSON(http.StatusBadRequest, gin.H{\"error\": err.Error()})\n";
             result += "    return\n";
@@ -552,10 +566,13 @@ impl GolangGinGenerator {
         if method.req.is_some() {
             // if get, use query parameters
             if rest.method == "get" {
-                result += "  if err := ctx.ShouldBindQuery(&request); err != nil {\n";
-                result += "    ctx.JSON(http.StatusBadRequest, gin.H{\"error\": err.Error()})\n";
-                result += "    return\n";
-                result += "  }\n";
+                if query_params.is_some_and(|q| !q.is_empty()) {
+                    result += "  if err := ctx.ShouldBindQuery(&request); err != nil {\n";
+                    result += "    ctx.JSON(http.StatusBadRequest, gin.H{\"parse query error\": err.Error()})\n";
+                    result += "    return\n";
+                    result += "  }\n";
+                }
+                
             } else {
                 if is_multipart {
                     // multipart/form-data, use
@@ -567,12 +584,14 @@ impl GolangGinGenerator {
                 } else {
                     // default to ShouldBindJSON for other methods
                     // if post, delete, put, patch, use body parameters
-
-                    result += "  if err := ctx.BindJSON(&request); err != nil {\n";
-                    result +=
-                        "    ctx.JSON(http.StatusBadRequest, gin.H{\"error\": err.Error()})\n";
-                    result += "    return\n";
-                    result += "  }\n";
+                    // check if body_params is empty, then do not use ShouldBindJSON
+                    if body_params.is_some() && body_params.as_ref().unwrap().len() > 0 {
+                        result += "  if err := ctx.ShouldBindJSON(&request); err != nil {\n";
+                        result +=
+                            "    ctx.JSON(http.StatusBadRequest, gin.H{\"parse body error\": err.Error()})\n";
+                        result += "    return\n";
+                        result += "  }\n";
+                    } 
                 }
             }
         }

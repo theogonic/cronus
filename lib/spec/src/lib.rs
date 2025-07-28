@@ -168,6 +168,7 @@ pub struct GolangGeneratorOption {
     /// Golang Package Name
     #[serde(skip_serializing_if = "Option::is_none")]
     pub package: Option<String>,
+
 }
 
 #[derive(Debug, Serialize, Deserialize)]

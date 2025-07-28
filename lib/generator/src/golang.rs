@@ -270,9 +270,15 @@ impl GolangGenerator {
     }
 
     fn dst(&self, ctx: &Ctxt) -> String {
-        let default_file = "domain.golang";
+        let default_file = "domain.go";
+
+        
 
         if let Some(go_opt) = self.get_gen_option(ctx) {
+            if let Some(file) = ctx.output.as_ref() {
+                let file_str = file.to_string_lossy().to_string();
+                return get_path_from_optional_parent(go_opt.def_loc.file.parent(), Some(&file_str), default_file);
+            }
             let dest_path = get_path_from_optional_parent(go_opt.def_loc.file.parent(), go_opt.file.as_ref(), default_file);
                 return dest_path;
         }

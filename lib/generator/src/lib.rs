@@ -31,13 +31,15 @@ type GeneratorFileSystem = Rc<RefCell<HashMap<String, String>>>;
 pub struct Context {
     pub generator_fs: RefCell<HashMap<&'static str, GeneratorFileSystem>>,
     pub spec: RawSpec,
+    pub output: Option<PathBuf>,
 }
 
 impl Context {
-    pub fn new(spec: RawSpec) -> Self {
+    pub fn new(spec: RawSpec, output: Option<PathBuf>) -> Self {
         Self {
             generator_fs: RefCell::new(HashMap::new()),
             spec,
+            output,
         }
     }
 
@@ -80,6 +82,7 @@ impl Context {
         for (g, fs) in self.generator_fs.borrow().iter() {
             for (path, contents) in fs.borrow().iter() {
                 let pb = PathBuf::from(path);
+                println!("Dumping {}: {}", g, pb.display());
                 let par = pb.parent().unwrap();
                 if !par.exists() {
                     std::fs::create_dir_all(par)?;
@@ -123,8 +126,8 @@ impl std::ops::Deref for Ctxt {
 }
 
 impl Ctxt {
-    pub fn new(spec: RawSpec) -> Self {
-        Self(std::sync::Arc::new( Context::new(spec)))
+    pub fn new(spec: RawSpec, output: Option<PathBuf>) -> Self {
+        Self(std::sync::Arc::new( Context::new(spec, output)))
     }
 }
 
@@ -237,14 +240,14 @@ mod test {
 
     #[test]
     fn context_get_files_by_generator(){
-        let ctx = Context::new(RawSpec::new());
+        let ctx = Context::new(RawSpec::new(), None);
         ctx.init_gfs("abcde");
         ctx.get_gfs("abcde");
     }
 
     #[test]
     fn context_append_file(){
-        let ctx = Context::new( RawSpec::new());
+        let ctx = Context::new( RawSpec::new(), None);
         ctx.init_gfs("agenerator");
 
         ctx.append_file("agenerator", "src/lib.rs", "hello");
@@ -260,7 +263,7 @@ mod test {
         let spec_file = proj_dir.join("main.api");
         let mut explored = HashSet::new();  
         let spec = cronus_parser::from_file(&spec_file, true, None, &mut explored)?;
-        let ctx = Ctxt::new(spec);
+        let ctx = Ctxt::new(spec, None);
         generate(&ctx)?;
         run_cargo_check(&proj_dir)
     }
@@ -271,7 +274,7 @@ mod test {
         let spec_file = proj_dir.join("main.api");
         let mut explored = HashSet::new();  
         let spec = cronus_parser::from_file(&spec_file, true, None, &mut explored)?;
-        let ctx = Ctxt::new(spec);
+        let ctx = Ctxt::new(spec, None);
         generate(&ctx)?;
         run_cargo_check(&proj_dir)
     }

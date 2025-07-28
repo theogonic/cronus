@@ -19,10 +19,15 @@ enum Commands {
     Gen {
         /// Input file path
         #[arg(short, long, value_parser)]
-        input: Option<String>,
+        input: Option<PathBuf>,
+        
         /// Output to stdout
         #[arg(short, long, default_value_t = false)]
         stdout: bool,
+
+        // Output directory
+        #[arg(short, long, value_parser)]
+        output: Option<PathBuf>,
 
         /// Search paths
         #[arg(short, long, value_parser)]
@@ -32,7 +37,7 @@ enum Commands {
     Yaml {
         /// Input file path
         #[arg(short, long, value_parser)]
-        input: Option<String>,
+        input: Option<PathBuf>,
 
         /// Output to stdout
         #[arg(short, long, default_value_t = false)]
@@ -42,7 +47,7 @@ enum Commands {
     Api {
         /// Input file path
         #[arg(short, long, value_parser)]
-        input: Option<String>,
+        input: Option<PathBuf>,
 
         /// Output to stdout
         #[arg(short, long, default_value_t = false)]
@@ -61,7 +66,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let args = Args::parse();
     match args.command {
-        Some(Commands::Gen { input, stdout, search_paths }) => {
+        Some(Commands::Gen { input, stdout, output, search_paths }) => {
             match input {
                 Some(i) => {
                     let target_path = PathBuf::from(i);
@@ -72,13 +77,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 for default_file in &default_files {
                                     let try_file = Path::join(&target_path, default_file);
                                     if try_file.exists() {
-                                        run(&try_file, search_paths.as_ref())?;
+                                        run(&try_file, search_paths.as_ref(), output)?;
                                         break;
                                     }
                                 }
                                     
                             } else if md.is_file() {
-                                run(&target_path, search_paths.as_ref())?;
+                                run(&target_path, search_paths.as_ref(), output)?;
                             } else {
                                 return Err(format!("Unsupported path: {:?}", md).into())
                             }
@@ -153,11 +158,11 @@ fn read_from_stdin() -> String {
 }
 
 #[tracing::instrument]
-pub fn run(entry_file: &Path, search_paths: Option<&Vec<PathBuf>>) -> Result<()> {
+pub fn run(entry_file: &Path, search_paths: Option<&Vec<PathBuf>>, output: Option<PathBuf>) -> Result<()> {
     let abs_file = std::path::absolute(entry_file)?;
     let mut explored = HashSet::new();
     let spec = cronus_parser::from_file(&abs_file, true, search_paths, &mut explored)?;
-    let ctx = Ctxt::new(spec);
+    let ctx = Ctxt::new(spec, output);
     generate(&ctx)?;
     ctx.dump()
 }
@@ -188,7 +193,7 @@ pub fn api_to_yaml(content: &str) -> Result<String> {
 
 fn run_raw_spec(spec: cronus_spec::RawSpec) -> Result<String> {
 
-    let ctx = Ctxt::new(spec);
+    let ctx = Ctxt::new(spec, None);
     match cronus_generator::generate(&ctx) {
         Ok(_) => {
 
