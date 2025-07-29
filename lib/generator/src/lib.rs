@@ -19,7 +19,7 @@ use std::{rc::Rc, cell::{RefCell}, collections::{HashMap, HashSet}, path::{Path,
 use openapi::OpenAPIGenerator;
 use rust::RustGenerator;
 use rust_axum::RustAxumGenerator;
-use cronus_spec::{RawSchema, RawSpec, RawUsecase, RawUsecaseMethod};
+use cronus_spec::{RawSchema, RawSpec, RawUsecase, RawMethod};
 use tracing::info;
 use ts::TypescriptGenerator;
 use ts_nestjs::TypescriptNestjsGenerator;

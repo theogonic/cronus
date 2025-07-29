@@ -1,8 +1,8 @@
 use anyhow::bail;
 use convert_case::{Case, Casing};
 use cronus_spec::{
-    GolangGinGeneratorOption, PythonFastApiGeneratorOption, RawSchema, RawUsecaseMethod,
-    RawUsecaseMethodRestOption,
+    GolangGinGeneratorOption, PythonFastApiGeneratorOption, RawSchema, RawMethod,
+    RawMethodRestOption,
 };
 use std::{any::type_name, cell::RefCell, collections::HashSet, fmt::format, path::PathBuf};
 
@@ -320,7 +320,7 @@ impl Generator for GolangGinGenerator {
 }
 
 fn get_method_path_names_and_tys(
-    method: &RawUsecaseMethod,
+    method: &RawMethod,
 ) -> Result<Option<(Vec<String>, Vec<String>)>> {
     let path_params = utils::get_path_params(method);
     let mut struct_fields: Vec<String> = Vec::new();
@@ -451,7 +451,7 @@ impl GolangGinGenerator {
         usecase_var: &str,
         domain_pkg: &str,
         method_name: &str,
-        method: &RawUsecaseMethod,
+        method: &RawMethod,
     ) -> Result<String> {
         let mut result = String::new();
         let domain_package = self

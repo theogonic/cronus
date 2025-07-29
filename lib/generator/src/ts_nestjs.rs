@@ -1,7 +1,7 @@
 
 
 use convert_case::{Casing, Case};
-use cronus_spec::{RawUsecase, RawUsecaseMethod, RawUsecaseMethodRestOption, RawSchema};
+use cronus_spec::{RawUsecase, RawMethod, RawMethodRestOption, RawSchema};
 
 use crate::{Generator, Ctxt};
 use anyhow::{Ok, Result};
@@ -54,7 +54,7 @@ impl TypescriptNestjsGenerator {
 
     
 
-    fn generate_method(&self, usecase_name: &str, method: &RawUsecaseMethod, rest_option: &RawUsecaseMethodRestOption) -> String {
+    fn generate_method(&self, usecase_name: &str, method: &RawMethod, rest_option: &RawMethodRestOption) -> String {
         let mut method_code = String::new();
     
         // Generate NestJS method code

@@ -335,6 +335,9 @@ impl Default for DefLoc {
 
 
 
+
+
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RawSchema {
     #[serde(skip)]
@@ -479,14 +482,14 @@ pub struct RawSchemaPropertyRustOption {
     pub attrs: Option<Vec<String>>
 }
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RawUsecaseMethod {
+pub struct RawMethod {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub req: Option<RawSchema>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub res: Option<RawSchema>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub option: Option<RawUsecaseMethodOption>
+    pub option: Option<RawMethodOption>
 }
 
   
@@ -495,7 +498,7 @@ pub  struct RawUsecase {
     #[serde(skip)]
     pub def_loc: Arc<DefLoc>,
 
-    pub methods: HashMap<String, RawUsecaseMethod>,
+    pub methods: HashMap<String, RawMethod>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub option: Option<RawUsecaseOption>
@@ -520,18 +523,18 @@ pub struct RawUsecaseRestOption {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct RawUsecaseMethodOption {
+pub struct RawMethodOption {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rest: Option<RawUsecaseMethodRestOption>,
+    pub rest: Option<RawMethodRestOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub redis: Option<RawUsecaseMethodRedisOption>,
+    pub redis: Option<RawMethodRedisOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub python_fastapi: Option<RawUsecaseMethodPythonFastApiOption>,
+    pub python_fastapi: Option<RawMethodPythonFastApiOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub golang_gin: Option<RawUsecaseMethodGolangGinOption>,
+    pub golang_gin: Option<RawMethodGolangGinOption>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -543,7 +546,7 @@ pub struct RawUsecaseMethodOption {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct RawUsecaseMethodRedisOption {
+pub struct RawMethodRedisOption {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub queue_name: Option<String>,
@@ -553,14 +556,14 @@ pub struct RawUsecaseMethodRedisOption {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RawUsecaseMethodGolangGinOption {
+pub struct RawMethodGolangGinOption {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub extra_request_fields: Option<Vec<String>>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RawUsecaseMethodPythonFastApiOption {
+pub struct RawMethodPythonFastApiOption {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub extra_method_args: Option<Vec<String>>,
 
@@ -569,10 +572,23 @@ pub struct RawUsecaseMethodPythonFastApiOption {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct RawUsecaseMethodRestOption {
+pub struct RawMethodRestOption {
     pub method: String,
     pub path: Option<String>,
     pub content_type: Option<String>, // e.g. Default is "application/json"
+}
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RawRepository {
+    #[serde(skip)]
+    pub def_loc: Arc<DefLoc>,
+
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    // pub option: Option<RawRepositoryOption>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub methods: Option<HashMap<String, RawMethod>>,
 }
 
 /// The schema for a spec
@@ -588,6 +604,8 @@ pub struct RawSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub usecases: Option<HashMap<String, RawUsecase>>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub repositories: Option<HashMap<String, RawRepository>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub option: Option<GlobalOption>,
@@ -647,6 +665,7 @@ impl RawSpec {
          Self { 
             ty: Default::default(), 
             usecases: Default::default(), 
+            repositories: Default::default(),
             option: Default::default(), 
             imports: Default::default()
          }

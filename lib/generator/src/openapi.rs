@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::{HashMap, HashSet}, fmt::format};
 
 use anyhow::{bail, Ok, Result};
 use convert_case::{Case, Casing};
-use cronus_spec::{OpenapiGeneratorOption, RawSchema, RawUsecaseMethod};
+use cronus_spec::{OpenapiGeneratorOption, RawSchema, RawMethod};
 use tracing::{span, Level};
 
 use crate::{openapi_utils::{InfoObject, MediaTypeObject, OpenApiComponentsObject, OpenApiDocument, OperationObject, ParameterObject, PathItemObject, RequestBodyObject, ResponseObject, ResponsesObject, SchemaObject}, utils::{self, extract_url_variables, get_path_from_optional_parent, get_request_name, get_response_name, get_schema_by_name, parse_map_type, spec_ty_to_openapi_builtin_ty, spec_ty_to_rust_builtin_ty}, Ctxt, Generator};
@@ -311,7 +311,7 @@ impl OpenAPIGenerator {
         ctx.spec.option.as_ref().and_then(|go| go.generator.as_ref().and_then(|gen| gen.openapi.as_ref()))
     }
 
-    fn create_operation_object(&self, ctx: &Ctxt, name:&str, method: &RawUsecaseMethod) -> Result<OperationObject> {
+    fn create_operation_object(&self, ctx: &Ctxt, name:&str, method: &RawMethod) -> Result<OperationObject> {
 let case = self.get_case(ctx);
         // path parameters like /abc/:var, var is the path parameter
         // query parameters like /abc?var=xxx , var is the query parameter

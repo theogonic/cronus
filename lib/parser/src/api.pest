@@ -74,6 +74,17 @@ enum_body = {
     "}" 
 }
 
+// repository definitions
+repository_def = {
+    option* ~
+    "repository" ~ identifier ~ repository_body
+}
+
+repository_body = {
+    "{" ~
+         method_def* ~
+    "}" 
+}
 
 
 global_option = {
@@ -84,6 +95,6 @@ global_option = {
 // Root rule
 file = { 
     SOI ~
-    (usecase | struct_def | enum_def | import | global_option )* ~
+    (usecase | struct_def | enum_def | import | global_option | repository_def)* ~
     EOI 
 }

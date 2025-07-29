@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use anyhow::bail;
 use anyhow::Result;
+use cronus_spec::RawRepository;
 use cronus_spec::RawSchemaEnumItem;
 use serde::de::DeserializeOwned;
 use cronus_spec::DefLoc;
@@ -15,7 +16,7 @@ use cronus_spec::RawSchema;
 use cronus_spec::RawSchemaPropertyOption;
 use cronus_spec::RawSpec;
 use cronus_spec::RawUsecase;
-use cronus_spec::RawUsecaseMethod;
+use cronus_spec::RawMethod;
 
 
 fn parse_file(def_loc:Arc<DefLoc>, pairs: Pair<Rule>) -> Result<RawSpec> {
@@ -95,6 +96,19 @@ fn parse_file(def_loc:Arc<DefLoc>, pairs: Pair<Rule>) -> Result<RawSpec> {
                     },
                 }
             },
+            Rule::repository_def => {
+                let (name, repository) = parse_repository_def(def_loc.clone(), pair)?;
+                match spec.repositories {
+                    Some(ref mut repos) => {
+                        repos.insert(name, repository);
+                    },
+                    None => {
+                        let mut repos = HashMap::new();
+                        repos.insert(name, repository);
+                        spec.repositories = Some(repos);
+                    },
+                }
+            },
             _ => {}
         }
     }
@@ -109,6 +123,57 @@ fn parse_file(def_loc:Arc<DefLoc>, pairs: Pair<Rule>) -> Result<RawSpec> {
     set_def_loc_for_global_option(def_loc.clone(), spec.option.as_mut());
 
     Ok(spec)
+}
+
+fn parse_repository_def(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> Result<(String, RawRepository)> {
+    let mut name = String::new();
+    let mut methods = HashMap::new();
+    let mut options = serde_yaml::Mapping::new();
+
+    for inner_pair in pair.into_inner() {
+        match inner_pair.as_rule() {
+            Rule::identifier => {
+                name = inner_pair.as_str().to_string();
+            },
+            Rule::option => {
+                let (keys, value) = parse_option(def_loc.clone(), inner_pair)?;
+                insert_value_by_keys(&mut options, keys, value)?;
+            },
+            Rule::repository_body => {
+                let m = parse_repository_body(def_loc.clone(), inner_pair)?;
+                methods.extend(m);
+            },
+            _ => {}
+        }
+    }
+
+    // let option:Option<RawSchemaPropertyOption> = yaml_mapping_to_option(options)?;
+
+    let repository = RawRepository {
+        def_loc,
+        methods: if methods.is_empty() { None } else { Some(methods) },
+    };
+
+    Ok((name, repository))
+   
+}
+
+fn parse_repository_body(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> Result<HashMap<String, RawMethod>> {
+    let mut methods = HashMap::new();
+
+    for inner_pair in pair.into_inner() {
+        match inner_pair.as_rule() {
+            Rule::method_def => {
+                let (method_name, method) = parse_method_def(def_loc.clone(), inner_pair)?;
+                methods.insert(method_name, method);
+            }
+            _ => {
+                bail!("unexpected rule found in repository body: {:?}", inner_pair.as_rule())
+            }
+        }
+    }
+
+    Ok(methods)
 }
 
 fn set_def_loc_for_global_option(def_loc:Arc<DefLoc>,  global_option: Option<&mut GlobalOption>) {
@@ -545,7 +610,7 @@ fn yaml_mapping_to_option< T: DeserializeOwned>(m: serde_yaml::Mapping) -> Resul
     if m.is_empty() { Ok(None) } else { Ok(serde_yaml::from_value(serde_yaml::Value::Mapping(m))?) }
 }
 
-fn parse_method_def(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> Result<(String, RawUsecaseMethod)> {
+fn parse_method_def(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> Result<(String, RawMethod)> {
     let mut method_name = String::new();
     let mut req = None;
     let mut res = None;
@@ -574,7 +639,7 @@ fn parse_method_def(def_loc:Arc<DefLoc>, pair: pest::iterators::Pair<Rule>) -> R
         }
     }
 
-    let method = RawUsecaseMethod {
+    let method = RawMethod {
         req,
         res,
         option: yaml_mapping_to_option(options)?
@@ -674,13 +739,28 @@ struct abc {
     }
 
     #[test]
-    #[should_panic(expected = "unknown field")]
-    fn cannot_parse_undefined_option()  {
+    fn can_parse_repository() -> Result<()> {
         let api_file: &'static str = r#"
-# [generator.rest]
+            repository abc {
+                create_abc
+                create_abcd {
+                    a: string
+                } -> {
+                    b: string
+                }
+            }
         "#;
 
-        let _ = api_parse::parse(PathBuf::from(""), api_file);
+        let spec = api_parse::parse(PathBuf::from(""), api_file)?;
+        assert!(spec.repositories.is_some());
+        assert!(spec.repositories.as_ref().unwrap().len() == 1);
+        let repo = spec.repositories.as_ref().unwrap().get("abc").unwrap();
+        assert!(repo.methods.is_some());
+        assert!(repo.methods.as_ref().unwrap().len() == 2);
+        let method_abc = repo.methods.as_ref().unwrap().get("create_abc").unwrap();
+        assert!(method_abc.req.is_none());
+        assert!(method_abc.res.is_none());
+        Ok(())
 
     }
 

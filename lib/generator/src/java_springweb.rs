@@ -1,8 +1,8 @@
 use anyhow::bail;
 use convert_case::{Case, Casing};
 use cronus_spec::{
-    JavaSpringWebGeneratorOption, RawSchema, RawUsecaseMethod,
-    RawUsecaseMethodRestOption,
+    JavaSpringWebGeneratorOption, RawSchema, RawMethod,
+    RawMethodRestOption,
 };
 use std::{any::type_name, cell::RefCell, collections::HashSet, fmt::format, path::PathBuf};
 
@@ -146,7 +146,7 @@ impl JavaSpringWebGenerator {
         ctx: &Ctxt,
         service_field: &str,
         method_name: &str,
-        method: &RawUsecaseMethod,
+        method: &RawMethod,
     ) -> Result<String> {
         let mut dto_result = String::new();
         let mut result = String::new();

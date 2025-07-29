@@ -63,16 +63,16 @@ Defines the schema for a type. It has the following optional fields:
 
 Represents a use case in the API. It contains:
 
-- `methods`: A map of method names to `RawUsecaseMethod` objects.
+- `methods`: A map of method names to `RawMethod` objects.
 - `option`: An optional `RawUsecaseOption` object with additional options.
 
-### RawUsecaseMethod
+### RawMethod
 
 Defines a method in a use case. It has the following optional fields:
 
 - `req`: A `RawSchema` object for the request schema.
 - `res`: A `RawSchema` object for the response schema.
-- `option`: A `RawUsecaseMethodOption` object with additional options.
+- `option`: A `RawMethodOption` object with additional options.
 
 ### GlobalOption, GeneratorOption, RustGeneratorOption, etc.
 

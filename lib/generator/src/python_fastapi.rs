@@ -1,7 +1,7 @@
 use anyhow::bail;
 use convert_case::{Case, Casing};
 use cronus_spec::{
-    PythonFastApiGeneratorOption, RawSchema, RawUsecaseMethod, RawUsecaseMethodRestOption,
+    PythonFastApiGeneratorOption, RawSchema, RawMethod, RawMethodRestOption,
 };
 use std::{any::type_name, cell::RefCell, collections::HashSet, fmt::format, path::PathBuf};
 
@@ -543,7 +543,7 @@ fn turn_cronus_path_to_fastapi_path(path: &str, var_case: Case) -> String {
 }
 
 fn get_method_path_names_and_tys(
-    method: &RawUsecaseMethod,
+    method: &RawMethod,
 ) -> Result<Option<(Vec<String>, Vec<String>)>> {
     let path_params = utils::get_path_params(method);
     let mut struct_fields: Vec<String> = Vec::new();

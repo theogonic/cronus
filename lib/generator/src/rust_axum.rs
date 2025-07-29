@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::HashMap, hash::Hash, path::PathBuf};
 
 use anyhow::{ bail, Ok, Result};
 use convert_case::{Case, Casing};
-use cronus_spec::{RawUsecase, RawUsecaseMethod, RawUsecaseMethodRestOption, RustAxumGeneratorOption};
+use cronus_spec::{RawUsecase, RawMethod, RawMethodRestOption, RustAxumGeneratorOption};
 use tracing::{span, Level};
 
 use crate::{utils::{self, get_path_from_optional_parent, get_request_name, get_usecase_name}, Ctxt, Generator};
@@ -58,7 +58,7 @@ impl Generator for RustAxumGenerator {
 
 }
 
-fn gen_method_query_struct(method: &RawUsecaseMethod, query_type:&str) -> Option<String> {
+fn gen_method_query_struct(method: &RawMethod, query_type:&str) -> Option<String> {
     let mut query_params: Vec<String> = Vec::new();
     if let Some(req) = &method.req {
         if let Some(properties) = &req.properties {
@@ -92,7 +92,7 @@ fn gen_method_query_struct(method: &RawUsecaseMethod, query_type:&str) -> Option
     }
 }
 
-fn get_method_path_names_and_tys(method: &RawUsecaseMethod) -> Result<Option<(Vec<String>, Vec<String>)>> {
+fn get_method_path_names_and_tys(method: &RawMethod) -> Result<Option<(Vec<String>, Vec<String>)>> {
     let path_params = utils::get_path_params(method);
     let mut struct_fields: Vec<String> = Vec::new();
     let mut struct_tys: Vec<String> = Vec::new();
@@ -147,7 +147,7 @@ impl RustAxumGenerator {
     ///
     /// Path parameter is also need if there is path templating
     /// Ex. PathExtractor(post_id): PathExtractor<Uuid>
-    fn generate_method(&self, ctx: &Ctxt, usecase_name:&str, usecase: &RawUsecase, method_name: &str, method: &cronus_spec::RawUsecaseMethod, rest: &cronus_spec::RawUsecaseMethodRestOption) -> Result<()> {
+    fn generate_method(&self, ctx: &Ctxt, usecase_name:&str, usecase: &RawUsecase, method_name: &str, method: &cronus_spec::RawMethod, rest: &cronus_spec::RawMethodRestOption) -> Result<()> {
 
         let mut result = "pub async fn ".to_owned();
         let fn_name = method_name.to_case(convert_case::Case::Snake);

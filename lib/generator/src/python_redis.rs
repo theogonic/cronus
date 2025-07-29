@@ -44,7 +44,7 @@ impl PythonRedisGenerator {
 }
 
 
-fn async_sender_str(service_name:&str, methods: &Vec<(&String, &cronus_spec::RawUsecaseMethod, &cronus_spec::RawUsecaseMethodRedisOption)>) -> String {
+fn async_sender_str(service_name:&str, methods: &Vec<(&String, &cronus_spec::RawMethod, &cronus_spec::RawMethodRedisOption)>) -> String {
     let mut method_strs = String::new();
 
     for (method_name, method, option) in methods {
@@ -74,7 +74,7 @@ class {service_name}RedisSender({service_name}):
     )
 }
 
-fn async_receiver_str(ctx: &crate::Ctxt, service_name:&str, methods: &Vec<(&String, &cronus_spec::RawUsecaseMethod, &cronus_spec::RawUsecaseMethodRedisOption)>) -> String {
+fn async_receiver_str(ctx: &crate::Ctxt, service_name:&str, methods: &Vec<(&String, &cronus_spec::RawMethod, &cronus_spec::RawMethodRedisOption)>) -> String {
     let mut method_strs = String::new();
     let mut listen_methods = vec![];
     for (method_name, method, option) in methods {
@@ -184,7 +184,7 @@ impl Generator for PythonRedisGenerator {
             .and_then(|gen_opt| gen_opt.usecase_from.as_ref())
             .ok_or(anyhow::anyhow!("usecase_from option is not set"))?;
 
-        let redis_methods: Vec<(&String, &cronus_spec::RawUsecaseMethod, &cronus_spec::RawUsecaseMethodRedisOption)> = usecase.methods.iter().filter_map(|(method_name, method)| {
+        let redis_methods: Vec<(&String, &cronus_spec::RawMethod, &cronus_spec::RawMethodRedisOption)> = usecase.methods.iter().filter_map(|(method_name, method)| {
             let redis_option = method
                 .option
                 .as_ref()
